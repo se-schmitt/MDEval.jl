@@ -10,12 +10,17 @@ using Dates
 using DelimitedFiles
 using Plots
 using Statistics
+using StatsBase
+
+# Physical Constants
+global kB = 1.380649e-23
 
 # Structures
 # Structure to store general evaluation and simulation options
 mutable struct info_struct
     folder
     do_multi
+    n_equ
     moltype
     dt
     natoms
@@ -71,6 +76,12 @@ mutable struct heat_dat
     jz
 end
 
+# Data structure to store single data
+mutable struct single_dat
+    val
+    std
+end
+
 # Data structure to store results
 mutable struct results_struct
     T
@@ -106,4 +117,22 @@ function get_subfolder(folder)
     what = isdir.(paths)
 
     subfolder = paths[what]
+end
+
+# Function to integrate by trapezodial rule
+function trapz(x,y,cum)
+    # cum: 0 - output just total integral as float,
+    #      1 - output vector with cumulative calculated integal
+    # Check input
+    if (length(x) != size(y,1)) error("Length of input vectors not equal") end
+
+    # Numerical integration by trapeziodal rule
+    if cum != 1
+        dx = x[2:end] - x[1:end-1]
+        int = sum(dx.*y[1:end-1,:] .+ (y[2:end,:]-y[1:end-1,:]).*dx./2, dims=1)
+    else
+        int = 0;
+        for i=2:length(x) int = vcat(int,trapz(x[1:i],y[1:i,:],0)) end
+    end
+    return int
 end

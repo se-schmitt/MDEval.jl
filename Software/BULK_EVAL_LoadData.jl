@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - LoadData
-# Functions to load data from simulation folder to variables
+# Function to load data from simulation folder to variables
 # ---
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ function load_info(info)
         info.dt = parse(Float64,lines[2][pos2[end]+1:end])
         pos3 = findfirst(": ",lines[3])
         info.natoms = parse(Int16,lines[3][pos3[end]+1:end])
-    else println("File \"info.dat\" is empty"); info = [] end
+    else error("File \"info.dat\" is empty") end
 
     return info
 end
@@ -65,7 +65,7 @@ function load_thermo(info)
         Ekin = dat[:,6];    Epot = dat[:,7]
 
         thermodat = thermo_dat(step, time, T, p, ρ, Etot, Ekin, Epot)
-    else println("File \"thermo.dat\" is empty"); thermodat = [] end
+    else error("File \"thermo.dat\" is empty") end
 end
 
 # Loading Pressure File
