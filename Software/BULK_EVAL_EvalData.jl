@@ -13,7 +13,7 @@ function EvalData(DATA, info)
     # Average Thermodynamic Properties
     T, p, ρ, Etot, Ekin, Epot = ave_thermo(thermodat, info)
 
-    # Evaluate Pressure Data to calculate viscosities
+    # Evaluate Pressure Data to Calculate Viscosities
     if (pdat isa pressure_dat) η, η_V = calc_viscosities(pdat, info)
     else η = single_dat([],[]); η_V = single_dat([],[]) end
 
@@ -22,8 +22,11 @@ function EvalData(DATA, info)
     else D = single_dat([],[]) end
 
     # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
+    if (jdat isa heat_dat) λ = calc_thermalconductivity(jdat, info)
+    else λ = single_dat([],[]) end
 
-    error("STOP")
+    RES = results_struct(T, p, ρ, Etot, Ekin, Epot, η, η_V, D, λ)
+    return RES
 end
 
 # Subfunctions
@@ -32,7 +35,7 @@ function ave_thermo(dat, info)
     what = dat.step .>= info.n_equ
 
     T = single_dat(mean(dat.T[what]), std(dat.T[what]))
-    p = single_dat(mean(dat.p[what]), std(dat.p[what]))
+    p = single_dat(mean(dat.p[what].*1e-1), std(dat.p[what]).*1e-1)
     ρ = single_dat(mean(dat.ρ[what]), std(dat.ρ[what]))
     Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]))
     Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]))
@@ -88,13 +91,17 @@ function calc_viscosities(dat, info)            # dat => pdat
     png(plt,string(info.folder,"/fig_eta(t).png"))
 
     # Save Results
-    what_ave = dat.step .>= mean([info.n_equ,maximum(dat.step)])
-    η = single_dat(mean(η_t[what]),std(η_t[what]))
-    η_V = single_dat(mean(η_V_t[what]),std(η_V_t[what]))
+    η = single_dat(η_t[end],[])
+    η_V = single_dat(η_V_t[end],[])
     return η, η_V
 end
 
 # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
-function calc_selfdiffusion(dat, info)       # dat => posdat
+function calc_selfdiffusion(dat, info)          # dat => posdat
+    return single_dat([],[])
+end
 
+# Evaluate Heat Flux Data to Calculate Thermal Conducitvity
+function calc_thermalconductivity(dat, info)    # dat => jdat
+    return single_dat([],[])
 end

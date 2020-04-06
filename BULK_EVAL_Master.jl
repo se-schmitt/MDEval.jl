@@ -8,14 +8,13 @@
 include("Software/BULK_EVAL_Init.jl")
 include("Software/BULK_EVAL_LoadData.jl")
 include("Software/BULK_EVAL_EvalData.jl")
+include("Software/BULK_EVAL_OutputResult.jl")
 
 # ---------- INPUT ----------
 # Data to read
 folder = "C:/Daten/1_Projekte/MD_Bulk/Input_Skripte_EMD/MinBSP_Pentane"
 do_multi = 0;           # 1 - Evaluate subfolder of folder
 # Evaluation
-# n_eval = 2e6;           # Timesteps to evaluate (length of evaluated sections)
-# n_wait = 1e6;           # Timesteps to wait to create independent trajectories
 n_equ = 1000;              # Timesteps to wait from start of simulations
 # do_TDM = 0;             # 1 - Evaluate by Time Decomposition Method ()
 # ---------------------------
@@ -28,7 +27,10 @@ else subfolder = [folder];                nfolder = 1 end
 # Initialization of Results Array
 RESULTS = Vector{Any}(undef,nfolder)
 
+k = 0
 for ifolder in subfolder
+    global k += 1;
+
     # Initialization of info structure
     info = info_struct(ifolder,do_multi,n_equ,"",[],[])
 
@@ -36,11 +38,13 @@ for ifolder in subfolder
     DATA, info = LoadData(info)
 
     # Evaluate Data
-    RESULTS = EvalData(DATA, info)
+    RESULTS[k] = EvalData(DATA, info)
     # alle Berechnungsdaten wie η(t), acf(t), msd(t), D(t), λ(t), acf_λ(t), ...
     # als Textdateien ausschreiben (+ evtl. als Plot) -> in RESULTS nur End-
     # ergebnisse speichern
 
+    # Output Results
+    OutputResult(RESULTS[k], ifolder)
 end
 
 # END

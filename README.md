@@ -11,7 +11,7 @@ Notes:
 ## Input
 
 Files:
--
+- 
 
 ## Output
 
@@ -22,6 +22,6 @@ Units:
 - Temperature:            [T] = K
 - Pressure:               [p] = MPa
 - Density:                [ρ] = g/ml
-- Energy:                 [E] =
+- Energy:                 [E] = eV
 - Viscosity:              [η] = Pa*s
-- Diffusion Coefficient:  [D] =
+- Diffusion Coefficient:  [D] = m^2/s
