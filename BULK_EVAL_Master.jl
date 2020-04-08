@@ -12,11 +12,13 @@ include("Software/BULK_EVAL_OutputResult.jl")
 
 # ---------- INPUT ----------
 # Data to read
-folder = "C:/Daten/1_Projekte/MD_Bulk/Input_Skripte_EMD/MinBSP_Pentane"
-do_multi = 0;           # 1 - Evaluate subfolder of folder
+folder = "C:/Daten/1_Projekte/MD_Bulk/Input_Skripte_EMD/0_alt/MinBSP_Pentane"
+ensemble = "NVT"
+do_multi = 1;               # 1 - Evaluate subfolder of folder
 # Evaluation
-n_equ = 1000;              # Timesteps to wait from start of simulations
-# do_TDM = 0;             # 1 - Evaluate by Time Decomposition Method ()
+n_equ = 1e3;                # Timesteps to wait from start of simulations
+single_state = 1;           # 1 - Simulations to Evaluate at Same State Point
+do_TDM = 0;                 # 1 - Evaluate by Time Decomposition Method ()
 # ---------------------------
 
 # Get all subfolder
@@ -32,20 +34,28 @@ for ifolder in subfolder
     global k += 1;
 
     # Initialization of info structure
-    info = info_struct(ifolder,do_multi,n_equ,"",[],[])
+    info = info_struct(ifolder,ensemble,do_multi,n_equ,"",[],[])
 
     # Load data
     DATA, info = LoadData(info)
 
     # Evaluate Data
     RESULTS[k] = EvalData(DATA, info)
-    # alle Berechnungsdaten wie η(t), acf(t), msd(t), D(t), λ(t), acf_λ(t), ...
-    # als Textdateien ausschreiben (+ evtl. als Plot) -> in RESULTS nur End-
-    # ergebnisse speichern
+    # alle zeitabhängigen Daten (wie η(t), acf(t), msd(t), D(t), λ(t), acf_λ(t))
+    # werden als Textdateien ausschreiben (+ evtl. als Plot)
 
     # Output Results
     OutputResult(RESULTS[k], ifolder)
+
+    println(string("Folder ",k," / ",length(subfolder)," DONE"))
 end
+
+# Time Decomposition Method
+if do_TDM == 1
+    TimeDecompositionMethod()
+end
+
+# Output Data
 
 # END
 println("---")

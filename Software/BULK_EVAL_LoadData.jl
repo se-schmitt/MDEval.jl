@@ -31,7 +31,7 @@ end
 # Loading Info File
 function load_info(info)
     # Read file info.dat
-    file = string(info.folder,"/info.dat")
+    file = string(info.folder,"/info.",info.ensemble,".dat")
     if isfile(file)
         fID = open(file,"r");   lines = readlines(fID);     close(fID)
 
@@ -50,7 +50,7 @@ end
 # Loading Thermo File
 function load_thermo(info)
     # Read file info.dat and check for right format
-    file = string(info.folder,"/thermo.dat")
+    file = string(info.folder,"/thermo.",info.ensemble,".dat")
     if isfile(file)
         fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
         if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
@@ -71,7 +71,7 @@ end
 # Loading Pressure File
 function load_pressure(info)
     # Read file pressure.dat and check for right format
-    file = string(info.folder,"/pressure.dat")
+    file = string(info.folder,"/pressure.",info.ensemble,".dat")
     if isfile(file)
         fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
         if line2 != "# TimeStep v_V v_T c_thermo_press c_thermo_press[1] c_thermo_press[2] c_thermo_press[3] c_thermo_press[4] c_thermo_press[5] c_thermo_press[6]"
@@ -95,7 +95,7 @@ function load_dump(info)
     posdat = []
 
     # Read dump file timestep by timestep
-    file = string(info.folder,"/atoms_position.dump")
+    file = string(info.folder,"/atoms_position.",info.ensemble,".dump")
     if isfile(file)
         fID = open(file,"r")
         while !eof(fID)
@@ -135,7 +135,7 @@ end
 # Loading Heat Flux File
 function load_heatflux(info)
     # Read file heat_flux.dat and check for right format
-    file = string(info.folder,"/heat_flux.dat")
+    file = string(info.folder,"/heat_flux.",info.ensemble,".dat")
     if isfile(file)
         fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
         if line2 != "# TimeStep v_V v_T c_j[1] c_j[2] c_j[3]"

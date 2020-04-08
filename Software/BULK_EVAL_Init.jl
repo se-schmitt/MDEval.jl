@@ -20,6 +20,7 @@ global kB = 1.380649e-23
 # Structure to store general evaluation and simulation options
 mutable struct info_struct
     folder
+    ensemble
     do_multi
     n_equ
     moltype
@@ -81,6 +82,7 @@ end
 mutable struct single_dat
     val
     std
+    err
 end
 
 # Data structure to store results
