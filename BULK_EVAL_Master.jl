@@ -5,20 +5,23 @@
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
 
+no_procs = 6            # Parallel computing if no_cpu_procs > 1
+
 include("Software/BULK_EVAL_Init.jl")
 include("Software/BULK_EVAL_LoadData.jl")
 include("Software/BULK_EVAL_EvalData.jl")
 include("Software/BULK_EVAL_OutputResult.jl")
+println(string("START: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
 
 # ---------- INPUT ----------
 # Data to read
-folder = "C:/Daten/1_Projekte/MD_Bulk/Input_Skripte_EMD/0_alt/MinBSP_Pentane"
+folder = "C:/Users/Schmitt/Desktop/TEST_EvalBulk/Test_compass"
 ensemble = "NVT"
-do_multi = 1;               # 1 - Evaluate subfolder of folder
+do_multi = 0                # 1 - Evaluate subfolder of folder
 # Evaluation
-n_equ = 1e3;                # Timesteps to wait from start of simulations
-single_state = 1;           # 1 - Simulations to Evaluate at Same State Point
-do_TDM = 0;                 # 1 - Evaluate by Time Decomposition Method ()
+n_equ = 0                   # Timesteps to wait from start of simulations
+single_state = 1            # 1 - Simulations to Evaluate at Same State Point
+do_TDM = 0                  # 1 - Evaluate by Time Decomposition Method ()
 # ---------------------------
 
 # Get all subfolder
@@ -38,16 +41,18 @@ for ifolder in subfolder
 
     # Load data
     DATA, info = LoadData(info)
+    println(string("ave_thermo DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Evaluate Data
     RESULTS[k] = EvalData(DATA, info)
+    println(string("ave_thermo DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
     # alle zeitabhängigen Daten (wie η(t), acf(t), msd(t), D(t), λ(t), acf_λ(t))
     # werden als Textdateien ausschreiben (+ evtl. als Plot)
 
     # Output Results
     OutputResult(RESULTS[k], ifolder)
 
-    println(string("Folder ",k," / ",length(subfolder)," DONE"))
+    println(string("---\nFolder ",k," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
 end
 
 # Time Decomposition Method
@@ -58,5 +63,7 @@ end
 # Output Data
 
 # END
-println("---")
-println(string("DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+if nprocs() > 1
+    rmprocs(workers())
+end
+println(string("---\nDONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))

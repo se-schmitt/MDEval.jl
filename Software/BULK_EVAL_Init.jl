@@ -8,10 +8,19 @@
 # Load Packages
 using Dates
 using DelimitedFiles
+using Distributed
 using Plots
 using Printf
 using Statistics
-using StatsBase
+
+if no_procs > 1
+    addprocs(no_procs)
+elseif no_procs == 1 && nprocs()>1
+    rmprocs(workers())
+end
+
+@everywhere using FFTW
+@everywhere using StatsBase
 
 # Physical Constants
 global kB = 1.380649e-23
@@ -120,22 +129,4 @@ function get_subfolder(folder)
     what = isdir.(paths)
 
     subfolder = paths[what]
-end
-
-# Function to integrate by trapezodial rule
-function trapz(x,y,cum)
-    # cum: 0 - output just total integral as float,
-    #      1 - output vector with cumulative calculated integal
-    # Check input
-    if (length(x) != size(y,1)) error("Length of input vectors not equal") end
-
-    # Numerical integration by trapeziodal rule
-    if cum != 1
-        dx = x[2:end] - x[1:end-1]
-        int = sum(dx.*y[1:end-1,:] .+ (y[2:end,:]-y[1:end-1,:]).*dx./2, dims=1)
-    else
-        int = 0;
-        for i=2:length(x) int = vcat(int,trapz(x[1:i],y[1:i,:],0)) end
-    end
-    return int
 end
