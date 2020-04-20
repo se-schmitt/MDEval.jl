@@ -84,7 +84,7 @@ function calc_viscosities(dat, info)            # dat => pdat
 
     # Plots
     teve = 100        # Just take data every 'teve' timesteps
-    plt = plot(t[1:teve:end],abs.(acf_η[1:teve:end]), dpi=400, legend=false)#, yscale=:log)
+    plt = plot(t[2:teve:end],abs.(acf_η[2:teve:end]), dpi=400, legend=false, xscale=:log10, yscale=:log10)
     xlabel!("t / ps"); ylabel!("|ACF| / Pa^2")
     png(plt,string(info.folder,"/fig_acf(t).png"))
     plt = plot(t[1:teve:end],η_t[1:teve:end], dpi=400, legend=false)
@@ -126,12 +126,10 @@ function cumtrapz(x::Array{Float64},y::Array{Float64})
 end
 
 # Function to calculate autocorrelation function (usable parallel)
-@everywhere begin
-    function calc_acf(in::Array{Float64,1})
-        L = length(in)
-        in0 = vcat(in,zeros(L))
-        out = real(ifft(fft(in0) .* conj(fft(in0))))[1:L]
-        out = out ./ (L:-1:1)
-        return out
-    end
+@everywhere function calc_acf(in::Array{Float64,1})
+    L = length(in)
+    in0 = vcat(in,zeros(L))
+    out = real(ifft(fft(in0) .* conj(fft(in0))))[1:L]
+    out = out ./ (L:-1:1)
+    return out
 end

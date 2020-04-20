@@ -9,17 +9,16 @@
 using Dates
 using DelimitedFiles
 using Distributed
-using Plots
+using Distributions
 using Printf
 using Statistics
 
-if no_procs > 1
-    addprocs(no_procs)
-elseif no_procs == 1 && nprocs()>1
-    rmprocs(workers())
-end
+if (nprocs() > 1) rmprocs(workers()) end
+if (no_procs > 1) addprocs(no_procs) end
 
 @everywhere using FFTW
+@everywhere using LsqFit
+@everywhere using Plots
 @everywhere using StatsBase
 
 # Physical Constants
@@ -30,7 +29,6 @@ global kB = 1.380649e-23
 mutable struct info_struct
     folder
     ensemble
-    do_multi
     n_equ
     moltype
     dt
@@ -108,6 +106,20 @@ mutable struct results_struct
     λ
 end
 
+# Data strucutre to store TDM settings
+@everywhere mutable struct set_TDM
+    folder::String
+    subfolder::Array{String,1}
+    do_out::Bool
+    tskip::Float64
+    cutcrit::Float64
+    tcut
+    name::String
+    symbol::String
+    unit::String
+    nboot::Int64
+end
+
 # Functions
 # Function to convert to or froam DATA
 function DATA2dats(DATA)
@@ -126,7 +138,75 @@ end
 function get_subfolder(folder)
     # Get all subfolders
     paths = string.(folder,"/",readdir(folder))
-    what = isdir.(paths)
-
+    what = isdir.(paths) .& .!(occursin.("TransportProperties",paths))
     subfolder = paths[what]
+end
+
+# Average of T, p, ρ
+function ave_state(subf)
+    # Make array
+    n = length(subf)
+    Tmat = zeros(n)
+    pmat = zeros(n)
+    ρmat = zeros(n)
+    for i = 1:n
+        res = load_result(string(subfolder[i],"/result.dat"))
+        Tmat[i] = res.T.val
+        pmat[i] = res.p.val
+        ρmat[i] = res.ρ.val
+    end
+
+    # Save in structure
+    T = single_dat(mean(Tmat), std(Tmat), std(Tmat)/n)
+    p = single_dat(mean(pmat), std(pmat), std(pmat)/n)
+    ρ = single_dat(mean(ρmat), std(ρmat), std(ρmat)/n)
+
+    return T, p, ρ
+end
+
+# Load result file
+function load_result(file)
+    fID = open(file,"r")
+    lines = readlines(fID);
+    close(fID)
+    res = results_struct([],[],[],[],[],[],[],[],[],[])
+
+    for i = 1:length(lines)
+        pos_colon = findfirst(isequal(':'),lines[i])
+        pos_open = findfirst(isequal('('),lines[i])
+        pos_comma = findfirst(isequal(','),lines[i])
+        pos_close = findfirst(isequal(')'),lines[i])
+        if length(lines[i])>1 && !(lines[i][1] == '#')
+            if !occursin("---",lines[i])
+                if lines[i][1] == 'ρ' || lines[i][1] == 'η'
+                    name = lines[i][1:pos_colon-2]
+                else
+                    name = lines[i][1:pos_colon-1]
+                end
+                if isnothing(pos_open) && isnothing(pos_close)
+                    val = parse(Float64,strip(lines[i][pos_colon+1:pos_comma-1]))
+                    std = []; err = []
+                elseif pos_close < pos_comma
+                    val = parse(Float64,strip(lines[i][pos_colon+1:pos_open-1]))
+                    std = parse(Float64,strip(lines[i][pos_open+1:pos_close-1]))
+                    err = []
+                elseif (pos_open < pos_comma) && (pos_close > pos_comma)
+                    val = parse(Float64,strip(lines[i][pos_colon+1:pos_open-1]))
+                    std = parse(Float64,strip(lines[i][pos_open+1:pos_comma-1]))
+                    err = parse(Float64,strip(lines[i][pos_comma+1:pos_close-1]))
+                end
+                if (name == "T") res.T = single_dat(val,std,err) end
+                if (name == "p") res.p = single_dat(val,std,err) end
+                if (name == "ρ") res.ρ = single_dat(val,std,err) end
+                if (name == "Etot") res.Etot = single_dat(val,std,err) end
+                if (name == "Ekin") res.Ekin = single_dat(val,std,err) end
+                if (name == "Epot") res.Epot = single_dat(val,std,err) end
+                if (name == "η") res.η = single_dat(val,std,err) end
+                if (name == "η_") res.η_V = single_dat(val,std,err) end
+                if (name == "D") res.D = single_dat(val,std,err) end
+                if (name == "λ") res.λ = single_dat(val,std,err) end
+            end
+        end
+    end
+    return res
 end

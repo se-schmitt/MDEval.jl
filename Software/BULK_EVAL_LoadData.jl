@@ -18,10 +18,12 @@ function LoadData(info)
     pdat = load_pressure(info)
 
     # Loading Dump File
-    posdat = load_dump(info)
+    # posdat = load_dump(info)
+    posdat = []
 
     # Loading Heat Flux File
-    jdat = load_heatflux(info)
+    # jdat = load_heatflux(info)
+    jdat = []
 
     DATA = dats2DATA(thermodat, pdat, posdat, jdat)
     return DATA, info
