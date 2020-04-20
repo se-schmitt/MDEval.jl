@@ -178,7 +178,7 @@ function load_result(file)
         pos_close = findfirst(isequal(')'),lines[i])
         if length(lines[i])>1 && !(lines[i][1] == '#')
             if !occursin("---",lines[i])
-                if lines[i][1] == 'ρ' || lines[i][1] == 'η'
+                if lines[i][1] == 'ρ' || lines[i][1] == 'η' || lines[i][1] == 'λ'
                     name = lines[i][1:pos_colon-2]
                 else
                     name = lines[i][1:pos_colon-1]

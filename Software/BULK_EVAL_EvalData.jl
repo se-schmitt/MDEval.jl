@@ -47,7 +47,7 @@ end
 
 # Evaluate Pressure Data to calculate viscosities
 function calc_viscosities(dat, info)            # dat => pdat
-    what = (dat.step .>= info.n_equ) .& (dat.step .<= 2e6)
+    what = (dat.step .>= info.n_equ)
     t = dat.t[what]
 
     # Calculate autocorrelation
@@ -86,7 +86,7 @@ function calc_viscosities(dat, info)            # dat => pdat
     teve = 100        # Just take data every 'teve' timesteps
     plt = plot(t[2:teve:end],abs.(acf_η[2:teve:end]), dpi=400, legend=false, xscale=:log10, yscale=:log10)
     xlabel!("t / ps"); ylabel!("|ACF| / Pa^2")
-    png(plt,string(info.folder,"/fig_acf(t).png"))
+    png(plt,string(info.folder,"/fig_eta-acf(t).png"))
     plt = plot(t[1:teve:end],η_t[1:teve:end], dpi=400, legend=false)
     xlabel!("t / ps"); ylabel!("η / (Pa*s)")
     png(plt,string(info.folder,"/fig_eta(t).png"))
@@ -104,7 +104,42 @@ end
 
 # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
 function calc_thermalconductivity(dat, info)    # dat => jdat
-    return single_dat([],[],[])
+    what = (dat.step .>= info.n_equ)
+    t = dat.t[what]
+
+    # Calculate autocorrelation
+    J_mat = [dat.jx[what]./dat.V[what],
+             dat.jy[what]./dat.V[what],
+             dat.jz[what]./dat.V[what]]
+    acf_J = pmap(calc_acf,J_mat)
+
+    # Unit conversion and GK factor
+    metal2WmK = 2.566969967e-16
+    factor = metal2WmK .* dat.V[what] ./ (3 .* kB .* dat.T[what].^2)
+
+    # Integration of acf
+    acf_λ = (acf_J[1] .+ acf_J[2] .+ acf_J[3])
+    λ_t = cumtrapz(t,acf_λ).*factor
+
+    # Write data to file
+    line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
+    line2 = "# t[ps] λ(t)[W/(m*K)] ACF_λ[eV^2/(Å^4*ps)]"
+    header = string(line1,"\n",line2)
+    file = string(info.folder,"/thermalconductivity.dat")
+    fID = open(file,"w"); println(fID,header)
+    writedlm(fID, hcat(dat.t[what],λ_t,acf_λ), " ")
+    close(fID)
+
+    # Plots
+    teve = 100        # Just take data every 'teve' timesteps
+    plt = plot(t[2:teve:end],abs.(acf_λ[2:teve:end]), dpi=400, legend=false, xscale=:log10, yscale=:log10)
+    xlabel!("t / ps"); ylabel!("|ACF| / eV^2/(Å^4*ps)")
+    png(plt,string(info.folder,"/fig_lambda_acf(t).png"))
+    plt = plot(t[1:teve:end],λ_t[1:teve:end], dpi=400, legend=false)
+    xlabel!("t / ps"); ylabel!("λ / (W/(m*K))")
+    png(plt,string(info.folder,"/fig_lambda(t).png"))
+
+    return single_dat(λ_t[end],[],[])
 end
 
 # Help functions

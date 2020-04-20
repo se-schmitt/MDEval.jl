@@ -16,12 +16,12 @@ println(string("START: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
 
 # ---------- INPUT ----------
 # Data to read
-folder = "F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.5gml"
+folder = "F:/MD_Bulk/Methane/Test_multiFiles"
 ensemble = "NVT"
 # Evaluation
 n_equ = 0                   # Timesteps to wait from start of simulations
 do_eval = 1                 # set 0, if single folders already evaluated
-do_state = 1                # set 1, if get averaged values of subfolder
+do_state = 0                # set 1, if get averaged values of subfolder
 nboot = 200                 # Number of bootstrapping repetitions
 # ---------------------------
 
