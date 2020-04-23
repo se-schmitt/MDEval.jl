@@ -6,7 +6,7 @@
 # ------------------------------------------------------------------------------
 
 # Function to ouput results of a single simulation / state point
-function OutputResult(result, folder)
+function OutputResult(result::results_struct, folder::String)
     # Create Filepath
     path = string(folder,"/result.dat")
 
@@ -34,32 +34,34 @@ end
 # Help function
 # Function to write a single line
 function print_prop(fID, x, sym)
-    spacestr = " "^(6-length(sym))
-    if !isempty(x.val)
-        if abs(ceil(log10(abs(x.val)))) > 3.5
-            @printf(fID,"%s:%s%5.5e",sym,spacestr,x.val)
-            if !isempty(x.std)
-                @printf(fID," (%5.5e",x.std)
-                if !isempty(x.err)
-                    @printf(fID,", %5.5e",x.err)
+    if typeof(x) == single_dat
+        spacestr = " "^(6-length(sym))
+        if !isempty(x.val)
+            if abs(ceil(log10(abs(x.val)))) > 3.5
+                @printf(fID,"%s:%s%5.5e",sym,spacestr,x.val)
+                if !isempty(x.std)
+                    @printf(fID," (%5.5e",x.std)
+                    if !isempty(x.err)
+                        @printf(fID,", %5.5e",x.err)
+                    end
+                    @printf(fID,"),\n")
+                else
+                    @printf(fID,",\n")
                 end
-                @printf(fID,"),\n")
             else
-                @printf(fID,",\n")
+                @printf(fID,"%s:%s%5.5f",sym,spacestr,x.val)
+                if !isempty(x.std)
+                    @printf(fID," (%5.5f",x.std)
+                    if !isempty(x.err)
+                        @printf(fID,", %5.5f",x.err)
+                    end
+                    @printf(fID,"),\n")
+                else
+                    @printf(fID,",\n")
+                end
             end
         else
-            @printf(fID,"%s:%s%5.5f",sym,spacestr,x.val)
-            if !isempty(x.std)
-                @printf(fID," (%5.5f",x.std)
-                if !isempty(x.err)
-                    @printf(fID,", %5.5f",x.err)
-                end
-                @printf(fID,"),\n")
-            else
-                @printf(fID,",\n")
-            end
+            @printf(fID,"%s:%s---,\n",sym,spacestr)
         end
-    else
-        @printf(fID,"%s:%s---,\n",sym,spacestr)
     end
 end
