@@ -5,37 +5,16 @@
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
 
-# Main Function
-function LoadData(info)
-
-    # Loading Info File
-    info = load_info(info)
-
-    # Loading Thermo File
-    thermodat = load_thermo(info)
-
-    # Loading Pressure File
-    pdat = load_pressure(info)
-
-    # Loading Dump File
-    # posdat = load_dump(info)
-    posdat = []
-
-    # Loading Heat Flux File
-    jdat = load_heatflux(info)
-
-    DATA = dats2DATA(thermodat, pdat, posdat, jdat)
-    return DATA, info
-end
-
-# Subfunctions
+# Functions to load different files
 # Loading Info File
-function load_info(info)
+function load_info(info::info_struct)
     # Read file info.dat
     if isfile(string(info.folder,"/info.",info.ensemble,".dat"))
         file = string(info.folder,"/info.",info.ensemble,".dat")
     else
-        file = string(info.folder,"/info.",info.ensemble,".1.dat")
+        list = readdir(info.folder)
+        filename = list[occursin.(string("info.",info.ensemble),list)][1]
+        file = string(info.folder,"/",filename)
     end
     if isfile(file)
         fID = open(file,"r");   lines = readlines(fID);     close(fID)
@@ -47,7 +26,9 @@ function load_info(info)
         info.dt = parse(Float64,lines[2][pos2[end]+1:end])
         pos3 = findfirst(": ",lines[3])
         info.natoms = parse(Int16,lines[3][pos3[end]+1:end])
-    else error("File \"info.dat\" is empty") end
+        pos4 = findfirst(": ",lines[4])
+        info.molmass = parse(Float64,lines[4][pos4[end]+1:end])
+    else error("File \"",file,"\" is empty") end
 
     return info
 end
@@ -174,17 +155,38 @@ function load_dump(info)
                 else error("File format wrong") end
                 # Reading positions of atoms
                 if (readline(fID) == "ITEM: ATOMS id mol xu yu zu ")
-                    id = zeros(natoms); molid = zeros(natoms);
-                    x = zeros(natoms); y = zeros(natoms); z = zeros(natoms);
+                    id = Int64.(zeros(natoms))
+                    molid = Int64.(zeros(natoms))
+                    x = zeros(natoms)
+                    y = zeros(natoms)
+                    z = zeros(natoms)
+                    mass = []
                     for i = 1:natoms
                         line_float = parse.(Float64,split(readline(fID)))
-                        id[i] = line_float[1]; molid[i] = line_float[2]
-                        x[i] = line_float[3]; y[i] = line_float[4]; z[i] = line_float[5]
+                        id[i] = Int64(line_float[1])
+                        molid[i] = Int64(line_float[2])
+                        x[i] = line_float[3]
+                        y[i] = line_float[4]
+                        z[i] = line_float[5]
+                    end
+                elseif (readline(fID) == "ITEM: ATOMS id mol mass xu yu zu ")
+                    id = Int64.(zeros(natoms))
+                    molid = Int64.(zeros(natoms))
+                    mass = zeros(natoms)
+                    x = zeros(natoms); y = zeros(natoms); z = zeros(natoms)
+                    for i = 1:natoms
+                        line_float = parse.(Float64,split(readline(fID)))
+                        id[i] = Int64(line_float[1])
+                        molid[i] = Int64(line_float[2])
+                        mass[i] = line_float[3]
+                        x[i] = line_float[4]
+                        y[i] = line_float[5]
+                        z[i] = line_float[6]
                     end
                 else error("File format wrong") end
 
                 if !(step==0 && skip1==1)
-                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, x, y, z))
+                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, mass, x, y, z))
                 end
             end
             skip1 = 1

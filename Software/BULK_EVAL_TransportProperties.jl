@@ -6,28 +6,47 @@
 # ------------------------------------------------------------------------------
 
 # Main
-function TransportProperties(set::set_TDM)
+function TransportProperties(state::state_info,set::set_TDM)
+
     if !(isdir(string(set.folder,"/TransportProperties")))
         mkdir(string(set.folder,"/TransportProperties"))
     end
 
-    # VISCOSITY
-    # Load runs
-    ηmat, t = load_runs("viscosity.dat", 2, set)
-    # Calculation of viscosity value by TDM method
-    set_η = set
-    set_η.name = "Viscosity"
-    set_η.unit = "Pa*s"
-    set_η.do_out = true
-    ηval, set_η = TDM(ηmat, t, set_η)
-    # Calculation of statistical uncertainties by bootstrapping method
-    println("Bootstrapping Viscosity ...")
-    ηstd, ηerr = bootstrapping(ηmat, t, set)
-    # Save in struct
-    η = single_dat(ηval, ηstd, ηerr)
+    if isfile(string(set.folder,"/result.dat"))
+        res = load_result(string(set.folder,"/result.dat"))
+        η = res.η
+    end
+
+    # # VISCOSITY
+    # # Load runs
+    # ηmat, t = load_runs("viscosity.dat", 2, set)
+    # # Calculation of viscosity value by TDM method
+    # set_η = set
+    # set_η.name = "Viscosity"
+    # set_η.unit = "Pa*s"
+    # set_η.do_out = true
+    # ηval, set_η = TDM(ηmat, t, set_η)
+    # # Calculation of statistical uncertainties by bootstrapping method
+    # println("Bootstrapping Viscosity ...")
+    # ηstd, ηerr = bootstrapping(ηmat, t, set)
+    # # Save in struct
+    # η = single_dat(ηval, ηstd, ηerr)
 
     # DIFFUSION COEFFICIENT
-    D = single_dat([],[],[])
+    Dv = []
+    for i = 1:length(set.subfolder)
+        file = string(set.subfolder[i],"/result.dat")
+        if isfile(file)
+            res = load_result(file)
+            append!(Dv,res.D.val)
+        end
+    end
+    ξ = 2.837298
+    L = (info.molmass/NA*state.n /state.ρ * 1e-6)^(1/3)
+    Dval = mean(Dv) .+ kB*state.T*ξ/(6*π*η.val*L)
+    D = single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv)))
+    println(D)
+    error()
 
     # THERMAL CONDUCTIVITY
     # Load runs
