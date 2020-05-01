@@ -6,16 +6,23 @@
 # ------------------------------------------------------------------------------
 
 # Main Function
-function EvalState(subfolder::Array{String,1},info::info_struct)
+function EvalState(subfolder::Array{String,1})
+
+    pos = findlast(isequal('/'),subfolder[1])-1
+    folder = subfolder[1][1:pos]
+
+    # Initialization of info structure
+    moltype, dt, natoms, molmass = load_info(subfolder[1])
+    mass = natoms*molmass/NA    # [mass] = g
 
     # T, p, ρ
     T, p, ρ = StaticProperties(subfolder)
     println(string("ave_state DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
-    state = state_info(T.val,p.val,ρ.val,info.natoms)
+    state = state_info(T.val,p.val,ρ.val,natoms,mass)
 
     # Transport Properties
-    η, η_V, D, λ = TransportProperties(state,set_TDM(info.folder,subfolder,false,2.0,0.4,[],"","","",nboot))
+    η, η_V, D, λ = TransportProperties(state,set_TDM(folder,subfolder,false,2.0,0.4,NaN,"","","",nboot))
     println(string("TransportProperties DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Output Data
@@ -66,11 +73,11 @@ function load_result(file)
                 end
                 if isnothing(pos_open) && isnothing(pos_close)
                     val = parse(Float64,strip(lines[i][pos_colon+1:pos_comma-1]))
-                    std = []; err = []
+                    std = NaN; err = NaN
                 elseif pos_close < pos_comma
                     val = parse(Float64,strip(lines[i][pos_colon+1:pos_open-1]))
                     std = parse(Float64,strip(lines[i][pos_open+1:pos_close-1]))
-                    err = []
+                    err = NaN
                 elseif (pos_open < pos_comma) && (pos_close > pos_comma)
                     val = parse(Float64,strip(lines[i][pos_colon+1:pos_open-1]))
                     std = parse(Float64,strip(lines[i][pos_open+1:pos_comma-1]))

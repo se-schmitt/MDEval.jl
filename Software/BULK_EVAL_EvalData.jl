@@ -8,7 +8,11 @@
 # Main Function
 function EvalData(info)
     # Loading Info File
-    info = load_info(info)
+    moltype, dt, natoms, molmass = load_info(info.folder)
+    info.moltype = moltype
+    info.dt = dt
+    info.natoms = natoms
+    info.molmass = molmass
 
     # Average Thermodynamic Properties
     T, p, ρ, Etot, Ekin, Epot = ave_thermo(info)
@@ -28,7 +32,7 @@ end
 
 # Subfunctions
 # Function to Average Thermodynamic Properties
-function ave_thermo(info)
+function ave_thermo(info::info_struct)
     # Loading Thermo File
     dat = load_thermo(info)
 
@@ -40,18 +44,18 @@ function ave_thermo(info)
         println(info.folder," | ave Etot: ",beta[1]," | slope E_tot: ",beta[2])
     end
 
-    T = single_dat(mean(dat.T[what]), std(dat.T[what]), [])
-    p = single_dat(mean(dat.p[what].*1e-1), std(dat.p[what]).*1e-1, [])
-    ρ = single_dat(mean(dat.ρ[what]), std(dat.ρ[what]), [])
-    Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), [])
-    Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), [])
-    Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), [])
+    T = single_dat(mean(dat.T[what]), std(dat.T[what]), NaN)
+    p = single_dat(mean(dat.p[what].*1e-1), std(dat.p[what]).*1e-1, NaN)
+    ρ = single_dat(mean(dat.ρ[what]), std(dat.ρ[what]), NaN)
+    Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
+    Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
+    Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
 
     return T, p, ρ, Etot, Ekin, Epot
 end
 
 # Evaluate Pressure Data to calculate viscosities
-function calc_viscosities(info)
+function calc_viscosities(info::info_struct)
     # Loading Pressure File
     dat = load_pressure(info)
 
@@ -101,18 +105,18 @@ function calc_viscosities(info)
         png(plt,string(info.folder,"/fig_eta(t).png"))
 
         # Save Results
-        η = single_dat(η_t[end], [], [])
-        η_V = single_dat(η_V_t[end], [], [])
+        η = single_dat(η_t[end], NaN, NaN)
+        η_V = single_dat(η_V_t[end], NaN, NaN)
     else
-        η = single_dat([],[],[])
-        η_V = single_dat([],[],[])
+        η = single_dat(NaN,NaN,NaN)
+        η_V = single_dat(NaN,NaN,NaN)
     end
 
     return η, η_V
 end
 
 # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
-function calc_selfdiffusion(info)
+function calc_selfdiffusion(info::info_struct)
     # Loading Dump File
     dat = load_dump(info)
 
@@ -128,7 +132,7 @@ function calc_selfdiffusion(info)
         δ_tol = 0.075
         δ = 0
         N_eval = ceil(Int64,kmax_eval*length(t))
-        L_eval = 100
+        L_eval = 50
         N = N_eval
         while δ < δ_tol && N > L_eval
             N = N-L_eval
@@ -145,7 +149,7 @@ function calc_selfdiffusion(info)
         # Calculation of D by determination of slope of msd
         beta = hcat(ones(length(what_eval)),t[what_eval]) \ msd_t[what_eval]
         factor_unit = 1e-8
-        D = single_dat(beta[2]/6*factor_unit,[],[])
+        D = single_dat(beta[2]/6*factor_unit,NaN,NaN)
 
         t1 = t[what_eval[1]]
         t2 = t[what_eval[end]]
@@ -158,14 +162,14 @@ function calc_selfdiffusion(info)
         plot!([t2,t2],[0.1,msd_t[what_eval[end]]],linestyle=:dot)
         png(plt1,string(info.folder,"/fig_msd(t).png"))
     else
-        D = single_dat([],[],[])
+        D = single_dat(NaN,NaN,NaN)
     end
 
     return D
 end
 
 # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
-function calc_thermalconductivity(info)    # dat => jdat
+function calc_thermalconductivity(info::info_struct)
     # Loading Heat Flux File
     dat = load_heatflux(info)
 
@@ -204,11 +208,13 @@ function calc_thermalconductivity(info)    # dat => jdat
         plt = plot(t[1:teve:end],λ_t[1:teve:end], dpi=400, legend=false)
         xlabel!("t / ps"); ylabel!("λ / (W/(m*K))")
         png(plt,string(info.folder,"/fig_lambda(t).png"))
+
+        λ = single_dat(λ_t[end],NaN,NaN)
     else
-        λ = single_dat([],[],[])
+        λ = single_dat(NaN,NaN,NaN)
     end
 
-    return single_dat(λ_t[end],[],[])
+    return λ
 end
 
 # Help functions

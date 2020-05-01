@@ -28,71 +28,71 @@ global NA = 6.02214076e23   # 1/mol
 # Structures
 # Structure to store general evaluation and simulation options
 mutable struct info_struct
-    folder
-    ensemble
-    n_equ
-    moltype
-    dt
-    natoms
-    molmass
+    folder::String
+    ensemble::String
+    n_equ::Int64
+    moltype::String
+    dt::Float64
+    natoms::Int64
+    molmass::Float64
 end
 
 # Data structure to store thermo data (thermo.dat)
 mutable struct thermo_dat
-    step
-    t
-    T
-    p
-    ρ
-    Etot
-    Ekin
-    Epot
+    step::Array{Int64,1}
+    t::Array{Float64,1}
+    T::Array{Float64,1}
+    p::Array{Float64,1}
+    ρ::Array{Float64,1}
+    Etot::Array{Float64,1}
+    Ekin::Array{Float64,1}
+    Epot::Array{Float64,1}
 end
 
 # Data structure to store pressure tensor (pressure.dat)
 mutable struct pressure_dat
-    step
-    t
-    V
-    T
-    p
-    pxx
-    pyy
-    pzz
-    pxy
-    pxz
-    pyz
+    step::Array{Int64,1}
+    t::Array{Float64,1}
+    V::Array{Float64,1}
+    T::Array{Float64,1}
+    p::Array{Float64,1}
+    pxx::Array{Float64,1}
+    pyy::Array{Float64,1}
+    pzz::Array{Float64,1}
+    pxy::Array{Float64,1}
+    pxz::Array{Float64,1}
+    pyz::Array{Float64,1}
 end
 
 # Data structure to store atoms positions
 mutable struct dump_dat
     step::Int64
     t::Float64
-    bounds
+    bounds::Array{Float64,2}
     id::Array{Int64,1}
     molid::Array{Int64,1}
-    mass
-    x
-    y
-    z
+    mass::Array{Float64,1}
+    x::Array{Float64,1}
+    y::Array{Float64,1}
+    z::Array{Float64,1}
 end
 
 # Data structure to store heat flux vector (heat_flux.dat)
 mutable struct heat_dat
-    step
-    t
-    V
-    T
-    jx
-    jy
-    jz
+    step::Array{Int64,1}
+    t::Array{Float64,1}
+    V::Array{Float64,1}
+    T::Array{Float64,1}
+    jx::Array{Float64,1}
+    jy::Array{Float64,1}
+    jz::Array{Float64,1}
 end
 
 # Data structure to store single data
 mutable struct single_dat
-    val
-    std
-    err
+    val::Float64
+    std::Float64
+    err::Float64
 end
 
 # Data structure to store results
@@ -116,7 +116,7 @@ end
     do_out::Bool
     tskip::Float64
     cutcrit::Float64
-    tcut
+    tcut::Float64
     name::String
     symbol::String
     unit::String
@@ -128,12 +128,12 @@ mutable struct state_info
     T::Float64
     p::Float64
     ρ::Float64
-    n::Float64
+    n::Int64
+    m::Float64
 end
 
 # Functions
-
-# Function to get all subfolder
+# Function to get all subfolders
 function get_subfolder(folder)
     # Get all subfolders
     paths = string.(folder,"/",readdir(folder))

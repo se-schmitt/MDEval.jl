@@ -7,67 +7,65 @@
 
 # Functions to load different files
 # Loading Info File
-function load_info(info::info_struct)
+function load_info(folder)
+    # Get filename
+    list = readdir(folder)
+    filename = list[occursin.("info.",list)][end]
+    file = string(folder,"/",filename)
+
     # Read file info.dat
-    if isfile(string(info.folder,"/info.",info.ensemble,".dat"))
-        file = string(info.folder,"/info.",info.ensemble,".dat")
-    else
-        list = readdir(info.folder)
-        filename = list[occursin.(string("info.",info.ensemble),list)][1]
-        file = string(info.folder,"/",filename)
-    end
     if isfile(file)
         fID = open(file,"r");   lines = readlines(fID);     close(fID)
 
         # Extract information
         pos1 = findfirst(": ",lines[1])
-        info.moltype = lines[1][pos1[end]+1:end]
+        moltype = lines[1][pos1[end]+1:end]
         pos2 = findfirst(": ",lines[2])
-        info.dt = parse(Float64,lines[2][pos2[end]+1:end])
+        dt = parse(Float64,lines[2][pos2[end]+1:end])
         pos3 = findfirst(": ",lines[3])
-        info.natoms = parse(Int16,lines[3][pos3[end]+1:end])
+        natoms = parse(Int64,lines[3][pos3[end]+1:end])
         pos4 = findfirst(": ",lines[4])
-        info.molmass = parse(Float64,lines[4][pos4[end]+1:end])
+        molmass = parse(Float64,lines[4][pos4[end]+1:end])
     else error("File \"",file,"\" is empty") end
 
-    return info
+    return moltype, dt, natoms, molmass
 end
 
 # Loading Thermo File
-function load_thermo(info)
+function load_thermo(info::info_struct)
     thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
     if length(files) > 9
         files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
     end
-    let stepADD=0,timeADD=0, skip1=0
-        for file in files
-            step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info,skip1)
-            thermodat.step = vcat(thermodat.step,step.+stepADD)
-            thermodat.t = vcat(thermodat.t,time.+timeADD)
-            thermodat.T = vcat(thermodat.T,T)
-            thermodat.p = vcat(thermodat.p,p)
-            thermodat.ρ = vcat(thermodat.ρ,ρ)
-            thermodat.Etot = vcat(thermodat.Etot,Etot)
-            thermodat.Ekin = vcat(thermodat.Ekin,Ekin)
-            thermodat.Epot = vcat(thermodat.Epot,Epot)
-            stepADD = thermodat.step[end]
-            timeADD = thermodat.t[end]
-            # if (skip1 == 0) skip1 = 1 end
-        end
+    stepADD=0
+    timeADD=0
+    for file in files
+        step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info)
+        thermodat.step = vcat(thermodat.step,step.+stepADD)
+        thermodat.t = vcat(thermodat.t,time.+timeADD)
+        thermodat.T = vcat(thermodat.T,T)
+        thermodat.p = vcat(thermodat.p,p)
+        thermodat.ρ = vcat(thermodat.ρ,ρ)
+        thermodat.Etot = vcat(thermodat.Etot,Etot)
+        thermodat.Ekin = vcat(thermodat.Ekin,Ekin)
+        thermodat.Epot = vcat(thermodat.Epot,Epot)
+        stepADD = thermodat.step[end]
+        timeADD = thermodat.t[end]
     end
+
     return thermodat
     if isempty(thermodat.step) error("No thermo data loaded!") end
     return thermodat
 end
-function load_thermo_file(file,info,skip)
+function load_thermo_file(file::String, info::info_struct)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
     if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
         error("Format of File \"thermo.dat\" not right")
     end
     # Read data
-    dat = readdlm(file, skipstart=(2+skip))
+    dat = readdlm(file, skipstart=2)
     step = dat[:,1];    time = step*info.dt
     T    = dat[:,2];    p    = dat[:,3]
     ρ    = dat[:,4];    Etot = dat[:,5]

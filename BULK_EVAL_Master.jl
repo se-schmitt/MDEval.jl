@@ -7,13 +7,15 @@
 
 # ---------- INPUT ---------
 # Data to read
-folders = ["F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.1gml"]
+folders = ["F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.1gml",
+           "F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.3gml",
+           "F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.5gml",]
 ensemble = "NVT"
 # Evaluation
 n_equ = 0                   # Timesteps to wait from start of simulations
 do_eval = 1                 # set 0, if single folders already evaluated
-do_state = 0                # set 1, if get averaged values of subfolder
-nboot = 200                 # Number of bootstrapping repetitions
+do_state = 1                # set 1, if get averaged values of subfolder
+nboot = 5                   # Number of bootstrapping repetitions
 # Settings
 no_procs = 4                # Parallel computing if no_cpu_procs > 1
 # ---------------------------
@@ -24,7 +26,7 @@ include("Software/BULK_EVAL_EvalData.jl")
 include("Software/BULK_EVAL_EvalState.jl")
 include("Software/BULK_EVAL_OutputResult.jl")
 include("Software/BULK_EVAL_TransportProperties.jl")
-println(string("START: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
+println(string("START: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n__________"))
 
 for folder in folders
     # Get all subfolder
@@ -32,35 +34,30 @@ for folder in folders
     if isempty(subfolder)
         subfolder = [folder]
     end
+    println("Folder: ",folder)
 
     # Evaluation of single folder
     if do_eval == 1
         for i = 1:length(subfolder)
-            ifolder = subfolder[i]
-
             # Initialization of info structure
-            info = info_struct(ifolder,ensemble,n_equ,"",[],[],[])
+            info = info_struct(subfolder[i],ensemble,n_equ,"",NaN,0,NaN)
 
             # Evaluate Data
             EvalData(info)
-
-            println(string("---\nFolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
+            println(string("Folder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
         end
     end
 
     # Averaging simulations
     if do_state == 1
-        # Initialization of info structure
-        info = info_struct(subfolder[1],ensemble,n_equ,"",[],[],[])
-        info = load_info(info)
-        info.folder = folder
-
-        EvalState(subfolder,info)
+        EvalState(subfolder)
+        println(string("State Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
     end
-
-    # END
-    if nprocs() > 1
-        rmprocs(workers())
-    end
-    println(string("---\nDONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+    println("__________")
 end
+
+# END
+if nprocs() > 1
+    rmprocs(workers())
+end
+println(string("---\nDONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))

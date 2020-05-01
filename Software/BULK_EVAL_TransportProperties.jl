@@ -7,63 +7,78 @@
 
 # Main
 function TransportProperties(state::state_info,set::set_TDM)
-
+    # Create new folder if it not yet exists
     if !(isdir(string(set.folder,"/TransportProperties")))
         mkdir(string(set.folder,"/TransportProperties"))
     end
 
+    # Load existing result file
+    do_calc = 0                 # 1 - Calculation even if it already exists
+                                # 0 - Take old result if exists
     if isfile(string(set.folder,"/result.dat"))
         res = load_result(string(set.folder,"/result.dat"))
+    else
+        do_calc = 1
+    end
+
+    # VISCOSITY
+    if do_calc == 1 || !(typeof(res.η) == single_dat)
+        # Load runs
+        ηmat, t = load_runs("viscosity.dat", 2, set)
+        # Calculation of viscosity value by TDM method
+        set_η = set
+        set_η.name = "Viscosity"
+        set_η.unit = "Pa*s"
+        set_η.do_out = true
+        ηval, set_η = TDM(ηmat, t, set_η)
+        # Calculation of statistical uncertainties by bootstrapping method
+        println("Bootstrapping Viscosity ...")
+        ηstd, ηerr = bootstrapping(ηmat, t, set)
+        # Save in struct
+        η = single_dat(ηval, ηstd, ηerr)
+    else
         η = res.η
     end
 
-    # # VISCOSITY
-    # # Load runs
-    # ηmat, t = load_runs("viscosity.dat", 2, set)
-    # # Calculation of viscosity value by TDM method
-    # set_η = set
-    # set_η.name = "Viscosity"
-    # set_η.unit = "Pa*s"
-    # set_η.do_out = true
-    # ηval, set_η = TDM(ηmat, t, set_η)
-    # # Calculation of statistical uncertainties by bootstrapping method
-    # println("Bootstrapping Viscosity ...")
-    # ηstd, ηerr = bootstrapping(ηmat, t, set)
-    # # Save in struct
-    # η = single_dat(ηval, ηstd, ηerr)
-
     # DIFFUSION COEFFICIENT
-    Dv = []
-    for i = 1:length(set.subfolder)
-        file = string(set.subfolder[i],"/result.dat")
-        if isfile(file)
-            res = load_result(file)
-            append!(Dv,res.D.val)
+    if do_calc == 1 || !(typeof(res.D) == single_dat)
+        Dv = []
+        for i = 1:length(set.subfolder)
+            file = string(set.subfolder[i],"/result.dat")
+            if isfile(file)
+                restmp = load_result(file)
+                append!(Dv,restmp.D.val)
+            end
         end
+        ξ = 2.837298
+        L = (state.m /state.ρ * 1e-6)^(1/3)
+        Dcorr = kB*state.T*ξ/(6*π*η.val*L)
+        Dval = mean(Dv) .+ Dcorr
+        D = single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv)))
+    else
+        D = res.D
     end
-    ξ = 2.837298
-    L = (info.molmass/NA*state.n /state.ρ * 1e-6)^(1/3)
-    Dval = mean(Dv) .+ kB*state.T*ξ/(6*π*η.val*L)
-    D = single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv)))
-    println(D)
-    error()
 
     # THERMAL CONDUCTIVITY
-    # Load runs
-    λmat, t = load_runs("thermalconductivity.dat", 2, set)
-    # Calculation of viscosity value by TDM method
-    set_λ = set
-    set_λ.name = "Thermal Conductivity"
-    set_λ.unit = "W/(m*K)"
-    set_λ.do_out = true
-    λval, set_λ = TDM(λmat, t, set_λ)
-    # Calculation of statistical uncertainties by bootstrapping method
-    println("Bootstrapping Thermal Conductivity ...")
-    λstd, λerr = bootstrapping(λmat, t, set)
-    # Save in struct
-    λ = single_dat(λval, λstd, λerr)
+    if do_calc == 1 || !(typeof(res.λ) == single_dat)
+        # Load runs
+        λmat, t = load_runs("thermalconductivity.dat", 2, set)
+        # Calculation of viscosity value by TDM method
+        set_λ = set
+        set_λ.name = "Thermal Conductivity"
+        set_λ.unit = "W/(m*K)"
+        set_λ.do_out = true
+        λval, set_λ = TDM(λmat, t, set_λ)
+        # Calculation of statistical uncertainties by bootstrapping method
+        println("Bootstrapping Thermal Conductivity ...")
+        λstd, λerr = bootstrapping(λmat, t, set)
+        # Save in struct
+        λ = single_dat(λval, λstd, λerr)
+    else
+        λ = res.λ
+    end
 
-    η_V = single_dat([],[],[])
+    η_V = single_dat(NaN,NaN,NaN)
     return η, η_V, D, λ
 end
 
