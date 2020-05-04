@@ -263,7 +263,7 @@ function atom2mol(atom)
         end
 
         molid_mol = Array{Int64,1}(undef,nmol)
-        mass_mol = Array{Int64,1}(undef,nmol)
+        mass_mol = Array{Float64,1}(undef,nmol)
         x_mol = Array{Float64,1}(undef,nmol)
         y_mol = Array{Float64,1}(undef,nmol)
         z_mol = Array{Float64,1}(undef,nmol)

@@ -7,9 +7,7 @@
 
 # ---------- INPUT ---------
 # Data to read
-folders = ["F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.1gml",
-           "F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.3gml",
-           "F:/MD_Bulk/Methane/trappe-ua/SIM_T_273.15K_rho_0.5gml",]
+folders = ["F:/MD_Bulk/Decane/Study_ForceFields/SIM_T_298.15K_p_0.1MPa"]
 ensemble = "NVT"
 # Evaluation
 n_equ = 0                   # Timesteps to wait from start of simulations
@@ -44,16 +42,17 @@ for folder in folders
 
             # Evaluate Data
             EvalData(info)
-            println(string("Folder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
+            println(string("\n---Folder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
         end
+        println("__________")
     end
 
     # Averaging simulations
     if do_state == 1
         EvalState(subfolder)
-        println(string("State Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n---"))
+        println(string("\n---State Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+        println("__________")
     end
-    println("__________")
 end
 
 # END

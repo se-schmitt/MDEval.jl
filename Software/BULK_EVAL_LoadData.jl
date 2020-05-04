@@ -152,7 +152,8 @@ function load_dump(info)
                     bounds[3,:] = parse.(Float64,split(readline(fID)))
                 else error("File format wrong") end
                 # Reading positions of atoms
-                if (readline(fID) == "ITEM: ATOMS id mol xu yu zu ")
+                lineITEM = readline(fID)
+                if (lineITEM == "ITEM: ATOMS id mol xu yu zu ")
                     id = Int64.(zeros(natoms))
                     molid = Int64.(zeros(natoms))
                     x = zeros(natoms)
@@ -167,7 +168,7 @@ function load_dump(info)
                         y[i] = line_float[4]
                         z[i] = line_float[5]
                     end
-                elseif (readline(fID) == "ITEM: ATOMS id mol mass xu yu zu ")
+                elseif (lineITEM == "ITEM: ATOMS id mol mass xu yu zu ")
                     id = Int64.(zeros(natoms))
                     molid = Int64.(zeros(natoms))
                     mass = zeros(natoms)
