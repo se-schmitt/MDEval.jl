@@ -11,7 +11,7 @@ folders = ["F:/MD_Bulk/Decane/Study_ForceFields/SIM_T_298.15K_p_0.1MPa"]
 ensemble = "NVT"
 # Evaluation
 n_equ = 0                   # Timesteps to wait from start of simulations
-do_eval = 1                 # set 0, if single folders already evaluated
+do_eval = 0                 # set 0, if single folders already evaluated
 do_state = 1                # set 1, if get averaged values of subfolder
 nboot = 5                   # Number of bootstrapping repetitions
 # Settings

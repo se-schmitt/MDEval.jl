@@ -119,6 +119,16 @@ end
 
     # Fit standard deviation
     fit_std = curve_fit(fun_std, t, std_t, [1.0,1.0])
+    if !(fit_std.converged)
+        fit_std_starts = [[2.0,0.5],[0.5,2.0],[1e-4,1.0],[1.0,1e-4]]
+        for start in fit_std_starts
+            fit_std = curve_fit(fun_std, t, std_t, start)
+            if fit_std.converged
+                break
+            end
+        end
+    end
+
     if !(fit_std.converged) println("Std: Not converged!") end
     # Calculation of tcut (or cut)
     cut = findfirst(fun_std(t[skip:end],fit_std.param)./ave_t[skip:end] .> set.cutcrit)
