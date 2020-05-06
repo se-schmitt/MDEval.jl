@@ -8,6 +8,18 @@
 # Main Function
 function EvalState(subfolder::Array{String,1})
 
+    # Get excluded folders
+    what_include = Bool[]
+    for subf in subfolder
+        pos = findlast(isequal('/'),subf)
+        if occursin("_EXCLUDE",subf[pos+1:end])
+            append!(what_include,false)
+        else
+            append!(what_include,true)
+        end
+    end
+    subfolder = subfolder[what_include]
+
     pos = findlast(isequal('/'),subfolder[1])-1
     folder = subfolder[1][1:pos]
 

@@ -7,7 +7,7 @@
 
 # ---------- INPUT ---------
 # Data to read
-folders = ["F:/MD_Bulk/Decane/Study_ForceFields/SIM_T_298.15K_p_0.1MPa"]
+folders = ["F:/MD_Bulk/Decane/Study_ForceFields/SIM_T_298.15K_p_1MPa"]
 ensemble = "NVT"
 # Evaluation
 n_equ = 0                   # Timesteps to wait from start of simulations
