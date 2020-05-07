@@ -21,43 +21,43 @@ function TransportProperties(state::state_info,set::set_TDM)
         do_calc = 1
     end
 
-    # # VISCOSITY
-    # if do_calc == 1 || !(typeof(res.η) == single_dat)
-    #     # Load runs
-    #     ηmat, t = load_runs("viscosity.dat", 2, set)
-    #     # Calculation of viscosity value by TDM method
-    #     set_η = set
-    #     set_η.name = "Viscosity"
-    #     set_η.unit = "Pa*s"
-    #     set_η.do_out = true
-    #     ηval, set_η = TDM(ηmat, t, set_η)
-    #     # Calculation of statistical uncertainties by bootstrapping method
-    #     println("Bootstrapping Viscosity ...")
-    #     ηstd, ηerr = bootstrapping(ηmat, t, set)
-    #     # Save in struct
-    #     η = single_dat(ηval, ηstd, ηerr)
-    # else
-    #     η = res.η
-    # end
-    #
-    # # DIFFUSION COEFFICIENT
-    # if do_calc == 1 || !(typeof(res.D) == single_dat)
-    #     Dv = []
-    #     for i = 1:length(set.subfolder)
-    #         file = string(set.subfolder[i],"/result.dat")
-    #         if isfile(file)
-    #             restmp = load_result(file)
-    #             append!(Dv,restmp.D.val)
-    #         end
-    #     end
-    #     ξ = 2.837298
-    #     L = (state.m /state.ρ * 1e-6)^(1/3)
-    #     Dcorr = kB*state.T*ξ/(6*π*η.val*L)
-    #     Dval = mean(Dv) .+ Dcorr
-    #     D = single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv)))
-    # else
-    #     D = res.D
-    # end
+    # VISCOSITY
+    if do_calc == 1 || !(typeof(res.η) == single_dat)
+        # Load runs
+        ηmat, t = load_runs("viscosity.dat", 2, set)
+        # Calculation of viscosity value by TDM method
+        set_η = set
+        set_η.name = "Viscosity"
+        set_η.unit = "Pa*s"
+        set_η.do_out = true
+        ηval, set_η = TDM(ηmat, t, set_η)
+        # Calculation of statistical uncertainties by bootstrapping method
+        println("Bootstrapping Viscosity ...")
+        ηstd, ηerr = bootstrapping(ηmat, t, set)
+        # Save in struct
+        η = single_dat(ηval, ηstd, ηerr)
+    else
+        η = res.η
+    end
+
+    # DIFFUSION COEFFICIENT
+    if do_calc == 1 || !(typeof(res.D) == single_dat)
+        Dv = []
+        for i = 1:length(set.subfolder)
+            file = string(set.subfolder[i],"/result.dat")
+            if isfile(file)
+                restmp = load_result(file)
+                append!(Dv,restmp.D.val)
+            end
+        end
+        ξ = 2.837298
+        L = (state.m /state.ρ * 1e-6)^(1/3)
+        Dcorr = kB*state.T*ξ/(6*π*η.val*L)
+        Dval = mean(Dv) .+ Dcorr
+        D = single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv)))
+    else
+        D = res.D
+    end
 
     # THERMAL CONDUCTIVITY
     if do_calc == 1 || !(typeof(res.λ) == single_dat)
@@ -118,18 +118,18 @@ end
     skip = findfirst(t .>= set.tskip)
 
     # Fit standard deviation
-    fit_std = curve_fit(fun_std, t, std_t, [1.0,1.0])
-    if !(fit_std.converged)
-        fit_std_starts = [[2.0,0.5],[0.5,2.0],[1e-4,1.0],[1.0,1e-4]]
-        for start in fit_std_starts
-            fit_std = curve_fit(fun_std, t, std_t, start)
-            if fit_std.converged
-                break
-            end
-        end
+    k = 0
+    converged = false
+    p0_std = [[1.0,1.0], [2.0,0.5], [0.5,2.0], [1e-4,1.0], [1.0,1e-4]]
+    fit_std = []
+    while !(converged)
+        k += 1
+        fit_std = curve_fit(fun_std, t, std_t, p0_std[k])
+        converged = fit_std.converged
+        if (k == length(p0_std)) break end
     end
-
     if !(fit_std.converged) println("Std: Not converged!") end
+
     # Calculation of tcut (or cut)
     cut = findfirst(fun_std(t[skip:end],fit_std.param)./ave_t[skip:end] .> set.cutcrit)
     if fit_std.converged && !(isnothing(cut))
@@ -138,13 +138,24 @@ end
 
         # Fit η_ave(t) (start from tstart ps)
         w = 1 ./ t[skip:cut].^fit_std.param[2]
-        p0 = [ave_t[cut],1.0,1.0,10.0]
-        fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0)
+        k = 0
+        converged = false
+        p0_1 = mean(ave_t[round(Int64,cut/2):cut])
+        p0_ave = [  [p0_1, 1.0, 1.0,  1.0],
+                    [p0_1, 1.0, 0.1,  10.0],
+                    [p0_1, 1.0, 1e-3, 1e3],
+                    [p0_1, 0.1, 0.1, 1.0],
+                    [0.1,  1.0, 0.1, 1.0] ]
+        fit_ave = []
+        while !(converged)
+            k += 1
+            fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0_ave[k])
+            converged = fit_ave.converged
+            if (k == length(p0_ave)) break end
+        end
 
         val = fit_ave.param[1]
 
-        # println("cut_crit: ",set.cutcrit,"; cut pos: ",cut,"; t_cut: ",set.tcut,
-        #         "; fit ave: ",fit_ave.converged,"; val: ",val)
         if !(fit_ave.converged)
             val = NaN
             println("Ave: Not converged!")
@@ -158,10 +169,17 @@ end
         if isnan(val) error(string("Curve fit for ",set.name," did not converge!")) end
         outfolder = string(set.folder,"/TransportProperties/")
         valstr = string(round(val/10^floor(log10(val)),digits=3),"e",Int64(floor(log10(val))))
-        plt = plot(t[1:cut],[ave_t[1:cut],fun_ave(t[1:cut],fit_ave.param)],
-            xlabel="t / ps",ylabel=string(set.name," / ",set.unit), dpi=400, legend=:bottomright,
-            label=[string("Averaged ",set.name) string("Fit: ",set.name," = ",valstr," ",set.unit)])
+        # Plot: γ(t) average values and fitted curve
+        plt = plot(xlabel="t / ps",ylabel=string(set.name," / ",set.unit), dpi=400, legend=:bottomright)
+        plot!(t[1:cut],mat[1:cut,:],linestyle=:dot, linealpha=0.5, linecolor=:gray, label=nothing)
+        plot!(t[1:cut],ave_t[1:cut],label="Average",linecolor=:blue)
+        plot!(t[1:cut],fun_ave(t[1:cut],fit_ave.param),label="Fit",linecolor=:red)
         png(plt,string(outfolder,set.name,".png"))
+
+        global FIT = fit_ave
+
+        error()
+
         # fID = open(string(outfolder,set.name,".info"),"w")
         # println("Folder: ",set.folder)
     end

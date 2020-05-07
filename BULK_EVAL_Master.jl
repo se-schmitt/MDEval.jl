@@ -42,7 +42,7 @@ for folder in folders
 
             # Evaluate Data
             EvalData(info)
-            println(string("\n---Folder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+            println(string("\n---\nFolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
         end
         println("__________")
     end
