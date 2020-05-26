@@ -166,9 +166,18 @@ end
 
     # Output plot
     if set.do_out
-        if isnan(val) error(string("Curve fit for ",set.name," did not converge!")) end
         outfolder = string(set.folder,"/TransportProperties/")
-        valstr = string(round(val/10^floor(log10(val)),digits=3),"e",Int64(floor(log10(val))))
+
+        # Save all aingle and the averaged curves of the transport property
+        line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
+        line2 = string("# t[ps] ave[",set.unit,"]")
+        for i = 1:size(mat,2) line2 = string(line2," sim",i,"[",set.unit,"]") end
+        header = string(line1,"\n",line2)
+        file = string(outfolder,set.name,".dat")
+        fID = open(file,"w"); println(fID,header)
+        writedlm(fID, hcat(t[1:cut],ave_t[1:cut],mat[1:cut,:]), " ")
+        close(fID)
+
         # Plot: γ(t) average values and fitted curve
         plt = plot(xlabel="t / ps",ylabel=string(set.name," / ",set.unit), dpi=400, legend=:bottomright)
         plot!(t[1:cut],mat[1:cut,:],linestyle=:dot, linealpha=0.5, linecolor=:gray, label=nothing)
@@ -176,12 +185,11 @@ end
         plot!(t[1:cut],fun_ave(t[1:cut],fit_ave.param),label="Fit",linecolor=:red)
         png(plt,string(outfolder,set.name,".png"))
 
-        global FIT = fit_ave
-
-        error()
-
-        # fID = open(string(outfolder,set.name,".info"),"w")
-        # println("Folder: ",set.folder)
+        if (val < 0)
+            error("Negative value for ",set.name,"!")
+        elseif isnan(val)
+            error("NaN value for ",set.name," (-> fit did not converge)!")
+        end
     end
 
     return val, set

@@ -154,6 +154,15 @@ function calc_selfdiffusion(info::info_struct)
         t1 = t[what_eval[1]]
         t2 = t[what_eval[end]]
 
+        # Save msd as data file
+        line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
+        line2 = "# t[ps] msd[Å]"
+        header = string(line1,"\n",line2)
+        file = string(info.folder,"/msd.dat")
+        fID = open(file,"w"); println(fID,header)
+        writedlm(fID, hcat(t,msd_t), " ")
+        close(fID)        
+
         # Plots of msd
         infostr = string("MSD 'Evaluation window':\n",t1," ps - ",t2," ps (",length(what_eval)," steps))")
         plt1 = plot(t,msd_t, dpi=400, legend=false, title=infostr, titlefont=font(10))
@@ -308,7 +317,6 @@ function calc_msd(dat::Array{Any,1},info)
     msd_t = zeros(N)
 
     for i = 1:n
-
         r2 = x[i] .^ 2 + y[i] .^ 2 + z[i] .^ 2
 
         s_AB = sum(pmap(calc_acf,[x[i],y[i],z[i]]))
