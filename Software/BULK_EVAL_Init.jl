@@ -26,6 +26,16 @@ global kB = 1.380649e-23    # J/K
 global NA = 6.02214076e23   # 1/mol
 
 # Structures
+# Structure to store input variables read in from 'INPUT.txt'
+mutable struct input_struct
+    folders::Array{String,1}
+    ensemble::String
+    n_equ::Int64
+    do_eval::Int64
+    do_state::Int64
+    n_boot::Int64
+end
+
 # Structure to store general evaluation and simulation options
 mutable struct info_struct
     folder::String
