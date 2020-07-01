@@ -1,31 +1,9 @@
-# Input parameters for bulk evaluation tool
-# -----
-# Structure:
-# first line: '#' + 'keyword'
-# second line: value assigned to keyword
-# Example:
-        #keyword
-        1.2345
-# -----
-# Lines starting with '# ' are comments
-# ----
-# Keywords:
-#       - 'folder'
-#         -> path to folder containing simulation data (can occur multiple times) [string]
-#       - 'ensemble'
-#         -> ensemble to evaluate (possible values: 'NVE', 'NVT', 'NVP') [string]
-#       - 'timesteps_EQU'
-#         -> number of timesteps to ignore at the start [integer]
-#       - 'DO_evalulation'
-#         -> 1 - evaluate single folders, 0 - single folders already evaluated [0|1]
-#       - 'DO_state'
-#         -> 1 - evaluate complete thermodynamic state (main folder), 0 - do not [0|1]
-#       - 'N_boot'
-#         -> Number of bootstrapping repetitions recommended (>20, ~number of subsimulations) [integer]
-# ------------------------------------------------------------------------------
-
 #folder
-F:/MD_Bulk/Decane/Study_ForceFields/SIM_T_298.15K_p_1MPa
+F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.1gml
+#folder
+F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.3gml
+#folder
+F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.5gml
 
 #ensemble
 NVT
@@ -40,4 +18,4 @@ NVT
 1
 
 #N_boot
-20
+5

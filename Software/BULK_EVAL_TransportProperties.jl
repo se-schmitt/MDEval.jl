@@ -169,7 +169,7 @@ end
         outfolder = string(set.folder,"/TransportProperties/")
 
         # Save all aingle and the averaged curves of the transport property
-        line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
+        line1 = string("# Created by MD - Bulk Evaluation, Folder: ", set.folder)
         line2 = string("# t[ps] ave[",set.unit,"]")
         for i = 1:size(mat,2) line2 = string(line2," sim",i,"[",set.unit,"]") end
         header = string(line1,"\n",line2)

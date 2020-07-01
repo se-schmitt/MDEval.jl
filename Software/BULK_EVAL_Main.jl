@@ -18,10 +18,10 @@
 function main()
     println(string("----------\nSTART: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n----------"))
     println(string("Number of processors: ",no_procs))
+    println("----------")
 
     # Read input parameters
     inpar = read_input()
-    error()
 
     # Loop over all folders
     for folder in inpar.folders
@@ -40,7 +40,7 @@ function main()
 
                 # Evaluate Data
                 EvalData(info)
-                println(string("\n---\nFolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+                println(string("---\nSubfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
             end
             println("----------")
         end
@@ -48,7 +48,7 @@ function main()
         # Averaging simulations
         if inpar.do_state == 1
             EvalState(subfolder)
-            println(string("\n---State Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+            println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
             println("----------")
         end
     end

@@ -8,6 +8,8 @@
 # Main Function
 function EvalState(subfolder::Array{String,1})
 
+    inpar = read_input()
+
     # Get excluded folders
     what_include = Bool[]
     for subf in subfolder
@@ -34,7 +36,7 @@ function EvalState(subfolder::Array{String,1})
     state = state_info(T.val,p.val,ρ.val,natoms,mass)
 
     # Transport Properties
-    η, η_V, D, λ = TransportProperties(state,set_TDM(folder,subfolder,false,2.0,0.4,NaN,"","","",nboot))
+    η, η_V, D, λ = TransportProperties(state,set_TDM(folder,subfolder,false,2.0,0.4,NaN,"","","",inpar.n_boot))
     println(string("TransportProperties DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Output Data

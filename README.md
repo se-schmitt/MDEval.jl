@@ -19,19 +19,57 @@ __Required Folder structure:__
   - ...
 - ...
 
-## Input
+## Input File
 
-__Input Variables:__
+__Name__: 'INPUT.txt' (has to be in same folder as 'Master' file)
 
-| Name      | Possible Values             | Description                                                           |
-| --------- | ----------------------------| --------------------------------------------------------------------- |
-| folders   | ["STATE_1", "STATE_2", ...] | Array of strings with paths to simulation folders                     |
-| ensemble  | "NVT" / "NVE" / "NpT"       | String representing ensemble to evaluate                              |
-| n_equ     | 10000                       | Integer with number of equilibration steps (are skipped at beginning) |
-| do_eval   | 1 / 0                       | 1: Evaluation of single simulations; 0: Simulations already evaluated |
-| do_state  | 1 / 0                       | 1: Calculation of state variables on basis of single Simulations      |
-| nboot     | 200                         | Number of bootstrapping loop                                          |
-| no_procs  | 8                           | Number of processors to use for evaluation                            |
+__Format__:
+  - first line: '#' + 'keyword'
+  - second line: value assigned to keyword
+
+__Keywords:__
+
+| Name           | Type                        | Description                                                           |
+| -------------- | --------------------------- | --------------------------------------------------------------------- |
+| folder         | string                      | path to main folder containing all simulation data of one thermodynamic state (can occur multiple times)  |
+| ensemble       | string ["NVT"|"NVE"|"NpT"]  | ensemble to evaluate                                                  |
+| timesteps_EQU  | interger (≥ 0)              | number of timesteps to ignore at the start of each simulation         |
+| DO_evalulation | integer [0|1]               | 1 - evaluate single folders, 0 - single folders already evaluated     |
+| DO_state       | integer [0|1]               | 1 - evaluate complete thermodynamic state (main folder)               |
+| N_boot         | integer (≈ No. simulations) | number of bootstrapping repetitions                                   |
+
+Example:
+
+>#folder
+>
+>F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.1gml
+>#folder
+>
+>F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.3gml
+>
+>#folder
+>
+>F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.5gml
+>
+>#ensemble
+>
+>NVT
+>
+>#timesteps_EQU
+>
+>0
+>
+>#DO_evaluation
+>
+>1
+>
+>#DO_state
+>
+>1
+>
+>#N_boot
+>
+>5
 
 ## Output
 
