@@ -7,12 +7,12 @@
 
 no_procs = 1
 
-include("Software/BULK_EVAL_Init.jl")
-include("Software/BULK_EVAL_Main.jl")
-include("Software/BULK_EVAL_LoadData.jl")
-include("Software/BULK_EVAL_EvalData.jl")
-include("Software/BULK_EVAL_EvalState.jl")
-include("Software/BULK_EVAL_OutputResult.jl")
-include("Software/BULK_EVAL_TransportProperties.jl")
+include("src/BULK_EVAL_Init.jl")
+include("src/BULK_EVAL_Main.jl")
+include("src/BULK_EVAL_LoadData.jl")
+include("src/BULK_EVAL_EvalData.jl")
+include("src/BULK_EVAL_EvalState.jl")
+include("src/BULK_EVAL_OutputResult.jl")
+include("src/BULK_EVAL_TransportProperties.jl")
 
 main()
