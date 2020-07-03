@@ -31,11 +31,11 @@ __Keywords:__
 
 | Name           | Type                        | Description                                                           |
 | -------------- | --------------------------- | --------------------------------------------------------------------- |
-| folder         | string                      | path to main folder containing all simulation data of one thermodynamic state (can occur multiple times)  |
-| ensemble       | string ["NVT"|"NVE"|"NpT"]  | ensemble to evaluate                                                  |
+| folder         | string                      | path to main folder containing all simulation data of one thermodynamic state (can occur multiple times), asterisk at the end → all folders one level below are evaluated  |
+| ensemble       | string ["NVT","NVE","NpT"]  | ensemble to evaluate                                                  |
 | timesteps_EQU  | interger (≥ 0)              | number of timesteps to ignore at the start of each simulation         |
-| DO_evalulation | integer [0|1]               | 1 - evaluate single folders, 0 - single folders already evaluated     |
-| DO_state       | integer [0|1]               | 1 - evaluate complete thermodynamic state (main folder)               |
+| DO_evalulation | integer [0,1]               | 1 - evaluate single folders, 0 - single folders already evaluated     |
+| DO_state       | integer [0,1]               | 1 - evaluate complete thermodynamic state (main folder)               |
 | N_boot         | integer (≈ No. simulations) | number of bootstrapping repetitions                                   |
 
 Example:
@@ -43,13 +43,10 @@ Example:
 >#folder
 >
 >F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.1gml
->#folder
->
->F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.3gml
 >
 >#folder
 >
->F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.5gml
+>F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/*
 >
 >#ensemble
 >

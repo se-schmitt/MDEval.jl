@@ -73,7 +73,13 @@ function read_input()
     while !eof(fID)
         line = readline(fID)
         if line == "#folder"
-            inpar.folders = vcat(inpar.folders,readline(fID))
+            foldername = readline(fID)
+            if foldername[end] == '*'
+                folders = string.(foldername[1:end-1],readdir(foldername[1:end-1]))
+                inpar.folders = vcat(inpar.folders,folders[isdir.(folders)])
+            else
+                inpar.folders = vcat(inpar.folders,foldername)
+            end
         elseif line == "#ensemble"
             inpar.ensemble = readline(fID)
         elseif line == "#timesteps_EQU"

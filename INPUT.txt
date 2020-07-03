@@ -1,9 +1,9 @@
 #folder
-F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.1gml
+F:/MD_Bulk/Methane_trappe-ua_Aimoli/SIM_T_273.15K_rho_0.1gml
 #folder
-F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.3gml
+F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/*
 #folder
-F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.5gml
+F:/MD_Bulk/Methane_trappe-ua_Aimoli/SIM_T_273.15K_rho_0.2gml
 
 #ensemble
 NVT
