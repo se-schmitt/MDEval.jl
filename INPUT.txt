@@ -1,12 +1,8 @@
 #folder
-F:/MD_Bulk/Methane_trappe-ua_Aimoli/SIM_T_273.15K_rho_0.1gml
-#folder
-F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/*
-#folder
-F:/MD_Bulk/Methane_trappe-ua_Aimoli/SIM_T_273.15K_rho_0.2gml
+F:/MD_Bulk/1-Decene_Trimer_Mondello-Grest/*
 
 #ensemble
-NVT
+NpT
 
 #timesteps_EQU
 0
@@ -18,4 +14,4 @@ NVT
 1
 
 #N_boot
-5
+3

@@ -32,8 +32,13 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_η.do_out = true
         ηval, set_η = TDM(ηmat, t, set_η)
         # Calculation of statistical uncertainties by bootstrapping method
-        println("Bootstrapping Viscosity ...")
-        ηstd, ηerr = bootstrapping(ηmat, t, set)
+        if set.nboot > 0
+            println("Bootstrapping Viscosity ...")
+            ηstd, ηerr = bootstrapping(ηmat, t, set)
+        else
+            ηstd = NaN
+            ηerr = NaN
+        end
         # Save in struct
         η = single_dat(ηval, ηstd, ηerr)
     else
@@ -70,8 +75,13 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_λ.do_out = true
         λval, set_λ = TDM(λmat, t, set_λ)
         # Calculation of statistical uncertainties by bootstrapping method
-        println("Bootstrapping Thermal Conductivity ...")
-        λstd, λerr = bootstrapping(λmat, t, set)
+        if set.nboot > 0
+            println("Bootstrapping Thermal Conductivity ...")
+            λstd, λerr = bootstrapping(λmat, t, set)
+        else
+            λstd = NaN
+            λerr = NaN
+        end
         # Save in struct
         λ = single_dat(λval, λstd, λerr)
     else
