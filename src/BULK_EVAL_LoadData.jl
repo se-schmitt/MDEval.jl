@@ -140,26 +140,26 @@ function load_dump(info)
                 if (readline(fID) == "ITEM: TIMESTEP")
                     step = parse(Int64,readline(fID))
                     t = step*info.dt
-                else error("File format wrong") end
+                else error("Dump file format wrong") end
                 # Reading number of atoms
                 if (readline(fID) == "ITEM: NUMBER OF ATOMS")
                     natoms = parse(Int16,readline(fID))
-                else error("File format wrong") end
+                else error("Dump file format wrong") end
                 # Reading boundary coords
                 if (readline(fID) == "ITEM: BOX BOUNDS pp pp pp")
                     bounds = zeros(3,2)
                     bounds[1,:] = parse.(Float64,split(readline(fID)))
                     bounds[2,:] = parse.(Float64,split(readline(fID)))
                     bounds[3,:] = parse.(Float64,split(readline(fID)))
-                else error("File format wrong") end
+                else error("Dump file format wrong") end
                 # Reading positions of atoms
                 lineITEM = readline(fID)
+                id = Int64.(zeros(natoms))
+                molid = Int64.(zeros(natoms))
+                x = zeros(natoms)
+                y = zeros(natoms)
+                z = zeros(natoms)
                 if (lineITEM == "ITEM: ATOMS id mol xu yu zu ")
-                    id = Int64.(zeros(natoms))
-                    molid = Int64.(zeros(natoms))
-                    x = zeros(natoms)
-                    y = zeros(natoms)
-                    z = zeros(natoms)
                     mass = []
                     for i = 1:natoms
                         line_float = parse.(Float64,split(readline(fID)))
@@ -170,10 +170,7 @@ function load_dump(info)
                         z[i] = line_float[5]
                     end
                 elseif (lineITEM == "ITEM: ATOMS id mol mass xu yu zu ")
-                    id = Int64.(zeros(natoms))
-                    molid = Int64.(zeros(natoms))
                     mass = zeros(natoms)
-                    x = zeros(natoms); y = zeros(natoms); z = zeros(natoms)
                     for i = 1:natoms
                         line_float = parse.(Float64,split(readline(fID)))
                         id[i] = Int64(line_float[1])
@@ -183,7 +180,18 @@ function load_dump(info)
                         y[i] = line_float[5]
                         z[i] = line_float[6]
                     end
-                else error("File format wrong") end
+                elseif (lineITEM == "ITEM: ATOMS id mass xu yu zu ")
+                    mass = zeros(natoms)
+                    for i = 1:natoms
+                        line_float = parse.(Float64,split(readline(fID)))
+                        id[i] = Int64(line_float[1])
+                        molid[i] = id[i]
+                        mass[i] = line_float[2]
+                        x[i] = line_float[3]
+                        y[i] = line_float[4]
+                        z[i] = line_float[5]
+                    end
+                else error("Dump file format wrong") end
 
                 if !(step==0 && skip1==1)
                     posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, mass, x, y, z))
