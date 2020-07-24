@@ -175,7 +175,7 @@ end
     end
 
     # Output plot
-    if set.do_out
+    if set.do_out && !isnan(val)
         outfolder = string(set.folder,"/TransportProperties/")
 
         # Save all aingle and the averaged curves of the transport property
