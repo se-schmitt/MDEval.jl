@@ -14,7 +14,7 @@ function EvalState(subfolder::Array{String,1})
     what_include = Bool[]
     for subf in subfolder
         pos = findlast(isequal('/'),subf)
-        if occursin("_EXCLUDE",subf[pos+1:end])
+        if !isnothing(pos) && occursin("_EXCLUDE",subf[pos+1:end])
             append!(what_include,false)
         else
             append!(what_include,true)
