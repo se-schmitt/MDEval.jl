@@ -28,7 +28,7 @@ function TransportProperties(state::state_info,set::set_TDM)
         # Calculation of viscosity value by TDM method
         set_η = set
         set_η.name = "Viscosity"
-        set_η.unit = "Pa*s"
+        if !(reduced_units) set_η.unit = "Pa*s" elseif (reduced_units) set_η.unit = "-" end
         set_η.do_out = true
         ηval, set_η = TDM(ηmat, t, set_η)
         # Calculation of statistical uncertainties by bootstrapping method
@@ -181,6 +181,7 @@ end
         # Save all aingle and the averaged curves of the transport property
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", set.folder)
         line2 = string("# t[ps] ave[",set.unit,"]")
+        if (reduced_units) line2 = string("# t* ave*") end
         for i = 1:size(mat,2) line2 = string(line2," sim",i,"[",set.unit,"]") end
         header = string(line1,"\n",line2)
         file = string(outfolder,set.name,".dat")
@@ -190,6 +191,7 @@ end
 
         # Plot: γ(t) average values and fitted curve
         plt = plot(xlabel="t / ps",ylabel=string(set.name," / ",set.unit), dpi=400, legend=:bottomright)
+        if (reduced_units) xlabel!("t*"); ylabel!(string(set.name,"*")) end
         plot!(t[1:cut],mat[1:cut,:],linestyle=:dot, linealpha=0.5, linecolor=:gray, label=nothing)
         plot!(t[1:cut],ave_t[1:cut],label="Average",linecolor=:blue)
         plot!(t[1:cut],fun_ave(t[1:cut],fit_ave.param),label="Fit",linecolor=:red)

@@ -51,6 +51,8 @@ function ave_thermo(info::info_struct)
     Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
     Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
 
+    if (reduced_units) p = single_dat(mean(dat.p[what]), std(dat.p[what]), NaN) end
+
     return T, p, ρ, Etot, Ekin, Epot
 end
 
@@ -75,6 +77,7 @@ function calc_viscosities(info::info_struct)
         # Unit conversion and GK factor
         metal2Pas = 1e-32
         factor = metal2Pas .* dat.V[what] ./ (kB .* dat.T[what])
+        if (reduced_units) factor = dat.V[what] ./ (dat.T[what]) end
 
         # Integration of acf
         acf_η = (acf_P[1] .+ acf_P[2] .+ acf_P[3])./6 .+
@@ -89,6 +92,7 @@ function calc_viscosities(info::info_struct)
         # Write data to file
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
         line2 = "# t[ps] η(t)[Pa*s] ACF_η[Pa^2] η_V(t)[Pa*s] ACF_η_V[Pa^2]"
+        if (reduced_units) line2 = "# t* η*(t) ACF_η* η_V*(t) ACF_η_V*" end
         header = string(line1,"\n",line2)
         file = string(info.folder,"/viscosity.dat")
         fID = open(file,"w"); println(fID,header)
@@ -98,10 +102,12 @@ function calc_viscosities(info::info_struct)
         # Plots
         teve = 100        # Just take data every 'teve' timesteps
         plt = plot(t[2:teve:end],abs.(acf_η[2:teve:end]), dpi=400, legend=false, xscale=:log10, yscale=:log10)
-        xlabel!("t / ps"); ylabel!("|ACF| / Pa^2")
+        if !(reduced_units) xlabel!("t / ps")       elseif reduced_units xlabel!("t*") end
+        if !(reduced_units) ylabel!("|ACF| / Pa^2") elseif reduced_units ylabel!("|ACF*|") end
         png(plt,string(info.folder,"/fig_eta-acf(t).png"))
         plt = plot(t[1:teve:end],η_t[1:teve:end], dpi=400, legend=false)
-        xlabel!("t / ps"); ylabel!("η / (Pa*s)")
+        if !(reduced_units) xlabel!("t / ps")     elseif reduced_units xlabel!("t*") end
+        if !(reduced_units) ylabel!("η / (Pa*s)") elseif reduced_units ylabel!("η*") end
         png(plt,string(info.folder,"/fig_eta(t).png"))
 
         # Save Results
@@ -149,6 +155,7 @@ function calc_selfdiffusion(info::info_struct)
         # Calculation of D by determination of slope of msd
         beta = hcat(ones(length(what_eval)),t[what_eval]) \ msd_t[what_eval]
         factor_unit = 1e-8
+        if (reduced_units) factor_unit = 1 end
         D = single_dat(beta[2]/6*factor_unit,NaN,NaN)
 
         t1 = t[what_eval[1]]
@@ -161,7 +168,7 @@ function calc_selfdiffusion(info::info_struct)
         file = string(info.folder,"/msd.dat")
         fID = open(file,"w"); println(fID,header)
         writedlm(fID, hcat(t,msd_t), " ")
-        close(fID)        
+        close(fID)
 
         # Plots of msd
         infostr = string("MSD 'Evaluation window':\n",t1," ps - ",t2," ps (",length(what_eval)," steps))")
@@ -195,6 +202,7 @@ function calc_thermalconductivity(info::info_struct)
         # Unit conversion and GK factor
         metal2WmK = 2.566969967e-16
         factor = metal2WmK .* dat.V[what] ./ (3 .* kB .* dat.T[what].^2)
+        if (reduced_units) factor = dat.V[what] ./ (3 .* dat.T[what].^2) end
 
         # Integration of acf
         acf_λ = (acf_J[1] .+ acf_J[2] .+ acf_J[3])
@@ -204,6 +212,7 @@ function calc_thermalconductivity(info::info_struct)
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
         line2 = "# t[ps] λ(t)[W/(m*K)] ACF_λ[eV^2/(Å^4*ps)]"
         header = string(line1,"\n",line2)
+        if (reduced_units) line2 = "# t* λ*(t) ACF_λ*" end
         file = string(info.folder,"/thermalconductivity.dat")
         fID = open(file,"w"); println(fID,header)
         writedlm(fID, hcat(dat.t[what],λ_t,acf_λ), " ")
@@ -212,10 +221,12 @@ function calc_thermalconductivity(info::info_struct)
         # Plots
         teve = 100        # Just take data every 'teve' timesteps
         plt = plot(t[2:teve:end],abs.(acf_λ[2:teve:end]), dpi=400, legend=false, xscale=:log10, yscale=:log10)
-        xlabel!("t / ps"); ylabel!("|ACF| / eV^2/(Å^4*ps)")
+        if !(reduced_units) xlabel!("t / ps")                elseif reduced_units xlabel!("t*") end
+        if !(reduced_units) ylabel!("|ACF| / eV^2/(Å^4*ps)") elseif reduced_units ylabel!("|ACF*|") end
         png(plt,string(info.folder,"/fig_lambda_acf(t).png"))
         plt = plot(t[1:teve:end],λ_t[1:teve:end], dpi=400, legend=false)
-        xlabel!("t / ps"); ylabel!("λ / (W/(m*K))")
+        if !(reduced_units) xlabel!("t / ps")        elseif reduced_units xlabel!("t*") end
+        if !(reduced_units) ylabel!("λ / (W/(m*K))") elseif reduced_units ylabel!("λ*") end
         png(plt,string(info.folder,"/fig_lambda(t).png"))
 
         λ = single_dat(λ_t[end],NaN,NaN)

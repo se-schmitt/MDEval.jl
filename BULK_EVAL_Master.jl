@@ -5,7 +5,9 @@
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
 
-no_procs = 1
+no_procs = 2
+
+reduced_units = true
 
 include("src/BULK_EVAL_Init.jl")
 include("src/BULK_EVAL_Main.jl")

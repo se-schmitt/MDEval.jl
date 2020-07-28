@@ -14,6 +14,7 @@ function OutputResult(result::results_struct, folder::String)
     fID = open(path,"w")
     line1 = string("# Created by MD - Bulk Evaluation, Folder: ", folder)
     line2 = "# Format: val (std dev., std err.); [T]=K, [p]=MPa, [ρ]=g/ml, [E]=eV, [η]=Pa*s, [D]=m^2/s, [λ]=W/(m*K)"
+    if (reduced_units) line2 = "# Format: val (std dev., std err.); reduced units" end
     header = string(line1,"\n",line2,"\n")
     print(fID,header)
 
