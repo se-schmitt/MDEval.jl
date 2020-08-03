@@ -50,10 +50,11 @@ function ave_thermo(info::info_struct)
     Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
     Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
     Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
+    c = single_dat((mean(dat.Etot[what]^2)-mean(dat.Etot[what])^2)/(kB*T^2))
 
     if (reduced_units) p = single_dat(mean(dat.p[what]), std(dat.p[what]), NaN) end
 
-    return T, p, ρ, Etot, Ekin, Epot
+    return T, p, ρ, Etot, Ekin, Epot, c
 end
 
 # Evaluate Pressure Data to calculate viscosities
