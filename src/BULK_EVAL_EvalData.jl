@@ -15,7 +15,7 @@ function EvalData(info)
     info.molmass = molmass
 
     # Average Thermodynamic Properties
-    T, p, ρ, Etot, Ekin, Epot = ave_thermo(info)
+    T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info)
 
     # Evaluate Pressure Data to Calculate Viscosities
     η, η_V = calc_viscosities(info)
@@ -27,7 +27,7 @@ function EvalData(info)
     λ = calc_thermalconductivity(info)
 
     # Output Results
-    OutputResult(results_struct(T, p, ρ, Etot, Ekin, Epot, η, η_V, D, λ), info.folder)
+    OutputResult(results_struct(T, p, ρ, Etot, Ekin, Epot, c, η, η_V, D, λ), info.folder)
 end
 
 # Subfunctions
@@ -50,7 +50,7 @@ function ave_thermo(info::info_struct)
     Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
     Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
     Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
-    c = single_dat((mean(dat.Etot[what]^2)-mean(dat.Etot[what])^2)/(kB*T^2))
+    c = single_dat((mean(dat.Etot[what]^2)-mean(dat.Etot[what])^2)/(kB*T^2),NaN,NaN)
 
     if (reduced_units) p = single_dat(mean(dat.p[what]), std(dat.p[what]), NaN) end
 

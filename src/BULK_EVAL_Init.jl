@@ -113,6 +113,7 @@ mutable struct results_struct
     Etot
     Ekin
     Epot
+    c
     η
     η_V
     D

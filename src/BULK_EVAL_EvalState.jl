@@ -30,17 +30,19 @@ function EvalState(subfolder::Array{String,1})
     mass = natoms*molmass/NA    # [mass] = g
 
     # T, p, ρ
-    T, p, ρ = StaticProperties(subfolder)
+    T, p, ρ, c = StaticProperties(subfolder)
     println(string("ave_state DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     state = state_info(T.val,p.val,ρ.val,natoms,mass)
 
+    setTDM = set_TDM(folder,subfolder,false,0.5,0.4,NaN,"","","",inpar.n_boot)
+
     # Transport Properties
-    η, η_V, D, λ = TransportProperties(state,set_TDM(folder,subfolder,false,2.0,0.4,NaN,"","","",inpar.n_boot))
+    η, η_V, D, λ = TransportProperties(state,setTDM)
     println(string("TransportProperties DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Output Data
-    OutputResult(results_struct(T,p,ρ,[],[],[],η,η_V,D,λ),folder)
+    OutputResult(results_struct(T,p,ρ,[],[],[],c,η,η_V,D,λ),folder)
 end
 
 # Subfunctions
@@ -51,19 +53,22 @@ function StaticProperties(subf)
     Tmat = zeros(n)
     pmat = zeros(n)
     ρmat = zeros(n)
+    cmat = zeros(n)
     for i = 1:n
         res = load_result(string(subf[i],"/result.dat"))
         Tmat[i] = res.T.val
         pmat[i] = res.p.val
         ρmat[i] = res.ρ.val
+        cmat[i] = res.c.val
     end
 
     # Save in structure
-    T = single_dat(mean(Tmat), std(Tmat), std(Tmat)/n)
-    p = single_dat(mean(pmat), std(pmat), std(pmat)/n)
-    ρ = single_dat(mean(ρmat), std(ρmat), std(ρmat)/n)
+    T = single_dat(mean(Tmat), std(Tmat), std(Tmat)/sqrt(n))
+    p = single_dat(mean(pmat), std(pmat), std(pmat)/sqrt(n))
+    ρ = single_dat(mean(ρmat), std(ρmat), std(ρmat)/sqrt(n))
+    c = single_dat(mean(cmat), std(cmat), std(cmat)/sqrt(n))
 
-    return T, p, ρ
+    return T, p, ρ, c
 end
 
 # Load result file
@@ -103,6 +108,7 @@ function load_result(file)
                 if (name == "Etot") res.Etot = single_dat(val,std,err) end
                 if (name == "Ekin") res.Ekin = single_dat(val,std,err) end
                 if (name == "Epot") res.Epot = single_dat(val,std,err) end
+                if (name == "c") res.c = single_dat(val,std,err) end
                 if (name == "η") res.η = single_dat(val,std,err) end
                 if (name == "η_") res.η_V = single_dat(val,std,err) end
                 if (name == "D") res.D = single_dat(val,std,err) end
