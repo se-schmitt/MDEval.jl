@@ -76,7 +76,7 @@ function load_result(file)
     fID = open(file,"r")
     lines = readlines(fID);
     close(fID)
-    res = results_struct([],[],[],[],[],[],[],[],[],[])
+    res = results_struct([],[],[],[],[],[],[],[],[],[],[])
 
     for i = 1:length(lines)
         pos_colon = findfirst(isequal(':'),lines[i])

@@ -50,10 +50,11 @@ function ave_thermo(info::info_struct)
     Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
     Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
     Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
-    c = single_dat((mean(dat.Etot[what]^2)-mean(dat.Etot[what])^2)/(kB*T^2),NaN,NaN)
+    c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ (kB .* mean(dat.T[what]).^2), NaN, NaN)
 
     if (reduced_units) p = single_dat(mean(dat.p[what]), std(dat.p[what]), NaN) end
-
+    if (reduced_units) c = single_dat(((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) .* (1,602176634e-19).^2) ./ (((info.molmass .* (info.natoms/NA)) ./ 1e3) .* kB .* mean(dat.T[what]).^2), NaN, NaN) end
+    
     return T, p, ρ, Etot, Ekin, Epot, c
 end
 
