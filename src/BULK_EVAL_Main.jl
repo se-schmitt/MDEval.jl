@@ -30,7 +30,7 @@ function main()
         if isempty(subfolder)
             subfolder = [folder]
         end
-        println("Folder: ",folder)
+        println("Folder: ",folder,"\n----------")
 
         # Evaluation of single folder
         if inpar.do_eval == 1
@@ -40,7 +40,7 @@ function main()
 
                 # Evaluate Data
                 EvalData(info)
-                println(string("---\nSubfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+                println(string("Subfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
             end
             println("----------")
         end

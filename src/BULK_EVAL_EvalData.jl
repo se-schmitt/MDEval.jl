@@ -52,9 +52,10 @@ function ave_thermo(info::info_struct)
     Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
     Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
     Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
-
-    c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ (kB .* mean(dat.T[what]).^2), NaN, NaN)
-    if (reduced_units) c = single_dat(((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) .* (1,602176634e-19).^2) ./ (((info.molmass .* (info.natoms/NA)) ./ 1e3) .* kB .* mean(dat.T[what]).^2), NaN, NaN) end
+    # Heat capacity
+    if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
+    elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
+    c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ T.val^2 * factor_c, NaN, NaN)
 
     return T, p, ρ, Etot, Ekin, Epot, c
 end
