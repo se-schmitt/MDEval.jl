@@ -45,16 +45,17 @@ function ave_thermo(info::info_struct)
     end
 
     T = single_dat(mean(dat.T[what]), std(dat.T[what]), NaN)
-    p = single_dat(mean(dat.p[what].*1e-1), std(dat.p[what]).*1e-1, NaN)
+    if (reduced_units)      factor_p = 1
+    elseif !(reduced_units) factor_p = 0.1 end
+    p = single_dat(mean(dat.p[what].*factor_p), std(dat.p[what]).*factor_p, NaN)
     ρ = single_dat(mean(dat.ρ[what]), std(dat.ρ[what]), NaN)
     Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
     Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
     Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
-    c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ (kB .* mean(dat.T[what]).^2), NaN, NaN)
 
-    if (reduced_units) p = single_dat(mean(dat.p[what]), std(dat.p[what]), NaN) end
+    c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ (kB .* mean(dat.T[what]).^2), NaN, NaN)
     if (reduced_units) c = single_dat(((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) .* (1,602176634e-19).^2) ./ (((info.molmass .* (info.natoms/NA)) ./ 1e3) .* kB .* mean(dat.T[what]).^2), NaN, NaN) end
-    
+
     return T, p, ρ, Etot, Ekin, Epot, c
 end
 

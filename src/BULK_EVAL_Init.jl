@@ -22,8 +22,9 @@ if (no_procs > 1) addprocs(no_procs) end
 @everywhere using StatsBase
 
 # Physical Constants
-global kB = 1.380649e-23    # J/K
-global NA = 6.02214076e23   # 1/mol
+global kB = 1.380649e-23        # J/K
+global NA = 6.02214076e23       # 1/mol
+global eV2J = 1.602176565e-19   # 1 eV = 1.602176565e-19 J
 
 # Structures
 # Structure to store input variables read in from 'INPUT.txt'
