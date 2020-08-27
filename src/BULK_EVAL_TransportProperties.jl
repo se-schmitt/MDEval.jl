@@ -7,13 +7,18 @@
 
 # Main
 function TransportProperties(state::state_info,set::set_TDM)
+    # Set what to calculate
+    do_η = 0
+    do_D = 0
+    do_λ = 1
+
     # Create new folder if it not yet exists
     if !(isdir(string(set.folder,"/TransportProperties")))
         mkdir(string(set.folder,"/TransportProperties"))
     end
 
     # Load existing result file
-    do_calc = 0                 # 1 - Calculation even if it already exists
+    do_calc = 1                 # 1 - Calculation even if it already exists
                                 # 0 - Take old result if exists
     if isfile(string(set.folder,"/result.dat"))
         res = load_result(string(set.folder,"/result.dat"))
@@ -22,7 +27,7 @@ function TransportProperties(state::state_info,set::set_TDM)
     end
 
     # VISCOSITY
-    if do_calc == 1 || !(typeof(res.η) == single_dat)
+    if do_η == 1 && (do_calc == 1 || !(typeof(res.η) == single_dat))
         # Load runs
         ηmat, t = load_runs("viscosity.dat", 2, set)
         # Calculation of viscosity value by TDM method
@@ -46,7 +51,7 @@ function TransportProperties(state::state_info,set::set_TDM)
     end
 
     # DIFFUSION COEFFICIENT
-    if do_calc == 1 || !(typeof(res.D) == single_dat)
+    if do_D == 1 && (do_calc == 1 || !(typeof(res.D) == single_dat))
         Dv = []
         for i = 1:length(set.subfolder)
             file = string(set.subfolder[i],"/result.dat")
@@ -65,7 +70,7 @@ function TransportProperties(state::state_info,set::set_TDM)
     end
 
     # THERMAL CONDUCTIVITY
-    if do_calc == 1 || !(typeof(res.λ) == single_dat)
+    if do_λ == 1 && (do_calc == 1 || !(typeof(res.λ) == single_dat))
         # Load runs
         λmat, t = load_runs("thermalconductivity.dat", 2, set)
         # Calculation of viscosity value by TDM method
@@ -212,6 +217,7 @@ function bootstrapping(mat, t, set)
     nboot = set.nboot
     nsim = size(mat,2)
 
+    # Create matrix of #nboot random combinations
     randmat = Array{Array{Int64,1},1}(undef,Int64(2*nboot))
     for i = 1:Int64(2*nboot)
         k = 0
@@ -223,10 +229,17 @@ function bootstrapping(mat, t, set)
     end
     bootmat = unique(randmat)[1:nboot,:]
 
+    # Create cut off for every TDM evaluation
     cutcrit = rand(Float64, nboot) .* 0.2 .+ 0.4
 
+    # TDM for all combinations of single simulations
     vals = pmap((x1,x2)->TDMboot(mat,t,set,x1,x2), bootmat, cutcrit)
 
+    # Remove outliers
+    what_NaN = abs.(vals) .> 2*median(vals)
+    vals[what_NaN] = NaN .* ones(sum(what_NaN))
+
+    # Calculate error from distribution of TDM values
     nb = 50 # number of bins
     h = fit(Histogram, vals[.!isnan.(vals)], nbins = nb)
     edg = Array(h.edges[1])
@@ -240,6 +253,7 @@ function bootstrapping(mat, t, set)
     x = Array(LinRange(minimum(pts),maximum(pts),100))
     y = exp.(-(x.-μ).^2 ./ (2 .*σ.^2)) ./ sqrt.(2 .*π.*σ.^2)
 
+    # Plot histogram
     plt = histogram(vals,normalize=true,dpi=400,label="Data")
     plot!(x,y,label="Fit")
     outfolder = string(set.folder,"/TransportProperties/")
