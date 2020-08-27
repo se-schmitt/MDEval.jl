@@ -5,16 +5,6 @@
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
 
-# include("Software/BULK_EVAL_Init.jl")
-
-
-# include("Software/BULK_EVAL_Init.jl")
-# include("Software/BULK_EVAL_LoadData.jl")
-# include("Software/BULK_EVAL_EvalData.jl")
-# include("Software/BULK_EVAL_EvalState.jl")
-# include("Software/BULK_EVAL_OutputResult.jl")
-# include("Software/BULK_EVAL_TransportProperties.jl")
-
 function main()
     println(string("----------\nSTART: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n----------"))
     println(string("Number of processors: ",no_procs))
@@ -30,7 +20,7 @@ function main()
         if isempty(subfolder)
             subfolder = [folder]
         end
-        println("Folder: ",folder)
+        println("Folder: ",folder,"\n---")
 
         # Evaluation of single folder
         if inpar.do_eval == 1
@@ -39,17 +29,17 @@ function main()
                 info = info_struct(subfolder[i],inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
 
                 # Evaluate Data
-                EvalData(info)
-                println(string("---\nSubfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+                EvalSingle(info)
+                println(string("Subfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
             end
-            println("----------")
+            println("---")
         end
 
         # Averaging simulations
         if inpar.do_state == 1
             EvalState(subfolder)
             println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
-            println("----------")
+            println("---")
         end
     end
 
@@ -57,7 +47,7 @@ function main()
     if nprocs() > 1
         rmprocs(workers())
     end
-    println(string("----------\nDONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n----------"))
+    println(string("DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n----------"))
 end
 
 # Subfunctions
@@ -84,7 +74,7 @@ function read_input()
             inpar.ensemble = readline(fID)
         elseif line == "#timesteps_EQU"
             inpar.n_equ = parse(Int64,readline(fID))
-        elseif line == "#DO_evaluation"
+        elseif line == "#DO_single"
             inpar.do_eval = parse(Int64,readline(fID))
         elseif line == "#DO_state"
             inpar.do_state = parse(Int64,readline(fID))
