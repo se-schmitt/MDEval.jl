@@ -6,7 +6,7 @@
 # ------------------------------------------------------------------------------
 
 # Main Function
-function EvalData(info)
+function EvalSingle(info)
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(info.folder)
     info.moltype = moltype
