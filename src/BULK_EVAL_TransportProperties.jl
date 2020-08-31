@@ -119,6 +119,7 @@ end
 
 # Function to perform 1 TDM calculation
 @everywhere function TDM(mat::Array{Float64,2}, t::Array{Float64,1}, set::set_TDM)
+    t = t .- t[1]
     n = size(mat,2)
     ave_t = mean(mat, dims=2)
     std_t = sqrt.( sum((mat .- ave_t).^2, dims=2) ./(n-1))[:,1]
@@ -183,7 +184,7 @@ end
     if set.do_out && !isnan(val)
         outfolder = string(set.folder,"/TransportProperties/")
 
-        # Save all aingle and the averaged curves of the transport property
+        # Save all single simulation data and the averaged data of the transport property
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", set.folder)
         line2 = string("# t[ps] ave[",set.unit,"]")
         if (reduced_units) line2 = string("# t* ave*") end
