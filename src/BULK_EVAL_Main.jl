@@ -39,8 +39,8 @@ function main()
         if inpar.do_state == 1
             EvalState(subfolder)
             println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
-            println("---")
         end
+        println("----------")
     end
 
     # END
