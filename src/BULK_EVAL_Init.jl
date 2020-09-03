@@ -29,6 +29,7 @@ global eV2J = 1.602176565e-19   # 1 eV = 1.602176565e-19 J
 # Structures
 # Structure to store input variables read in from 'INPUT.txt'
 mutable struct input_struct
+    modus::String
     folders::Array{String,1}
     ensemble::String
     n_equ::Int64

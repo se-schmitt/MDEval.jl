@@ -1,3 +1,6 @@
+#modus
+vle
+
 #folder
 F:/MD_Bulk/1-Decene_Trimer_Mondello-Grest/*
 

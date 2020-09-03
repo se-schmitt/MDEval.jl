@@ -15,30 +15,35 @@ function main()
 
     # Loop over all folders
     for folder in inpar.folders
-        # Get all subfolder
-        subfolder = get_subfolder(folder)
-        if isempty(subfolder)
-            subfolder = [folder]
-        end
-        println("Folder: ",folder,"\n---")
-
-        # Evaluation of single folder
-        if inpar.do_eval == 1
-            for i = 1:length(subfolder)
-                # Initialization of info structure
-                info = info_struct(subfolder[i],inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
-
-                # Evaluate Data
-                EvalSingle(info)
-                println(string("Subfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+        if inpar.modus == "transport"
+            # Get all subfolder
+            subfolder = get_subfolder(folder)
+            if isempty(subfolder)
+                subfolder = [folder]
             end
-            println("---")
-        end
+            println("Folder: ",folder,"\n---")
 
-        # Averaging simulations
-        if inpar.do_state == 1
-            EvalState(subfolder)
-            println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+            # Evaluation of single folder
+            if inpar.do_eval == 1
+                for i = 1:length(subfolder)
+                    # Initialization of info structure
+                    info = info_struct(subfolder[i],inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
+
+                    # Evaluate Data
+                    EvalSingle(info)
+                    println(string("Subfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+                end
+                println("---")
+            end
+
+            # Averaging simulations
+            if inpar.do_state == 1
+                EvalState(subfolder)
+                println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+            end
+        elseif inpar.modus == "vle"
+            info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
+            EvalVLE(info)
         end
         println("----------")
     end
@@ -57,12 +62,14 @@ function read_input()
     file = "INPUT.txt"
 
     # Initialization of input variables
-    inpar = input_struct([],"",-1,-1,-1,-1)
+    inpar = input_struct("",[],"",-1,-1,-1,-1)
 
     fID = open(file,"r")
     while !eof(fID)
         line = readline(fID)
-        if line == "#folder"
+        if line == "#modus"
+            inpar.modus = readline(fID)
+        elseif line == "#folder"
             foldername = readline(fID)
             if foldername[end] == '*'
                 folders = string.(foldername[1:end-1],readdir(foldername[1:end-1]))
