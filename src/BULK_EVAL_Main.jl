@@ -43,6 +43,9 @@ function main()
         println("----------")
     end
 
+    # Output in single file
+    dlm_output(inpar.folders)
+
     # END
     if nprocs() > 1
         rmprocs(workers())
@@ -65,8 +68,20 @@ function read_input()
         if line == "#folder"
             foldername = readline(fID)
             if foldername[end] == '*'
-                folders = string.(foldername[1:end-1],readdir(foldername[1:end-1]))
-                inpar.folders = vcat(inpar.folders,folders[isdir.(folders)])
+                pos = findlast(isequal('/'),foldername)
+                folders = string.(foldername[1:pos],readdir(foldername[1:pos]))
+                folders = folders[isdir.(folders)]
+
+                if pos != length(foldername)-1
+                    startstr = foldername[pos+1:end-1]
+                    what = ones(length(folders)) .== zeros(length(folders))
+                    for i = 1:length(folders)
+                        f = folders[i]
+                        what[i] = length(f) > pos+length(startstr) && f[pos+1:pos+length(startstr)] == startstr
+                    end
+                    folders = folders[what]
+                end
+                inpar.folders = vcat(inpar.folders,folders)
             else
                 inpar.folders = vcat(inpar.folders,foldername)
             end
@@ -90,4 +105,59 @@ function read_input()
     end
 
     return inpar
+end
+
+# Output results in dlm file
+function dlm_output(folders)
+    # Get results
+    results = []
+    for f in folders
+        if isfile(string(f,"/result.dat"))
+            results = vcat(results,load_result(string(f,"/result.dat")))
+        # elseif isfile(string(f,"/results.dat"))
+        #     results = vcat(results,load_result(string(f,"/results.dat")))
+        else
+            println(strin("No result file in folder: \"",f,"\""))
+        end
+    end
+
+    # Create matrx for values with error (stds/errs)
+    props = [:T,:p,:ρ,:c,:η,:D,:λ]  # Properties to write out (see header)
+    No_props = length(props)
+    mat = Array{Float64,2}(undef,length(results),No_props*2).*NaN
+
+    error_type = :err
+    for i = 1:length(results), j = 1:No_props
+        sdat = getfield(results[i],props[j])
+        if typeof(sdat) == single_dat
+            mat[i,(j-1)*2+1:j*2] = [sdat.val,getfield(sdat,error_type)]
+        else
+            mat[i,(j-1)*2+1:j*2] = [NaN,NaN]
+        end
+    end
+
+    # Header
+    header = string("T/K +- p/MPa +- ρ/(g/ml) +- c/(J/kg*K) +- η/(Pa*s) +- ",
+                    "D/(m^2/s) +- λ/(W/(m*K)) +-\n")
+
+    # Write Files
+    f1 = folders[1]
+    posf = findall(isequal('/'),f1)
+    folder_save = ""
+    for posTMP in posf
+        inmat = findfirst.(f1[1:posTMP],folders)
+        if sum(isnothing.(inmat)) == 0
+            folder_save = f1[1:posTMP]
+        else
+            break
+        end
+    end
+    file_save = string(folder_save,"results.dat")
+    println("Results saved in file: ",file_save)
+
+    fID = open(file_save,"w")
+    print(fID,header)
+    writedlm(fID,mat,' ')
+    close(fID)
+    error()
 end

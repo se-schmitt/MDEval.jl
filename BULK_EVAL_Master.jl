@@ -7,9 +7,9 @@
 
 # --- Global Settings ---
 # Number of processors to use
-no_procs = 4
+no_procs = 1
 # Calculating in reduced units
-reduced_units = true
+reduced_units = false
 
 # --- Define Functions and Structures ---
 include("src/BULK_EVAL_Init.jl")
