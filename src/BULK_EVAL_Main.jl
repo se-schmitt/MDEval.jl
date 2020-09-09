@@ -159,5 +159,4 @@ function dlm_output(folders)
     print(fID,header)
     writedlm(fID,mat,' ')
     close(fID)
-    error()
 end
