@@ -2,7 +2,7 @@
 vle
 
 #folder
-F:/MD_Bulk/1-Decene_Trimer_Mondello-Grest/*
+F:/MD_Bulk/VLE_Methane_TEST
 
 #ensemble
 NpT
