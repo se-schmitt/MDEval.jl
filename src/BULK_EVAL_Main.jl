@@ -152,7 +152,7 @@ function dlm_output(folders)
             break
         end
     end
-    file_save = string(folder_save,"results.dat")
+    file_save = string(folder_save,"results_",Dates.format(now(),"yyyy-mm-dd"),".dat")
     println("Results saved in file: ",file_save)
 
     fID = open(file_save,"w")

@@ -8,8 +8,8 @@
 # Main
 function TransportProperties(state::state_info,set::set_TDM)
     # Set what to calculate
-    do_η = 0
-    do_D = 0
+    do_η = 1
+    do_D = 1
     do_λ = 1
 
     # Create new folder if it not yet exists
