@@ -8,8 +8,10 @@
 # Load Packages
 using Dates
 using DelimitedFiles
+using Dierckx
 using Distributed
 using Distributions
+using NLsolve
 using Printf
 using Statistics
 
@@ -18,7 +20,11 @@ if (no_procs > 1) addprocs(no_procs) end
 
 @everywhere using FFTW
 @everywhere using LsqFit
-@everywhere using Plots
+# @everywhere using Plots
+@everywhere using PyCall
+@everywhere pygui(:qt)
+@everywhere using PyPlot
+close("all")
 @everywhere using StatsBase
 
 # Physical Constants
@@ -29,6 +35,7 @@ global eV2J = 1.602176565e-19   # 1 eV = 1.602176565e-19 J
 # Structures
 # Structure to store input variables read in from 'INPUT.txt'
 mutable struct input_struct
+    modus::String
     folders::Array{String,1}
     ensemble::String
     n_equ::Int64
@@ -142,6 +149,23 @@ mutable struct state_info
     ρ::Float64
     n::Int64
     m::Float64
+end
+
+# Data structure to save profile information
+mutable struct profile_data
+    timestep::Array{Float64,1}
+    id_chunk::Array{Float64,2}
+    x::Array{Float64,2}
+    Ncount::Array{Float64,2}
+    ρn::Array{Float64,2}
+    ρm::Array{Float64,2}
+    T::Array{Float64,2}
+    pxx::Array{Float64,2}
+    pyy::Array{Float64,2}
+    pzz::Array{Float64,2}
+    pxy::Array{Float64,2}
+    pxz::Array{Float64,2}
+    pyz::Array{Float64,2}
 end
 
 # Functions

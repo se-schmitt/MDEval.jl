@@ -31,6 +31,7 @@ __Keywords:__
 
 | Name           | Type                        | Description                                                           |
 | -------------- | --------------------------- | --------------------------------------------------------------------- |
+| modus          | string ["transport","vle"]  | defines the present simulation as 'transport' or 'vle' Simulations    |
 | folder         | string                      | path to main folder containing all simulation data of one thermodynamic state (can occur multiple times), asterisk at the end → all folders one level below are evaluated  |
 | ensemble       | string ["NVT","NVE","NpT"]  | ensemble to evaluate                                                  |
 | timesteps_EQU  | interger (≥ 0)              | number of timesteps to ignore at the start of each simulation         |
