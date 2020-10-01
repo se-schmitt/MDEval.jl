@@ -156,6 +156,7 @@ function load_dump(info)
                 lineITEM = readline(fID)
                 id = Int64.(zeros(natoms))
                 molid = Int64.(zeros(natoms))
+                type = Int64.(zeros(natoms))
                 x = zeros(natoms)
                 y = zeros(natoms)
                 z = zeros(natoms)
@@ -191,10 +192,22 @@ function load_dump(info)
                         y[i] = line_float[4]
                         z[i] = line_float[5]
                     end
+                elseif (lineITEM == "ITEM: ATOMS id mol type mass xu yu zu ")
+                    mass = zeros(natoms)
+                    for i = 1:natoms
+                        line_float = parse.(Float64,split(readline(fID)))
+                        id[i] = Int64(line_float[1])
+                        molid[i] = Int64(line_float[2])
+                        type[i] = Int64(line_float[3])
+                        mass[i] = line_float[4]
+                        x[i] = line_float[5]
+                        y[i] = line_float[6]
+                        z[i] = line_float[7]
+                    end
                 else error("Dump file format wrong") end
 
                 if !(step==0 && skip1==1)
-                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, mass, x, y, z))
+                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, type, mass, x, y, z))
                 end
             end
             skip1 = 1

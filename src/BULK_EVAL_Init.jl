@@ -89,6 +89,7 @@ mutable struct dump_dat
     bounds::Array{Float64,2}
     id::Array{Int64,1}
     molid::Array{Int64,1}
+    type::Array{Int64,1}
     mass::Array{Float64,1}
     x::Array{Float64,1}
     y::Array{Float64,1}
