@@ -15,6 +15,7 @@ function main()
 
     # Loop over all folders
     for folder in inpar.folders
+        ## Evaluation of transport properties (mode "transport")
         if inpar.modus == "transport"
             # Get all subfolder
             subfolder = get_subfolder(folder)
@@ -41,6 +42,8 @@ function main()
                 EvalState(subfolder)
                 println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
             end
+
+        ## Evaluation of VLE (mode "vle")
         elseif inpar.modus == "vle"
             info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
             EvalVLE(info)
@@ -49,7 +52,10 @@ function main()
     end
 
     # Output in single file
-    dlm_output(inpar.folders)
+    if inpar.modus == "transport"
+        dlm_output(inpar.folders)
+    elseif inpar.modus == "vle"
+    end
 
     # END
     if nprocs() > 1
@@ -58,7 +64,7 @@ function main()
     println(string("DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n----------"))
 end
 
-# Subfunctions
+## Subfunctions
 # Function to read input file
 function read_input()
     # Filename
@@ -106,8 +112,8 @@ function read_input()
     end
 
     # Check input structure
-    if (inpar.n_equ == -1 | inpar.do_eval == -1 |
-        inpar.do_state == -1 | inpar.n_boot == -1)
+    if (inpar.n_equ == -1 || inpar.do_eval == -1 ||
+        inpar.do_state == -1 || inpar.n_boot == -1)
         error("-1 in Input Structure: Something is wrong!")
     end
 
@@ -124,46 +130,48 @@ function dlm_output(folders)
         # elseif isfile(string(f,"/results.dat"))
         #     results = vcat(results,load_result(string(f,"/results.dat")))
         else
-            println(strin("No result file in folder: \"",f,"\""))
+            println(string("No result file in folder: \"",f,"\""))
         end
     end
 
-    # Create matrx for values with error (stds/errs)
-    props = [:T,:p,:ρ,:c,:η,:D,:λ]  # Properties to write out (see header)
-    No_props = length(props)
-    mat = Array{Float64,2}(undef,length(results),No_props*2).*NaN
+    if !isempty(results)
+        # Create matrix for values with error (stds/errs)
+        props = [:T,:p,:ρ,:c,:η,:D,:λ]  # Properties to write out (see header)
+        No_props = length(props)
+        mat = Array{Float64,2}(undef,length(results),No_props*2).*NaN
 
-    error_type = :err
-    for i = 1:length(results), j = 1:No_props
-        sdat = getfield(results[i],props[j])
-        if typeof(sdat) == single_dat
-            mat[i,(j-1)*2+1:j*2] = [sdat.val,getfield(sdat,error_type)]
-        else
-            mat[i,(j-1)*2+1:j*2] = [NaN,NaN]
+        error_type = :err
+        for i = 1:length(results), j = 1:No_props
+            sdat = getfield(results[i],props[j])
+            if typeof(sdat) == single_dat
+                mat[i,(j-1)*2+1:j*2] = [sdat.val,getfield(sdat,error_type)]
+            else
+                mat[i,(j-1)*2+1:j*2] = [NaN,NaN]
+            end
         end
-    end
 
-    # Header
-    header = string("T/K +- p/MPa +- ρ/(g/ml) +- c/(J/kg*K) +- η/(Pa*s) +- ",
-                    "D/(m^2/s) +- λ/(W/(m*K)) +-\n")
+        # Header
+        header = string("T/K +- p/MPa +- ρ/(g/ml) +- c/(J/kg*K) +- η/(Pa*s) +- ",
+                        "D/(m^2/s) +- λ/(W/(m*K)) +-\n")
 
-    # Write Files
-    f1 = folders[1]
-    posf = findall(isequal('/'),f1)
-    folder_save = ""
-    for posTMP in posf
-        inmat = findfirst.(f1[1:posTMP],folders)
-        if sum(isnothing.(inmat)) == 0
-            folder_save = f1[1:posTMP]
-        else
-            break
+        # Write Files
+        f1 = folders[1]
+        posf = findall(isequal('/'),f1)
+        folder_save = ""
+        for posTMP in posf
+            inmat = findfirst.(f1[1:posTMP],folders)
+            if sum(isnothing.(inmat)) == 0
+                folder_save = f1[1:posTMP]
+            else
+                break
+            end
         end
-    end
-    file_save = string(folder_save,"results_",Dates.format(now(),"yyyy-mm-dd"),".dat")
-    println("Results saved in file: ",file_save)
+        file_save = string(folder_save,"results_",Dates.format(now(),"yyyy-mm-dd"),".dat")
+        println("Results saved in file: ",file_save)
 
-    fID = open(file_save,"w")
-    print(fID,header)
-    writedlm(fID,mat,' ')
-    close(fID)
+        fID = open(file_save,"w")
+        print(fID,header)
+        writedlm(fID,mat,' ')
+        close(fID)
+    end
 end
