@@ -11,16 +11,29 @@ function EvalVLE(info)
 
     # Evluation of subfolders
     for f in subfolder
-        eval_profiles(f)
+        # Loading Info File
+        moltype, dt, natoms, molmass = load_info(f)
+        info.moltype = moltype
+        info.dt = dt
+        info.natoms = natoms
+        info.molmass = molmass
+
+        # Evaluation of thermo files
+        eval_thermo_vle(f,info)
+
+        # Evaluation of profile files
+        eval_profiles(f,info)
         println(string("Subfolder ",findfirst(f .== subfolder)," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
     end
 
     # Plot of the vapour and liquid densities
     T = Float64[]
-    ρ_v = Float64[]
-    ρ_l = Float64[]
-    p_v = Float64[]
-    p_l = Float64[]
+    ρ = Float64[]
+    ρv = Float64[]
+    ρl = Float64[]
+    px = Float64[]
+    py = Float64[]
+    pz = Float64[]
     D = Float64[]
 
     for f in subfolder
@@ -32,18 +45,20 @@ function EvalVLE(info)
             pos0 = findfirst(isequal(':'),line)-1
             pos1 = findfirst(isequal(' '),line)+1
             pos2 = findlast(isequal(' '),line)-1
-            if line[1:pos0] == "T"          append!(T,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "ρ_v"    append!(ρ_v,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "ρ_l"    append!(ρ_l,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "p_v"    append!(p_v,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "p_l"    append!(p_l,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "D"      append!(D,parse(Float64,line[pos1:pos2])) end
+            if line[1:pos0] == "T"         append!(T,parse(Float64,line[pos1:pos2]))
+            elseif line[1:pos0] == "ρ"     append!(ρ,parse(Float64,line[pos1:pos2]))
+            elseif line[1:pos0] == "ρv"    append!(ρv,parse(Float64,line[pos1:pos2]))
+            elseif line[1:pos0] == "ρl"    append!(ρl,parse(Float64,line[pos1:pos2]))
+            elseif line[1:pos0] == "px"    append!(px,parse(Float64,line[pos1:pos2]))
+            elseif line[1:pos0] == "py"    append!(py,parse(Float64,line[pos1:pos2]))
+            elseif line[1:pos0] == "pz"    append!(py,parse(Float64,line[pos1:pos2]))
+            elseif line[1:pos0] == "D"     append!(D,parse(Float64,line[pos1:pos2])) end
         end
     end
 
-    header = "T/K ρ_v/(g/ml) ρ_l/(g/ml) p_v/MPa p_l/MPa D/Å"
+    header = "T/K ρ/(g/ml) ρ_v/(g/ml) ρ_l/(g/ml) px/MPa py/MPa pz/MPa D/Å"
     ind = sortperm(T)
-    mat = hcat(T,ρ_v,ρ_l,p_v,p_l,D)[ind,:]
+    mat = hcat(T,ρ,ρv,ρl,px,py,pz,D)[ind,:]
 
     # Data file
     fID = open(string(info.folder,"/results.dat"),"w")
@@ -65,8 +80,20 @@ function EvalVLE(info)
 end
 
 ## Subfunctions
+# Function to evaluate thermo file
+function eval_thermo_vle(folder,info)
+    # Load data
+    dat = load_thermo_vle(folder, info)
+    dat.px = dat.px .* 0.1
+    dat.py = dat.py .* 0.1
+    dat.pz = dat.pz .* 0.1
+
+    # Output data
+    OutputResult_VLE(dat, folder)
+end
+
 # Function to evaluate profiles of density, temperature, stress
-function eval_profiles(folder)
+function eval_profiles(folder,info)
     # Load profile file
     dat = []
     ts_add = 0
@@ -81,15 +108,16 @@ function eval_profiles(folder)
     # Calculation of means
     x = mean(dat.x,dims=1)[:]
     x = x .- minimum(x)
+    Ncount = mean(dat.Ncount,dims=1)[:]
     ρn = mean(dat.ρn,dims=1)[:]
     ρm = mean(dat.ρm,dims=1)[:]
     T = mean(dat.T,dims=1)[:]
-    pxx = mean(dat.pxx,dims=1)[:]
-    pyy = mean(dat.pyy,dims=1)[:]
-    pzz = mean(dat.pzz,dims=1)[:]
-    pxy = mean(dat.pxy,dims=1)[:]
-    pxz = mean(dat.pxz,dims=1)[:]
-    pyz = mean(dat.pyz,dims=1)[:]
+    pxx = mean(dat.pxx,dims=1)[:].*0.1
+    pyy = mean(dat.pyy,dims=1)[:].*0.1
+    pzz = mean(dat.pzz,dims=1)[:].*0.1
+    pxy = mean(dat.pxy,dims=1)[:].*0.1
+    pxz = mean(dat.pxz,dims=1)[:].*0.1
+    pyz = mean(dat.pyz,dims=1)[:].*0.1
 
     # Get position of interfaces
     ρm_ = (maximum(ρm) - minimum(ρm))/2 + minimum(ρm)
@@ -139,17 +167,20 @@ function eval_profiles(folder)
         what_v = dx .< -2*D
     end
 
-    p_l = mean(pxx[what_l] .+ pyy[what_l] .+ pzz[what_l])/3
-    p_v = mean(pxx[what_v] .+ pyy[what_v] .+ pzz[what_v])/3
+    p_l = (pxx[what_l] .+ pyy[what_l] .+ pzz[what_l])' * Ncount[what_l] ./(sum(Ncount[what_l]).*3)
+    p_v = (pxx[what_v] .+ pyy[what_v] .+ pzz[what_v])' * Ncount[what_v] ./(sum(Ncount[what_v]).*3)
+    p_x = pxx'*Ncount/sum(Ncount)
 
     # Data file
-    fID = open(string(folder,"/result.dat"),"w")
-    println(fID,string("T: ",mean(T)," K"))
-    println(fID,string("ρ_v: ",ρ_v," g/ml"))
-    println(fID,string("ρ_l: ",ρ_l," g/ml"))
-    println(fID,string("p_v: ",p_v," MPa"))
-    println(fID,string("p_l: ",p_l," MPa"))
-    println(fID,string("D: ",D," Å"))
+    fID = open(string(folder,"/result.dat"),"a")
+    println(fID,string("T_prof: ",T'*Ncount/sum(Ncount),","))
+    println(fID,string("ρv: ",ρ_v,","))
+    println(fID,string("ρl: ",ρ_l,","))
+    # println(fID,string("pv: ",p_v,","))
+    # println(fID,string("pl: ",p_l,","))
+    # println(fID,string("px: ",p_x,","))
+    println(fID,string("D: ",D,","))
+    println()
     close(fID)
 
     # Figure
@@ -212,63 +243,4 @@ function eval_profiles(folder)
     savefig(string(folder,"/Fig_density_f(ts).pdf"))
 
     close("all")
-end
-
-# Function to read profile data
-function read_profile1D(filename,data,ts_add)
-    fID = open(filename,"r")
-
-    # Read first three lines
-    line1 = readline(fID)
-    line2 = readline(fID)
-    line3 = readline(fID)
-    if (line2 != "# Timestep Number-of-chunks Total-count") ||
-       (line3 != "# Chunk Coord1 Ncount density/number density/mass temp v_p_xx v_p_yy v_p_zz v_p_xy v_p_xz v_p_yz")
-        error("Dataset not fitting to 'load_profile1D' function!")
-    end
-
-    # Read data body
-    txt = readlines(fID)
-
-    # Determine number of chunks
-    pos = vcat(findall(isequal(' '),txt[1]),length(txt[1])+1)
-    no_chunks = parse(Int64,txt[1][pos[1]+1:pos[2]-1])
-    lines_per_ts = (no_chunks+1)
-    n_steps = Int64(length(txt)/lines_per_ts)
-
-    if typeof(data) != profile_data
-        # Initialization of profile_data strucutre
-        init = Array{Float64,2}(undef,0,no_chunks)
-        data = profile_data(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
-    end
-
-    for i = 1:n_steps
-        # Get lines of step
-        istart = lines_per_ts*(i-1) + 1
-        iend = istart + no_chunks
-
-        # Get information from first line
-        line_start = txt[istart]
-        pos = vcat(findall(isequal(' '),line_start),length(line_start)+1)
-        timestep = parse(Int64,line_start[1:pos[1]-1]) + ts_add
-        total_count = parse(Float64,line_start[pos[2]+1:end])
-        append!(data.timestep,timestep)
-
-        # cols = length(properties)
-        body = Array(transpose(parse.(Float64,hcat(split.(txt[istart+1:iend])...))))
-        data.id_chunk = vcat(data.id_chunk,body[:,1]')
-        data.x = vcat(data.x,body[:,2]')
-        data.Ncount = vcat(data.Ncount,body[:,3]')
-        data.ρn = vcat(data.ρn,body[:,4]')
-        data.ρm = vcat(data.ρm,body[:,5]')
-        data.T = vcat(data.T,body[:,6]')
-        data.pxx = vcat(data.pxx,body[:,7]').*0.1
-        data.pyy = vcat(data.pyy,body[:,8]').*0.1
-        data.pzz = vcat(data.pzz,body[:,9]').*0.1
-        data.pxy = vcat(data.pxy,body[:,10]').*0.1
-        data.pxz = vcat(data.pxz,body[:,11]').*0.1
-        data.pyz = vcat(data.pyz,body[:,12]').*0.1
-    end
-
-    return data
 end
