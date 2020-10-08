@@ -152,6 +152,20 @@ mutable struct state_info
     m::Float64
 end
 
+# Data structure to store thermo data (thermo.vle.2phase.dat)
+mutable struct thermo_vle_dat
+    step::Array{Int64,1}
+    t::Array{Float64,1}
+    T::Array{Float64,1}
+    px::Array{Float64,1}
+    py::Array{Float64,1}
+    pz::Array{Float64,1}
+    ρ::Array{Float64,1}
+    Etot::Array{Float64,1}
+    Ekin::Array{Float64,1}
+    Epot::Array{Float64,1}
+end
+
 # Data structure to save profile information
 mutable struct profile_data
     timestep::Array{Float64,1}
