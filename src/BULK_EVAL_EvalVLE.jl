@@ -42,17 +42,20 @@ function EvalVLE(info)
         txt = readlines(fID)
         close(fID)
         for line in txt
-            pos0 = findfirst(isequal(':'),line)-1
-            pos1 = findfirst(isequal(' '),line)+1
-            pos2 = findlast(isequal(' '),line)-1
-            if line[1:pos0] == "T"         append!(T,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "ρ"     append!(ρ,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "ρv"    append!(ρv,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "ρl"    append!(ρl,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "px"    append!(px,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "py"    append!(py,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "pz"    append!(py,parse(Float64,line[pos1:pos2]))
-            elseif line[1:pos0] == "D"     append!(D,parse(Float64,line[pos1:pos2])) end
+            if line[1] != "#"
+                pos0 = findfirst(isequal(':'),line)
+                pos1 = findfirst(isequal(' '),line)+1
+                pos2 = findlast(isequal(','),line)-1
+
+                if line[1:pos0] == "T:"         append!(T,parse(Float64,strip(line[pos1:pos2])))
+                elseif line[1:pos0] == "ρ:"     append!(ρ,parse(Float64,strip(line[pos1:pos2])))
+                elseif line[1:pos0] == "ρv:"    append!(ρv,parse(Float64,strip(line[pos1:pos2])))
+                elseif line[1:pos0] == "ρl:"    append!(ρl,parse(Float64,strip(line[pos1:pos2])))
+                elseif line[1:pos0] == "px:"    append!(px,parse(Float64,strip(line[pos1:pos2])))
+                elseif line[1:pos0] == "py:"    append!(py,parse(Float64,strip(line[pos1:pos2])))
+                elseif line[1:pos0] == "pz:"    append!(pz,parse(Float64,strip(line[pos1:pos2])))
+                elseif line[1:pos0] == "D:"     append!(D,parse(Float64,strip(line[pos1:pos2]))) end
+            end
         end
     end
 
@@ -69,7 +72,7 @@ function EvalVLE(info)
     # Plot
     figure()
     for i = 1:length(T)
-        plot([ρ_v[i],ρ_l[i]],[T[i],T[i]],"sb:",linewidth=0.5)
+        plot([ρv[i],ρl[i]],[T[i],T[i]],"sb:",linewidth=0.5)
     end
     xlabel(L"\rho_{m} / (g/ml)")
     ylabel(L"T / K")
@@ -170,17 +173,14 @@ function eval_profiles(folder,info)
     p_l = (pxx[what_l] .+ pyy[what_l] .+ pzz[what_l])' * Ncount[what_l] ./(sum(Ncount[what_l]).*3)
     p_v = (pxx[what_v] .+ pyy[what_v] .+ pzz[what_v])' * Ncount[what_v] ./(sum(Ncount[what_v]).*3)
     p_x = pxx'*Ncount/sum(Ncount)
+    Tm = T'*Ncount/sum(Ncount)
 
     # Data file
     fID = open(string(folder,"/result.dat"),"a")
-    println(fID,string("T_prof: ",T'*Ncount/sum(Ncount),","))
-    println(fID,string("ρv: ",ρ_v,","))
-    println(fID,string("ρl: ",ρ_l,","))
-    # println(fID,string("pv: ",p_v,","))
-    # println(fID,string("pl: ",p_l,","))
-    # println(fID,string("px: ",p_x,","))
-    println(fID,string("D: ",D,","))
-    println()
+    print_prop(fID, single_dat(Tm,NaN,NaN), "Tpro")
+    print_prop(fID, single_dat(ρ_l,NaN,NaN), "ρl")
+    print_prop(fID, single_dat(ρ_v,NaN,NaN), "ρv")
+    print_prop(fID, single_dat(D,NaN,NaN), "D")
     close(fID)
 
     # Figure
