@@ -196,12 +196,19 @@ end
         close(fID)
 
         # Plot: γ(t) average values and fitted curve
-        plt = plot(xlabel="t / ps",ylabel=string(set.name," / ",set.unit), dpi=400, legend=:bottomright)
-        if (reduced_units) xlabel!("t*"); ylabel!(string(set.name,"*")) end
-        plot!(t[1:cut],mat[1:cut,:],linestyle=:dot, linealpha=0.5, linecolor=:gray, label=nothing)
-        plot!(t[1:cut],ave_t[1:cut],label="Average",linecolor=:blue)
-        plot!(t[1:cut],fun_ave(t[1:cut],fit_ave.param),label="Fit",linecolor=:red)
-        png(plt,string(outfolder,set.name,".png"))
+        figure()
+        tight_layout()
+        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
+        nstring = string(set.name," / ",set.unit)
+        rstring = string(set.name,"*")
+        if !(reduced_units) ylabel(nstring) elseif reduced_units ylabel(rstring) end
+        plot(t[1:cut],mat[1:cut,:], color="gray", linestyle=":", linewidth=0.1)
+        plot(t[1:cut],ave_t[1:cut], color="blue", label="Average", linewidth=0.1)
+        plot(t[1:cut],fun_ave(t[1:cut],fit_ave.param), color="red", label="Fit", linewidth=1) #label="Fit",linecolor=:red
+        legend()
+        splot = string(outfolder,set.name,".pdf")
+        savefig(splot)
+        close()
 
         if (val < 0)
             error("Negative value for ",set.name,"!")
@@ -255,10 +262,15 @@ function bootstrapping(mat, t, set)
     y = exp.(-(x.-μ).^2 ./ (2 .*σ.^2)) ./ sqrt.(2 .*π.*σ.^2)
 
     # Plot histogram
-    plt = histogram(vals,normalize=true,dpi=400,label="Data")
-    plot!(x,y,label="Fit")
+    figure()
+    tight_layout()
+    hist(vals, label="Data")
+    plot(x,y, label="Fit", linewidth=2)
     outfolder = string(set.folder,"/TransportProperties/")
-    png(string(outfolder,"histogram_",set.name,".png"))
+    splot = string(outfolder,"histogram_",set.name,".pdf")
+    legend()
+    savefig(splot)
+    close()
 
     err = 1.96*σ
 

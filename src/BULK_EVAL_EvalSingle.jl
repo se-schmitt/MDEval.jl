@@ -105,14 +105,22 @@ function calc_viscosities(info::info_struct)
 
         # Plots
         teve = 100        # Just take data every 'teve' timesteps
-        plt = plot(t[2:teve:end],abs.(acf_η[2:teve:end]), dpi=400, legend=false, xscale=:log10, yscale=:log10)
-        if !(reduced_units) xlabel!("t / ps")       elseif reduced_units xlabel!("t*") end
-        if !(reduced_units) ylabel!("|ACF| / Pa^2") elseif reduced_units ylabel!("|ACF*|") end
-        png(plt,string(info.folder,"/fig_eta-acf(t).png"))
-        plt = plot(t[1:teve:end],η_t[1:teve:end], dpi=400, legend=false)
-        if !(reduced_units) xlabel!("t / ps")     elseif reduced_units xlabel!("t*") end
-        if !(reduced_units) ylabel!("η / (Pa*s)") elseif reduced_units ylabel!("η*") end
-        png(plt,string(info.folder,"/fig_eta(t).png"))
+        figure()
+        tight_layout()
+        plot(t[2:teve:end],abs.(acf_η[2:teve:end]), linewidth=0.1)
+        loglog()
+        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
+        if !(reduced_units) ylabel(L"|ACF| / Pa^2") elseif reduced_units ylabel(L"|ACF*|") end
+        splot = string(info.folder,"/fig_eta-acf(t).pdf")
+        savefig(splot)
+        close()
+        figure()
+        plot(t[1:teve:end],η_t[1:teve:end], linewidth=0.1)
+        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
+        if !(reduced_units) ylabel(L"η / Pa^2") elseif reduced_units ylabel(L"η*") end
+        splot = string(info.folder,"/fig_eta(t).pdf")
+        savefig(splot)
+        close()
 
         # Save Results
         η = single_dat(η_t[end], NaN, NaN)
@@ -176,11 +184,17 @@ function calc_selfdiffusion(info::info_struct)
 
         # Plots of msd
         infostr = string("MSD 'Evaluation window':\n",t1," ps - ",t2," ps (",length(what_eval)," steps))")
-        plt1 = plot(t,msd_t, dpi=400, legend=false, title=infostr, titlefont=font(10))
-        plot!(t,beta[1] .+ beta[2].*t,linestyle=:dash)
-        plot!([t1,t1],[0.1,msd_t[what_eval[1]]],linestyle=:dot)
-        plot!([t2,t2],[0.1,msd_t[what_eval[end]]],linestyle=:dot)
-        png(plt1,string(info.folder,"/fig_msd(t).png"))
+        figure()
+        tight_layout()
+        title(infostr) #frontsize
+        plot(t, msd_t, linewidth=0.1)
+        plot(t,beta[1] .+ beta[2].*t, linestyle="-", linewidth=0.1)
+        plot([t1,t1],[0.1,msd_t[what_eval[1]]], color="black", linestyle=":", linewidth=0.1)
+        plot([t2,t2],[0.1,msd_t[what_eval[end]]], color="black", linestyle=":", linewidth=0.1)
+        splot = string(info.folder,"/fig_msd(t).pdf")
+        savefig(splot)
+        close()
+
     else
         D = single_dat(NaN,NaN,NaN)
     end
@@ -224,14 +238,23 @@ function calc_thermalconductivity(info::info_struct)
 
         # Plots
         teve = 100        # Just take data every 'teve' timesteps
-        plt = plot(t[2:teve:end],abs.(acf_λ[2:teve:end]), dpi=400, legend=false, xscale=:log10, yscale=:log10)
-        if !(reduced_units) xlabel!("t / ps")                elseif reduced_units xlabel!("t*") end
-        if !(reduced_units) ylabel!("|ACF| / eV^2/(Å^4*ps)") elseif reduced_units ylabel!("|ACF*|") end
-        png(plt,string(info.folder,"/fig_lambda_acf(t).png"))
-        plt = plot(t[1:teve:end],λ_t[1:teve:end], dpi=400, legend=false)
-        if !(reduced_units) xlabel!("t / ps")        elseif reduced_units xlabel!("t*") end
-        if !(reduced_units) ylabel!("λ / (W/(m*K))") elseif reduced_units ylabel!("λ*") end
-        png(plt,string(info.folder,"/fig_lambda(t).png"))
+        figure()
+        tight_layout()
+        abs_λ = abs.(acf_λ[2:teve:end])
+        plot(t[2:teve:end],abs_λ, linewidth=0.1)
+        loglog()
+        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
+        if !(reduced_units) ylabel(L"|ACF| / eV^2/(Å^4*ps)") elseif reduced_units ylabel(L"|ACF*|") end
+        splot = string(info.folder,"/fig_lambda_acf(t).pdf")
+        savefig(splot)
+        close()
+        figure()
+        plot(t[1:teve:end],λ_t[1:teve:end], linewidth=0.1)
+        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
+        if !(reduced_units) ylabel(L"λ / (W/(m*K)") elseif reduced_units ylabel(L"λ*") end
+        splot = string(info.folder,"/fig_lambda(t).pdf")
+        savefig(splot)
+        close()
 
         λ = single_dat(λ_t[end],NaN,NaN)
     else

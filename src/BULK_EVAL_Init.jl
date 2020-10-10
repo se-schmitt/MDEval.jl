@@ -18,7 +18,10 @@ if (no_procs > 1) addprocs(no_procs) end
 
 @everywhere using FFTW
 @everywhere using LsqFit
-@everywhere using Plots
+@everywhere using LaTeXStrings
+@everywhere using PyCall
+pygui(:qt)
+@everywhere using PyPlot
 @everywhere using StatsBase
 
 # Physical Constants
