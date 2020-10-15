@@ -323,7 +323,7 @@ function atom2mol(atom)
             y_mol[imol] = (y_atom[what]' * mass_atom[what]) / mass_mol[imol]
             z_mol[imol] = (z_atom[what]' * mass_atom[what]) / mass_mol[imol]
         end
-        mol[i] = dump_dat(atom[i].step,atom[i].t,atom[i].bounds,[],molid_mol,mass_mol,x_mol,y_mol,z_mol)
+        mol[i] = dump_dat(atom[i].step,atom[i].t,atom[i].bounds,Int64[],molid_mol,Int64[],mass_mol,x_mol,y_mol,z_mol)
     end
 
     return mol
