@@ -12,6 +12,10 @@ function TransportProperties(state::state_info,set::set_TDM)
     do_D = 1
     do_λ = 1
 
+    if set.nboot == 0
+        do_η = 0;   do_D = 0;   do_λ = 0
+    end
+
     # Create new folder if it not yet exists
     if !(isdir(string(set.folder,"/TransportProperties")))
         mkdir(string(set.folder,"/TransportProperties"))
@@ -25,7 +29,7 @@ function TransportProperties(state::state_info,set::set_TDM)
     else
         do_calc = 1
     end
-
+    
     # VISCOSITY
     if do_η == 1 && (do_calc == 1 || !(typeof(res.η) == single_dat))
         # Load runs
@@ -46,6 +50,8 @@ function TransportProperties(state::state_info,set::set_TDM)
         end
         # Save in struct
         η = single_dat(ηval, ηstd, ηerr)
+    elseif do_η == 0
+        η = []
     else
         η = res.η
     end
@@ -65,6 +71,8 @@ function TransportProperties(state::state_info,set::set_TDM)
         Dcorr = kB*state.T*ξ/(6*π*η.val*L)
         Dval = mean(Dv) .+ Dcorr
         D = single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv)))
+    elseif do_D == 0
+        D = []
     else
         D = res.D
     end
@@ -89,11 +97,13 @@ function TransportProperties(state::state_info,set::set_TDM)
         end
         # Save in struct
         λ = single_dat(λval, λstd, λerr)
+    elseif do_λ == 0
+        λ = []
     else
         λ = res.λ
     end
 
-    η_V = single_dat(NaN,NaN,NaN)
+    η_V = []
     return η, η_V, D, λ
 end
 
