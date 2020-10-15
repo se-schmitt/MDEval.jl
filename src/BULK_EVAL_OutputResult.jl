@@ -33,6 +33,41 @@ function OutputResult(result::results_struct, folder::String)
     close(fID)
 end
 
+# Function to ouput data from vle simulations (single simulation)
+function OutputResult_VLE(dat::thermo_vle_dat, folder::String)
+    # Create Filepath
+    path = string(folder,"/result.dat")
+
+    # Write to file
+    fID = open(path,"w")
+    line1 = string("# Created by MD - Bulk Evaluation, Folder: ", folder)
+    line2 = "# Format: val (std dev., std err.); [T]=K, [p]=MPa, [ρ]=g/ml, [E]=eV"
+    if (reduced_units) line2 = "# Format: val (std dev., std err.); reduced units" end
+    header = string(line1,"\n",line2,"\n")
+    print(fID,header)
+
+    # Calculation of means, stds, errs
+    T = single_dat(mean(dat.T),NaN,NaN)
+    px = single_dat(mean(dat.px),NaN,NaN)
+    py = single_dat(mean(dat.py),NaN,NaN)
+    pz = single_dat(mean(dat.pz),NaN,NaN)
+    ρ = single_dat(mean(dat.ρ),NaN,NaN)
+    Etot = single_dat(mean(dat.Etot),NaN,NaN)
+    Ekin = single_dat(mean(dat.Ekin),NaN,NaN)
+    Epot = single_dat(mean(dat.Epot),NaN,NaN)
+
+    # Write data
+    print_prop(fID, T, "T")
+    print_prop(fID, px, "px")
+    print_prop(fID, py, "py")
+    print_prop(fID, pz, "pz")
+    print_prop(fID, ρ, "ρ")
+    print_prop(fID, Etot, "Etot")
+    print_prop(fID, Ekin, "Ekin")
+    print_prop(fID, Epot, "Epot")
+    close(fID)
+end
+
 # Help function
 # Function to write a single line
 function print_prop(fID, x, sym)

@@ -156,6 +156,7 @@ function load_dump(info)
                 lineITEM = readline(fID)
                 id = Int64.(zeros(natoms))
                 molid = Int64.(zeros(natoms))
+                type = Int64.(zeros(natoms))
                 x = zeros(natoms)
                 y = zeros(natoms)
                 z = zeros(natoms)
@@ -191,10 +192,22 @@ function load_dump(info)
                         y[i] = line_float[4]
                         z[i] = line_float[5]
                     end
+                elseif (lineITEM == "ITEM: ATOMS id mol type mass xu yu zu ")
+                    mass = zeros(natoms)
+                    for i = 1:natoms
+                        line_float = parse.(Float64,split(readline(fID)))
+                        id[i] = Int64(line_float[1])
+                        molid[i] = Int64(line_float[2])
+                        type[i] = Int64(line_float[3])
+                        mass[i] = line_float[4]
+                        x[i] = line_float[5]
+                        y[i] = line_float[6]
+                        z[i] = line_float[7]
+                    end
                 else error("Dump file format wrong") end
 
                 if !(step==0 && skip1==1)
-                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, mass, x, y, z))
+                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, type, mass, x, y, z))
                 end
             end
             skip1 = 1
@@ -243,4 +256,108 @@ function load_heatflux_file(file,info,skip)
     V    = dat[:,2];    T    = dat[:,3]
     jx   = dat[:,4];    jy   = dat[:,5];    jz = dat[:,6]
     return step, time, V, T, jx, jy, jz
+end
+
+# Loading thermo file in vle simulations
+function load_thermo_vle(folder::String, info::info_struct)
+    thermodat = thermo_vle_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+    list = sort(readdir(folder))
+    files = string.(folder,"/",list[occursin.(string("thermo.vle.2phase."),list)])
+    if length(files) > 9
+        files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
+    end
+    stepADD=0
+    timeADD=0
+    for file in files
+        step, time, T, px, py, pz, ρ, Etot, Ekin, Epot = load_thermo_vle_file(file,info)
+        thermodat.step = vcat(thermodat.step,step.+stepADD)
+        thermodat.t = vcat(thermodat.t,time.+timeADD)
+        thermodat.T = vcat(thermodat.T,T)
+        thermodat.px = vcat(thermodat.px,px)
+        thermodat.py = vcat(thermodat.py,py)
+        thermodat.pz = vcat(thermodat.pz,pz)
+        thermodat.ρ = vcat(thermodat.ρ,ρ)
+        thermodat.Etot = vcat(thermodat.Etot,Etot)
+        thermodat.Ekin = vcat(thermodat.Ekin,Ekin)
+        thermodat.Epot = vcat(thermodat.Epot,Epot)
+        stepADD = thermodat.step[end]
+        timeADD = thermodat.t[end]
+    end
+
+    return thermodat
+    if isempty(thermodat.step) error("No thermo data loaded!") end
+    return thermodat
+end
+function load_thermo_vle_file(file::String, info::info_struct)
+    fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
+    if line2 != "# TimeStep v_T v_px v_py v_pz v_rho v_Etot v_Ekin v_Epot"
+        error("Format of File \"thermo.vle.2phase.dat\" not right")
+    end
+    # Read data
+    dat = readdlm(file, skipstart=2)
+    step = dat[:,1];    time = step*info.dt
+    T    = dat[:,2];    px    = dat[:,3]
+    py    = dat[:,4];   pz    = dat[:,5]
+    ρ    = dat[:,6];    Etot = dat[:,7]
+    Ekin = dat[:,8];    Epot = dat[:,9]
+    return step, time, T, px, py, pz, ρ, Etot, Ekin, Epot
+end
+
+# Function to read profile data
+function read_profile1D(filename,data,ts_add)
+    fID = open(filename,"r")
+
+    # Read first three lines
+    line1 = readline(fID)
+    line2 = readline(fID)
+    line3 = readline(fID)
+    if (line2 != "# Timestep Number-of-chunks Total-count") ||
+       (line3 != "# Chunk Coord1 Ncount density/number density/mass temp v_p_xx v_p_yy v_p_zz v_p_xy v_p_xz v_p_yz")
+        error("Dataset not fitting to 'load_profile1D' function!")
+    end
+
+    # Read data body
+    txt = readlines(fID)
+
+    # Determine number of chunks
+    pos = vcat(findall(isequal(' '),txt[1]),length(txt[1])+1)
+    no_chunks = parse(Int64,txt[1][pos[1]+1:pos[2]-1])
+    lines_per_ts = (no_chunks+1)
+    n_steps = Int64(length(txt)/lines_per_ts)
+
+    if typeof(data) != profile_data
+        # Initialization of profile_data strucutre
+        init = Array{Float64,2}(undef,0,no_chunks)
+        data = profile_data(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
+    end
+
+    for i = 1:n_steps
+        # Get lines of step
+        istart = lines_per_ts*(i-1) + 1
+        iend = istart + no_chunks
+
+        # Get information from first line
+        line_start = txt[istart]
+        pos = vcat(findall(isequal(' '),line_start),length(line_start)+1)
+        timestep = parse(Int64,line_start[1:pos[1]-1]) + ts_add
+        total_count = parse(Float64,line_start[pos[2]+1:end])
+        append!(data.timestep,timestep)
+
+        # cols = length(properties)
+        body = Array(transpose(parse.(Float64,hcat(split.(txt[istart+1:iend])...))))
+        data.id_chunk = vcat(data.id_chunk,body[:,1]')
+        data.x = vcat(data.x,body[:,2]')
+        data.Ncount = vcat(data.Ncount,body[:,3]')
+        data.ρn = vcat(data.ρn,body[:,4]')
+        data.ρm = vcat(data.ρm,body[:,5]')
+        data.T = vcat(data.T,body[:,6]')
+        data.pxx = vcat(data.pxx,body[:,7]')
+        data.pyy = vcat(data.pyy,body[:,8]')
+        data.pzz = vcat(data.pzz,body[:,9]')
+        data.pxy = vcat(data.pxy,body[:,10]')
+        data.pxz = vcat(data.pxz,body[:,11]')
+        data.pyz = vcat(data.pyz,body[:,12]')
+    end
+
+    return data
 end

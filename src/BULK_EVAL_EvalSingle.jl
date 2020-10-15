@@ -373,3 +373,9 @@ function calc_msd(dat::Array{Any,1},info)
 
     return msd_t, t
 end
+
+# Block averaging
+function block_average(y,n)
+
+    return block_ave
+end
