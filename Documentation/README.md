@@ -40,34 +40,28 @@ __Keywords:__
 | N_boot         | integer (≈ No. simulations) | number of bootstrapping repetitions                                   |
 
 Example:
+```
+#folder
+F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.1gml
 
->#folder
->
->F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.1gml
->
->#folder
->
->F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/*
->
->#ensemble
->
->NVT
->
->#timesteps_EQU
->
->0
->
->#DO_evaluation
->
->1
->
->#DO_state
->
->1
->
->#N_boot
->
->5
+#folder
+F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/*
+
+#ensemble
+NVT
+
+#timesteps_EQU
+0
+
+#DO_evaluation
+1
+
+#DO_state
+1
+
+#N_boot
+5
+```
 
 ## Output
 
