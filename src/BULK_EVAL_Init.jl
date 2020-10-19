@@ -24,6 +24,7 @@ if (no_procs > 1) addprocs(no_procs) end
 @everywhere using PyCall
 pygui(:qt)
 @everywhere using PyPlot
+close("all")
 @everywhere using StatsBase
 
 # Physical Constants
