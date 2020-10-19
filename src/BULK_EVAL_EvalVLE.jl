@@ -122,13 +122,6 @@ function eval_profiles(folder,info)
     pxz = sum(dat.pxz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
     pyz = sum(dat.pyz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
 
-    # pxx = mean(dat.pxx,dims=1)[:].*0.1
-    # pyy = mean(dat.pyy,dims=1)[:].*0.1
-    # pzz = mean(dat.pzz,dims=1)[:].*0.1
-    # pxy = mean(dat.pxy,dims=1)[:].*0.1
-    # pxz = mean(dat.pxz,dims=1)[:].*0.1
-    # pyz = mean(dat.pyz,dims=1)[:].*0.1
-
     # Get position of interfaces
     ρm_ = (maximum(ρm) - minimum(ρm))/2 + minimum(ρm)
     x_flu = x[ρm .> ρm_]
