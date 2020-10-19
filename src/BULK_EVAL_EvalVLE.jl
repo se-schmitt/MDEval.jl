@@ -114,13 +114,20 @@ function eval_profiles(folder,info)
     Ncount = mean(dat.Ncount,dims=1)[:]
     ρn = mean(dat.ρn,dims=1)[:]
     ρm = mean(dat.ρm,dims=1)[:]
-    T = mean(dat.T,dims=1)[:]
-    pxx = mean(dat.pxx,dims=1)[:].*0.1
-    pyy = mean(dat.pyy,dims=1)[:].*0.1
-    pzz = mean(dat.pzz,dims=1)[:].*0.1
-    pxy = mean(dat.pxy,dims=1)[:].*0.1
-    pxz = mean(dat.pxz,dims=1)[:].*0.1
-    pyz = mean(dat.pyz,dims=1)[:].*0.1
+    T = sum(dat.T .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:]
+    pxx = sum(dat.pxx .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
+    pyy = sum(dat.pyy .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
+    pzz = sum(dat.pzz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
+    pxy = sum(dat.pxy .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
+    pxz = sum(dat.pxz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
+    pyz = sum(dat.pyz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
+
+    # pxx = mean(dat.pxx,dims=1)[:].*0.1
+    # pyy = mean(dat.pyy,dims=1)[:].*0.1
+    # pzz = mean(dat.pzz,dims=1)[:].*0.1
+    # pxy = mean(dat.pxy,dims=1)[:].*0.1
+    # pxz = mean(dat.pxz,dims=1)[:].*0.1
+    # pyz = mean(dat.pyz,dims=1)[:].*0.1
 
     # Get position of interfaces
     ρm_ = (maximum(ρm) - minimum(ρm))/2 + minimum(ρm)
