@@ -102,7 +102,7 @@ function read_input()
             inpar.ensemble = readline(fID)
         elseif line == "#timesteps_EQU"
             inpar.n_equ = parse(Int64,readline(fID))
-        elseif line == "#DO_single"
+        elseif line == "#DO_evaluation"
             inpar.do_eval = parse(Int64,readline(fID))
         elseif line == "#DO_state"
             inpar.do_state = parse(Int64,readline(fID))
