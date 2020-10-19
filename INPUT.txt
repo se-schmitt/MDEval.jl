@@ -2,19 +2,19 @@
 vle
 
 #folder
-F:/MD_Bulk/VLE_Methane_TEST
+F:/MD_Bulk/VLE_Methane_2
 
 #ensemble
-NpT
+NVT
 
 #timesteps_EQU
 0
 
-#DO_evaluation
+#DO_single
 1
 
 #DO_state
 1
 
 #N_boot
-3
+200
