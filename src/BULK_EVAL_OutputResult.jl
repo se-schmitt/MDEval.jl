@@ -47,14 +47,14 @@ function OutputResult_VLE(dat::thermo_vle_dat, folder::String)
     print(fID,header)
 
     # Calculation of means, stds, errs
-    T = single_dat(mean(dat.T),NaN,NaN)
-    px = single_dat(mean(dat.px),NaN,NaN)
-    py = single_dat(mean(dat.py),NaN,NaN)
-    pz = single_dat(mean(dat.pz),NaN,NaN)
-    ρ = single_dat(mean(dat.ρ),NaN,NaN)
-    Etot = single_dat(mean(dat.Etot),NaN,NaN)
-    Ekin = single_dat(mean(dat.Ekin),NaN,NaN)
-    Epot = single_dat(mean(dat.Epot),NaN,NaN)
+    T = single_dat(mean(dat.T),block_average(dat.T),NaN)
+    px = single_dat(mean(dat.px),block_average(dat.px),NaN)
+    py = single_dat(mean(dat.py),block_average(dat.py),NaN)
+    pz = single_dat(mean(dat.pz),block_average(dat.pz),NaN)
+    ρ = single_dat(mean(dat.ρ),block_average(dat.ρ),NaN)
+    Etot = single_dat(mean(dat.Etot),block_average(dat.Etot),NaN)
+    Ekin = single_dat(mean(dat.Ekin),block_average(dat.Ekin),NaN)
+    Epot = single_dat(mean(dat.Epot),block_average(dat.Epot),NaN)
 
     # Write data
     print_prop(fID, T, "T")
@@ -74,28 +74,15 @@ function print_prop(fID, x, sym)
     if typeof(x) == single_dat
         spacestr = " "^(6-length(sym))
         if !isnan(x.val)
-            if abs(ceil(log10(abs(x.val)))) > 3.5
-                @printf(fID,"%s:%s%5.5e",sym,spacestr,x.val)
-                if !isnan(x.std)
-                    @printf(fID," (%5.5e",x.std)
-                    if !isnan(x.err)
-                        @printf(fID,", %5.5e",x.err)
-                    end
-                    @printf(fID,"),\n")
-                else
-                    @printf(fID,",\n")
+            @printf(fID,"%s:%s%5.5e",sym,spacestr,x.val)
+            if !isnan(x.std)
+                @printf(fID," (%5.5e",x.std)
+                if !isnan(x.err)
+                    @printf(fID,", %5.5e",x.err)
                 end
+                @printf(fID,"),\n")
             else
-                @printf(fID,"%s:%s%5.5f",sym,spacestr,x.val)
-                if !isnan(x.std)
-                    @printf(fID," (%5.5f",x.std)
-                    if !isnan(x.err)
-                        @printf(fID,", %5.5f",x.err)
-                    end
-                    @printf(fID,"),\n")
-                else
-                    @printf(fID,",\n")
-                end
+                @printf(fID,",\n")
             end
         else
             @printf(fID,"%s:%s---,\n",sym,spacestr)
