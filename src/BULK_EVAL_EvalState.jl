@@ -6,10 +6,8 @@
 # ------------------------------------------------------------------------------
 
 # Main Function
-function EvalState(subfolder::Array{String,1})
-
-    inpar = read_input()
-
+function EvalState(subfolder::Array{String,1}, inpar::input_struct)
+    
     # Get excluded folders
     what_include = Bool[]
     for subf in subfolder

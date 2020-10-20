@@ -39,7 +39,7 @@ function main()
 
             # Averaging simulations
             if inpar.do_state == 1
-                EvalState(subfolder)
+                EvalState(subfolder, inpar)
                 println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
             end
 
@@ -140,7 +140,7 @@ function dlm_output(folders)
         No_props = length(props)
         mat = Array{Float64,2}(undef,length(results),No_props*2).*NaN
 
-        error_type = :err
+        error_type = :std
         for i = 1:length(results), j = 1:No_props
             sdat = getfield(results[i],props[j])
             if typeof(sdat) == single_dat
@@ -171,7 +171,11 @@ function dlm_output(folders)
 
         fID = open(file_save,"w")
         print(fID,header)
-        writedlm(fID,mat,' ')
+        # writedlm(fID,mat,' ')
+        for i = 1:size(mat,1)
+            for j = 1:size(mat,2) @printf(fID,"%5.5e ",mat[i,j]) end
+            @printf(fID,"\n")
+        end
         close(fID)
     end
 end

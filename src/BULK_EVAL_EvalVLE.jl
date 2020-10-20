@@ -45,7 +45,12 @@ function EvalVLE(info)
             if line[1] != "#"
                 pos0 = findfirst(isequal(':'),line)
                 pos1 = findfirst(isequal(' '),line)+1
-                pos2 = findlast(isequal(','),line)-1
+                pos2 = findfirst(isequal('('),line)
+                if isnothing(pos2)
+                    pos2 = findlast(isequal(','),line)-1
+                else
+                    pos2 = pos2 - 1
+                end
 
                 if line[1:pos0] == "T:"         append!(T,parse(Float64,strip(line[pos1:pos2])))
                 elseif line[1:pos0] == "ρ:"     append!(ρ,parse(Float64,strip(line[pos1:pos2])))
