@@ -36,7 +36,7 @@ function ave_thermo(info::info_struct)
     # Loading Thermo File
     dat = load_thermo(info)
 
-    what = dat.step .>= info.n_equ#
+    what = dat.step .>= info.n_equ
 
     if info.ensemble == "NVE"
         A = [ones(size(dat.t)) dat.t]
@@ -44,14 +44,18 @@ function ave_thermo(info::info_struct)
         println(info.folder," | ave Etot: ",beta[1]," | slope E_tot: ",beta[2])
     end
 
-    T = single_dat(mean(dat.T[what]), std(dat.T[what]), NaN)
+    # Temperature
+    T = single_dat(mean(dat.T[what]), block_average(dat.T[what]), NaN)
+    # Pressure
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
-    p = single_dat(mean(dat.p[what].*factor_p), std(dat.p[what]).*factor_p, NaN)
-    ρ = single_dat(mean(dat.ρ[what]), std(dat.ρ[what]), NaN)
-    Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
-    Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
-    Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
+    p = single_dat(mean(dat.p[what].*factor_p), block_average(dat.p[what]).*factor_p, NaN)
+    # Density
+    ρ = single_dat(mean(dat.ρ[what]), block_average(dat.ρ[what]), NaN)
+    # Energies
+    Etot = single_dat(mean(dat.Etot[what]), block_average(dat.Etot[what]), NaN)
+    Ekin = single_dat(mean(dat.Ekin[what]), block_average(dat.Ekin[what]), NaN)
+    Epot = single_dat(mean(dat.Epot[what]), block_average(dat.Epot[what]), NaN)
     # Heat capacity
     if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
     elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
