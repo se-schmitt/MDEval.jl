@@ -21,6 +21,9 @@ function TransportProperties(state::state_info,set::set_TDM)
         mkdir(string(set.folder,"/TransportProperties"))
     end
 
+    fID_info = open(string(set.folder,"/TransportProperties/info.txt"),"w")
+    println(fID_info,"Start: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
+
     # Load existing result file
     do_calc = 1                 # 1 - Calculation even if it already exists
                                 # 0 - Take old result if exists
@@ -37,9 +40,11 @@ function TransportProperties(state::state_info,set::set_TDM)
         # Calculation of viscosity value by TDM method
         set_η = set
         set_η.name = "Viscosity"
+        set_η.symbol = "\\eta"
         if !(reduced_units) set_η.unit = "Pa*s" elseif (reduced_units) set_η.unit = "-" end
         set_η.do_out = true
-        ηmat = eliminate_outlier_curves(ηmat,"Viscosity")
+        plot_all_curves(t, ηmat, set_η)
+        ηmat = eliminate_outlier_curves(ηmat,set_η,fID_info)
         ηval, set_η = TDM(ηmat, t, set_η)
         # Calculation of statistical uncertainties by bootstrapping method
         if set.nboot > 0
@@ -56,6 +61,8 @@ function TransportProperties(state::state_info,set::set_TDM)
     else
         η = res.η
     end
+
+    println(fID_info,"Viscosity DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
 
     # DIFFUSION COEFFICIENT
     if do_D == 1 && (do_calc == 1 || !(typeof(res.D) == single_dat))
@@ -78,6 +85,8 @@ function TransportProperties(state::state_info,set::set_TDM)
         D = res.D
     end
 
+    println(fID_info,"Self-Diffusion Coef. DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
+
     # THERMAL CONDUCTIVITY
     if do_λ == 1 && (do_calc == 1 || !(typeof(res.λ) == single_dat))
         # Load runs
@@ -85,9 +94,11 @@ function TransportProperties(state::state_info,set::set_TDM)
         # Calculation of viscosity value by TDM method
         set_λ = set
         set_λ.name = "Thermal Conductivity"
-        set_λ.unit = "W/(m*K)"
+        set_λ.symbol = "\\lambda"
+        if !(reduced_units) set_λ.unit = "/(m*K)" elseif (reduced_units) set_λ.unit = "-" end
         set_λ.do_out = true
-        λmat = eliminate_outlier_curves(λmat,"Thermal Conductivity")
+        plot_all_curves(t, λmat, set_λ)
+        λmat = eliminate_outlier_curves(λmat,set_λ,fID_info)
         λval, set_λ = TDM(λmat, t, set_λ)
         # Calculation of statistical uncertainties by bootstrapping method
         if set.nboot > 0
@@ -104,6 +115,10 @@ function TransportProperties(state::state_info,set::set_TDM)
     else
         λ = res.λ
     end
+
+    println(fID_info,"Thermal Conductivity DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
+    println(fID_info,"End: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
+    close(fID_info)
 
     η_V = []
     return η, η_V, D, λ
@@ -211,13 +226,13 @@ end
         figure()
         tight_layout()
         if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-        nstring = string(set.name," / ",set.unit)
-        rstring = string(set.name,"*")
+        nstring = latexstring(set.symbol," / ",set.unit)
+        rstring = latexstring(set.symbol,"*")
         if !(reduced_units) ylabel(nstring) elseif reduced_units ylabel(rstring) end
         plot(t[1:cut],mat[1:cut,:], color="gray", linestyle=":", linewidth=0.1)
         plot(t[1:cut],ave_t[1:cut], color="blue", label="Average", linewidth=0.1)
         plot(t[1:cut],fun_ave(t[1:cut],fit_ave.param), color="red", label="Fit", linewidth=1) #label="Fit",linecolor=:red
-        legend()
+        legend(loc="upper left")
         splot = string(outfolder,set.name,".pdf")
         savefig(splot)
         close()
@@ -259,28 +274,33 @@ function bootstrapping(mat, t, set)
     what_NaN = abs.(vals) .> 2*median(vals)
     vals[what_NaN] = NaN .* ones(sum(what_NaN))
 
-    # Calculate error from distribution of TDM values
-    nb = 50 # number of bins
-    h = fit(Histogram, vals[.!isnan.(vals)], nbins = nb)
-    edg = Array(h.edges[1])
-    dedg = mean(edg[2:end] .- edg[1:end-1])
-    pts = (edg[2:end].+edg[1:end-1])./2
-    wgs = h.weights ./ (sum(h.weights) * dedg)
+    # # Calculate error from distribution of TDM values
+    # nb = round(Int,nboot/20)            # number of bins
+    # h = fit(Histogram, vals[.!isnan.(vals)], nbins = nb)
+    # edg = Array(h.edges[1])
+    # dedg = mean(edg[2:end] .- edg[1:end-1])
+    # pts = (edg[2:end].+edg[1:end-1])./2
+    # wgs = h.weights ./ (sum(h.weights) * dedg)
 
     fit_normal = fit_mle(Normal, vals[.!isnan.(vals)])
     μ = fit_normal.μ
     σ = fit_normal.σ
-    x = Array(LinRange(minimum(pts),maximum(pts),100))
+    x = Array(LinRange(minimum(vals),maximum(vals),100))
     y = exp.(-(x.-μ).^2 ./ (2 .*σ.^2)) ./ sqrt.(2 .*π.*σ.^2)
+
+    # Output to dat file
+    fID = open(string(set.folder,"/TransportProperties/bootstrapping_",set.name,".dat"),"w")
+    writedlm(fID,vals," ")
+    close(fID)
 
     # Plot histogram
     figure()
     tight_layout()
-    hist(vals, label="Data")
+    hist(vals, bins=round(Int,nboot/15), label="Data")
     plot(x,y, label="Fit", linewidth=2)
     outfolder = string(set.folder,"/TransportProperties/")
     splot = string(outfolder,"histogram_",set.name,".pdf")
-    legend()
+    legend(loc="upper left")
     savefig(splot)
     close()
 
@@ -299,7 +319,7 @@ end
 end
 
 # Function to eliminate outlier curves
-function eliminate_outlier_curves(mat::Array{Float64,2},name::String)
+function eliminate_outlier_curves(mat::Array{Float64,2},set::set_TDM,fID)
     # Settings
     fraction = 0.5      # Fraction what timesteps to use for mean calculation
     factor = 2          # Factor to define outlier curves
@@ -317,7 +337,27 @@ function eliminate_outlier_curves(mat::Array{Float64,2},name::String)
     mat = mat[:,index]
 
     if sum(index .== 0) > 0
-        println(name,": Elimination of ",sum(index .== 0)," simulations - Sims.: ",findall(index .== 0))
+        println(set.name,": Elimination of ",sum(index .== 0)," simulation(s) - Sims.: ",findall(index .== 0))
+        println(fID,set.name,": Elimination of ",sum(index .== 0)," simulation(s) - Sims.: ",findall(index .== 0))
     end
     return mat
+end
+
+# Function to plot all curves to a figure
+function plot_all_curves(t, mat, set)
+    # Output folder
+    outfile = string(set.folder,"/TransportProperties/",set.name,"_all.pdf")
+
+    figure()
+    for i = 1:size(mat,2)
+        plot(t,mat[:,i],label=string("Sim ",i),lw=0.5)
+    end
+    if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
+    nstring = latexstring(set.symbol," / ",set.unit)
+    rstring = latexstring(set.symbol,"*")
+    if !(reduced_units) ylabel(nstring) elseif reduced_units ylabel(rstring) end
+    legend(loc="upper left", fontsize=5, ncol=round(Int,size(mat,2)/10))
+    tight_layout()
+    savefig(outfile)
+    close()
 end
