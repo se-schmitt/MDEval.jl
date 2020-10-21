@@ -356,7 +356,7 @@ function plot_all_curves(t, mat, set)
     nstring = latexstring(set.symbol," / ",set.unit)
     rstring = latexstring(set.symbol,"*")
     if !(reduced_units) ylabel(nstring) elseif reduced_units ylabel(rstring) end
-    legend(loc="upper left", fontsize=5, ncol=round(Int,size(mat,2)/10))
+    legend(loc="upper left", fontsize=5, ncol=maximum([1,round(Int,size(mat,2)/10)]))
     tight_layout()
     savefig(outfile)
     close()
