@@ -41,7 +41,7 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_η = set
         set_η.name = "Viscosity"
         set_η.symbol = "\\eta"
-        if !(reduced_units) set_η.unit = "Pa*s" elseif (reduced_units) set_η.unit = "-" end
+        if !(reduced_units) set_η.unit = "(Pa*s)" elseif (reduced_units) set_η.unit = "-" end
         set_η.do_out = true
         plot_all_curves(t, ηmat, set_η)
         ηmat = eliminate_outlier_curves(ηmat,set_η,fID_info)
@@ -95,7 +95,7 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_λ = set
         set_λ.name = "Thermal Conductivity"
         set_λ.symbol = "\\lambda"
-        if !(reduced_units) set_λ.unit = "/(m*K)" elseif (reduced_units) set_λ.unit = "-" end
+        if !(reduced_units) set_λ.unit = "/(W/(m*K))" elseif (reduced_units) set_λ.unit = "-" end
         set_λ.do_out = true
         plot_all_curves(t, λmat, set_λ)
         λmat = eliminate_outlier_curves(λmat,set_λ,fID_info)
