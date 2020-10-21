@@ -29,7 +29,7 @@ function TransportProperties(state::state_info,set::set_TDM)
     else
         do_calc = 1
     end
-    
+
     # VISCOSITY
     if do_η == 1 && (do_calc == 1 || !(typeof(res.η) == single_dat))
         # Load runs
@@ -39,6 +39,7 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_η.name = "Viscosity"
         if !(reduced_units) set_η.unit = "Pa*s" elseif (reduced_units) set_η.unit = "-" end
         set_η.do_out = true
+        ηmat = eliminate_outlier_curves(ηmat,"Viscosity")
         ηval, set_η = TDM(ηmat, t, set_η)
         # Calculation of statistical uncertainties by bootstrapping method
         if set.nboot > 0
@@ -86,6 +87,7 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_λ.name = "Thermal Conductivity"
         set_λ.unit = "W/(m*K)"
         set_λ.do_out = true
+        λmat = eliminate_outlier_curves(λmat,"Thermal Conductivity")
         λval, set_λ = TDM(λmat, t, set_λ)
         # Calculation of statistical uncertainties by bootstrapping method
         if set.nboot > 0
@@ -294,4 +296,28 @@ end
     matTMP = mat[:,bootsample]
     val, set = TDM(matTMP,t,set)
     return val
+end
+
+# Function to eliminate outlier curves
+function eliminate_outlier_curves(mat::Array{Float64,2},name::String)
+    # Settings
+    fraction = 0.5      # Fraction what timesteps to use for mean calculation
+    factor = 2          # Factor to define outlier curves
+
+    nrow = size(mat,1)
+    ncol = size(mat,2)
+
+    # Calculation of means
+    means = mean(mat[1:Int(round(fraction*nrow)),:],dims=1)
+    # Calculation of median of means
+    m = median(means)
+
+    # Reduction of matrix
+    index = (abs.(means) .< (factor*m))[:]
+    mat = mat[:,index]
+
+    if sum(index .== 0) > 0
+        println(name,": Elimination of ",sum(index .== 0)," simulations - Sims.: ",findall(index .== 0))
+    end
+    return mat
 end
