@@ -74,11 +74,11 @@ function print_prop(fID, x, sym)
     if typeof(x) == single_dat
         spacestr = " "^(6-length(sym))
         if !isnan(x.val)
-            @printf(fID,"%s:%s%5.5e",sym,spacestr,x.val)
+            @printf(fID,"%s:%s%.8e",sym,spacestr,x.val)
             if !isnan(x.std)
-                @printf(fID," (%5.5e",x.std)
+                @printf(fID," (%.8e",x.std)
                 if !isnan(x.err)
-                    @printf(fID,", %5.5e",x.err)
+                    @printf(fID,", %.8e",x.err)
                 end
                 @printf(fID,"),\n")
             else

@@ -173,7 +173,7 @@ function dlm_output(folders)
         print(fID,header)
         # writedlm(fID,mat,' ')
         for i = 1:size(mat,1)
-            for j = 1:size(mat,2) @printf(fID,"%5.5e ",mat[i,j]) end
+            for j = 1:size(mat,2) @printf(fID,"%.8e ",mat[i,j]) end
             @printf(fID,"\n")
         end
         close(fID)
