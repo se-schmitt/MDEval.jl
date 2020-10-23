@@ -7,7 +7,7 @@
 
 # --- Global Settings ---
 # Number of processors to use
-no_procs = 4
+no_procs = 1
 # Calculating in reduced units
 reduced_units = false
 
