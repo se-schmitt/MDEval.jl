@@ -44,14 +44,14 @@ function ave_thermo(info::info_struct)
         println(info.folder," | ave Etot: ",beta[1]," | slope E_tot: ",beta[2])
     end
 
-    T = single_dat(mean(dat.T[what]), std(dat.T[what]), NaN)
+    T = single_dat(mean(dat.T[what]), block_average(dat.T[what])[1], block_average(dat.T[what])[2])
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
-    p = single_dat(mean(dat.p[what].*factor_p), std(dat.p[what]).*factor_p, NaN)
-    ρ = single_dat(mean(dat.ρ[what]), std(dat.ρ[what]), NaN)
-    Etot = single_dat(mean(dat.Etot[what]), std(dat.Etot[what]), NaN)
-    Ekin = single_dat(mean(dat.Ekin[what]), std(dat.Ekin[what]), NaN)
-    Epot = single_dat(mean(dat.Epot[what]), std(dat.Epot[what]), NaN)
+    p = single_dat(mean(dat.p[what].*factor_p), block_average(dat.p[what])[1].*factor_p, block_average(dat.p[what])[2].*factor_p )
+    ρ = single_dat(mean(dat.ρ[what]), block_average(dat.ρ[what])[1], block_average(dat.ρ[what])[2])
+    Etot = single_dat(mean(dat.Etot[what]), block_average(dat.Etot[what])[1], block_average(dat.Etot[what])[2])
+    Ekin = single_dat(mean(dat.Ekin[what]), block_average(dat.Ekin[what])[1], block_average(dat.Ekin[what])[2])
+    Epot = single_dat(mean(dat.Epot[what]), block_average(dat.Epot[what])[1], block_average(dat.Epot[what])[2])
     # Heat capacity
     if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
     elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
@@ -376,41 +376,35 @@ end
 
 # Standard Deviation from Block Average
 function block_average(x::Array{Float64,1})
-    # Define minimum Number of Blocks
-    nblock = 100
-    # Increase Block Number until Std constant
-    std_old = 100
-    stdblock = 1
-    while (std_old - stdblock)/std_old <= 0.01
-        std_old = stdblock
-        wblock = length(x)/nblock
-        # Break if Blockwidth <= 5000 timesteps
-        #if wblock <= 10    #Berechnen Blockbreitenminimum mit dt
-        #    break
-        #end
-        sumblock = 0
-        # Get Sum^2 and Calculate Std
-        for k = 1:nblock
-            bblock = trunc(round(Int, 1 + (k-1).*wblock))
-            #println(string("bblock =", bblock))
-            eblock = trunc(round(Int, 1 + k.*wblock))
-            if k == nblock
-                eblock = length(x)
-            end
-            #println(string("eblock =", eblock))
-            block = mean(x[bblock:eblock])
-            #println(string("block =", block))
-            #println(string("mean =", mean(x)))
-            sumblock = sumblock + (block-mean(x)).^2
-            #println(string("sumblock =", sumblock))
-        end
-        stdblock = sumblock/nblock
-        nblock = nblock + 10
-        println(string("nblock =", nblock))
-        println(string("stdblock =", stdblock))
+    # Define maximum Blocklenght and get Number of Blocks
+    M_block = 1000
+    N_block = trunc(length(x)/M_block)
+    # Change M_block if N_block < 20
+    if N_block < 20
+        N_block = 20
+        M_block = trunc(length(x)/N_block)
     end
-    return stdblock
-    #println(string("nblock =", nblock))
-    #println(string("typeof(stdblock)=",typeof(stdblock)))
-    #println(string("stdblock",stdblock))
+    # Get Dataset of Blockaverages
+    blocks = []
+    for k = 1:N_block
+        bblock = (round(Int,1+(k-1)*M_block))
+        if k == 1
+            bblock = 1
+        end
+        eblock = (round(Int,(k*M_block)))
+        if k == N_block
+            eblock = round(Int,length(x))
+        end
+    block = sum(x[bblock:eblock])/M_block
+    push!(blocks,block)
+    end
+    # Get Standard Derivation of Block from Block Averages
+    sum_block = 0
+    for k = 1:length(blocks)
+        sum_block = sum_block + (blocks[k]-mean(x)).^2
+    end
+    var_block = sum_block/(N_block-1)
+    std_block = sqrt(var_block) # Standard Derivation
+    err_block = sqrt(var_block/(N_block-1)) # Standard Error
+    return std_block, err_block
 end
