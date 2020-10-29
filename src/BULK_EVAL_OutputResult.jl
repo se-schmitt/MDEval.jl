@@ -47,14 +47,14 @@ function OutputResult_VLE(dat::thermo_vle_dat, folder::String)
     print(fID,header)
 
     # Calculation of means, stds, errs
-    T = single_dat(mean(dat.T),block_average(dat.T),NaN)
-    px = single_dat(mean(dat.px),block_average(dat.px),NaN)
-    py = single_dat(mean(dat.py),block_average(dat.py),NaN)
-    pz = single_dat(mean(dat.pz),block_average(dat.pz),NaN)
-    ρ = single_dat(mean(dat.ρ),block_average(dat.ρ),NaN)
-    Etot = single_dat(mean(dat.Etot),block_average(dat.Etot),NaN)
-    Ekin = single_dat(mean(dat.Ekin),block_average(dat.Ekin),NaN)
-    Epot = single_dat(mean(dat.Epot),block_average(dat.Epot),NaN)
+    T = single_dat(mean(dat.T),block_average(dat.T)[1],block_average(dat.T)[2])
+    px = single_dat(mean(dat.px),block_average(dat.px)[1],block_average(dat.T)[2])
+    py = single_dat(mean(dat.py),block_average(dat.py)[1],block_average(dat.T)[2])
+    pz = single_dat(mean(dat.pz),block_average(dat.pz)[1],block_average(dat.T)[2])
+    ρ = single_dat(mean(dat.ρ),block_average(dat.ρ)[1],block_average(dat.T)[2])
+    Etot = single_dat(mean(dat.Etot),block_average(dat.Etot)[1],block_average(dat.T)[2])
+    Ekin = single_dat(mean(dat.Ekin),block_average(dat.Ekin)[1],block_average(dat.T)[2])
+    Epot = single_dat(mean(dat.Epot),block_average(dat.Epot)[1],block_average(dat.T)[2])
 
     # Write data
     print_prop(fID, T, "T")
