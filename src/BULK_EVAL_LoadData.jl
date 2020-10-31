@@ -207,7 +207,7 @@ function load_dump(info)
                 else error("Dump file format wrong") end
 
                 if !(step==0 && skip1==1)
-                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, molid, type, mass, x, y, z))
+                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, type, molid, Int64[], mass, x, y, z))
                 end
             end
             skip1 = 1
@@ -215,6 +215,28 @@ function load_dump(info)
             timeADD = posdat[end].t
         end
     end
+
+    # Caluclation of moltypes (just for first timestep)
+    Nmol = length(unique(posdat[1].molid))
+    moltype = zeros(Int64,Nmol)
+    types_mol = []
+
+    # Loop over all molecules
+    i = 0
+    for molid in sort(unique(posdat[1].molid))
+        i += 1
+        what = posdat[1].molid .== molid
+        types = sort(posdat[1].type[what])
+
+        if types in types_mol
+            moltype[i] = findfirst(types_mol .== [types])
+        else
+            moltype[i] = maximum(moltype)+1
+            append!(types_mol,[types])
+        end
+    end
+    posdat[1].moltype = moltype
+
     return posdat
 end
 
