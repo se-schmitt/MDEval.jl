@@ -22,6 +22,7 @@ function OutputResult(result::results_struct, folder::String)
     print_prop(fID, result.T, "T")
     print_prop(fID, result.p, "p")
     print_prop(fID, result.ρ, "ρ")
+    print_prop(fID, result.x, "x")
     print_prop(fID, result.Etot, "Etot")
     print_prop(fID, result.Ekin, "Ekin")
     print_prop(fID, result.Epot, "Epot")
@@ -86,6 +87,10 @@ function print_prop(fID, x, sym)
             end
         else
             @printf(fID,"%s:%s---,\n",sym,spacestr)
+        end
+    elseif typeof(x) == Array{single_dat,1}
+        for i = 1:length(x)
+            print_prop(fID, x[i], string(sym,i))
         end
     end
 end
