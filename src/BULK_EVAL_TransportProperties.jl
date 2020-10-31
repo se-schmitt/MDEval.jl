@@ -13,7 +13,7 @@ function TransportProperties(state::state_info,set::set_TDM)
     do_λ = 1
 
     if set.nboot == 0
-        do_η = 0;   do_D = 0;   do_λ = 0
+        do_η = 0;   do_λ = 0
     end
 
     # Create new folder if it not yet exists
@@ -66,19 +66,28 @@ function TransportProperties(state::state_info,set::set_TDM)
 
     # DIFFUSION COEFFICIENT
     if do_D == 1 && (do_calc == 1 || !(typeof(res.D) == single_dat))
-        Dv = []
-        for i = 1:length(set.subfolder)
-            file = string(set.subfolder[i],"/result.dat")
-            if isfile(file)
-                restmp = load_result(file)
-                append!(Dv,restmp.D.val)
+        D = Array{single_dat,1}(undef,0)
+        imol = 0
+        Nmol = 10
+        while true
+            imol += 1
+            Dv = Float64[]
+            for i = 1:length(set.subfolder)
+                file = string(set.subfolder[i],"/result.dat")
+                if isfile(file)
+                    restmp = load_result(file)
+                    append!(Dv,restmp.D[imol].val)
+                    Nmol = length(restmp.x)
+                end
             end
+            # ξ = 2.837298
+            # L = (state.m /state.ρ * 1e-6)^(1/3)
+            # Dcorr = kB*state.T*ξ/(6*π*η.val*L)
+            Dcorr = 0
+            Dval = mean(Dv) .+ Dcorr
+            D = vcat(D,single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv))))
+            if imol == Nmol break end
         end
-        ξ = 2.837298
-        L = (state.m /state.ρ * 1e-6)^(1/3)
-        Dcorr = kB*state.T*ξ/(6*π*η.val*L)
-        Dval = mean(Dv) .+ Dcorr
-        D = single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv)))
     elseif do_D == 0
         D = []
     else
