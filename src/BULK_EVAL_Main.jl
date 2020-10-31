@@ -122,13 +122,17 @@ end
 
 # Output results in dlm file
 function dlm_output(folders)
+    # Settings
+    error_type = :std                       # :std, :err or :none
+    props = [:T,:p,:ρ,:x,:c,:η,:D,:λ]       # Properties to write out
+
     # Get results
     results = []
+    folder_str = "Simulation folder:\n"
     for f in folders
         if isfile(string(f,"/result.dat"))
             results = vcat(results,load_result(string(f,"/result.dat")))
-        # elseif isfile(string(f,"/results.dat"))
-        #     results = vcat(results,load_result(string(f,"/results.dat")))
+            folder_str = string(folder_str,f,"\n")
         else
             println(string("No result file in folder: \"",f,"\""))
         end
@@ -136,23 +140,82 @@ function dlm_output(folders)
 
     if !isempty(results)
         # Create matrix for values with error (stds/errs)
-        props = [:T,:p,:ρ,:c,:η,:D,:λ]  # Properties to write out (see header)
-        No_props = length(props)
-        mat = Array{Float64,2}(undef,length(results),No_props*2).*NaN
+        Nmol = maximum(length.(getfield.(results,:x)))
+        Nval = length(props) + 2 * (Nmol - 1)
+        if error_type != :none
+            mat = Array{Float64,2}(undef,length(results),Nval*2).*NaN
+        else
+            mat = Array{Float64,2}(undef,length(results),Nval).*NaN
+        end
 
-        error_type = :std
-        for i = 1:length(results), j = 1:No_props
-            sdat = getfield(results[i],props[j])
-            if typeof(sdat) == single_dat
-                mat[i,(j-1)*2+1:j*2] = [sdat.val,getfield(sdat,error_type)]
+        # Prepare header
+        vheader = []
+        for i = 1:length(props)
+            if props[i] in [:x,:D]
+                for j = 1:Nmol
+                    vheader = vcat(vheader,string(props[i],j))
+                    if (error_type != :none) vheader = vcat(vheader,"+-") end
+                end
             else
-                mat[i,(j-1)*2+1:j*2] = [NaN,NaN]
+                vheader = vcat(vheader,string(props[i]))
+                if (error_type != :none) vheader = vcat(vheader,"+-") end
             end
         end
 
-        # Header
-        header = string("T/K +- p/MPa +- ρ/(g/ml) +- c/(J/kg*K) +- η/(Pa*s) +- ",
-                        "D/(m^2/s) +- λ/(W/(m*K)) +-\n")
+        for i = 1:length(results)
+            jval = 0
+            for j = 1:length(props)
+                sdat = getfield(results[i],props[j])
+
+                if typeof(sdat) == single_dat
+                    jval += 1
+                    if error_type != :none
+                        if typeof(sdat) == single_dat
+                            mat[i,(jval-1)*2+1:jval*2] = [sdat.val,getfield(sdat,error_type)]
+                        else
+                            mat[i,(jval-1)*2+1:jval*2] = [NaN,NaN]
+                        end
+                    else
+                        if typeof(sdat) == single_dat
+                            mat[i,jval] = sdat.val
+                        else
+                            mat[i,jval] = NaN
+                        end
+                    end
+                elseif typeof(sdat) in [Array{Any,1},Array{single_dat,1}] && length(sdat) > 0
+                    for k = 1:Nmol
+                        jval += 1
+                        if k <= length(sdat)
+                            if error_type != :none
+                                if typeof(sdat[k]) == single_dat
+                                    mat[i,(jval-1)*2+1:jval*2] = [sdat[k].val,getfield(sdat[k],error_type)]
+                                else
+                                    mat[i,(jval-1)*2+1:jval*2] = [NaN,NaN]
+                                end
+                            else
+                                if typeof(sdat[k]) == single_dat
+                                    mat[i,jval] = sdat[k].val
+                                else
+                                    mat[i,jval] = NaN
+                                end
+                            end
+                        end
+                    end
+                else
+                    jval += 1
+                end
+            end
+        end
+
+        # Delete columns with NaN
+        nonan_col = (sum(isnan.(mat),dims=1) .!= size(mat,1))[:]
+        mat = mat[:,nonan_col]
+        vheader = vheader[nonan_col]
+
+        header = ""
+        for hstr in vheader
+            header = string(header,hstr," ")
+        end
 
         # Write Files
         f1 = folders[1]
@@ -166,16 +229,22 @@ function dlm_output(folders)
                 break
             end
         end
-        file_save = string(folder_save,"results_",Dates.format(now(),"yyyy-mm-dd_HH.MM"),".dat")
+        datestr = Dates.format(now(),"yyyy-mm-dd_HH.MM")
+        file_save = string(folder_save,"results_",datestr,".dat")
         println("Results saved in file: ",file_save)
 
         fID = open(file_save,"w")
-        print(fID,header)
+        println(fID,header)
         # writedlm(fID,mat,' ')
         for i = 1:size(mat,1)
             for j = 1:size(mat,2) @printf(fID,"%.8e ",mat[i,j]) end
             @printf(fID,"\n")
         end
+        close(fID)
+
+        # Save file with folder names
+        fID = open(string(folder_save,"results_",datestr,"_folder.dat"),"w")
+        println(fID,folder_str)
         close(fID)
     end
 end
