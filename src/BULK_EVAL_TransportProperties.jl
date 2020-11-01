@@ -192,16 +192,23 @@ end
         w = 1 ./ t[skip:cut].^fit_std.param[2]
         k = 0
         converged = false
+
+        β_max = 0.01*set.tcut       # Upper bound for decays time β1 and β2, compare Fischer et al.
+        p_upper_bound = [Inf, Inf, β_max, β_max]
+        p_lower_bound = [0, -Inf, 0, 0]
+
         p0_1 = mean(ave_t[round(Int64,cut/2):cut])
-        p0_ave = [  [p0_1, 1.0, 1.0,  1.0],
-                    [p0_1, 1.0, 0.1,  10.0],
-                    [p0_1, 1.0, 1e-3, 1e3],
-                    [p0_1, 0.1, 0.1, 1.0],
-                    [0.1,  1.0, 0.1, 1.0] ]
+        p0_ave = [  [p0_1, 1.0, min(1.0,β_max),  min(1.0,β_max)],
+                    [p0_1, 1.0, min(0.1,β_max),  min(10.0,β_max)],
+                    [p0_1, 1.0, min(1e-3,β_max), min(1.0,β_max)],
+                    [p0_1, 0.1, min(0.1,β_max), min(1.0,β_max)],
+                    [0.1,  1.0, min(0.1,β_max), min(1.0,β_max)] ]
         fit_ave = []
+
         while !(converged)
             k += 1
             fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0_ave[k])
+            # fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0_ave[k]; upper = p_upper_bound, lower = p_lower_bound)
             converged = fit_ave.converged
             if (k == length(p0_ave)) break end
         end
@@ -241,6 +248,8 @@ end
         plot(t[1:cut],mat[1:cut,:], color="gray", linestyle=":", linewidth=0.1)
         plot(t[1:cut],ave_t[1:cut], color="blue", label="Average", linewidth=0.1)
         plot(t[1:cut],fun_ave(t[1:cut],fit_ave.param), color="red", label="Fit", linewidth=1) #label="Fit",linecolor=:red
+        title(string(latexstring("Fit: ",set.symbol,"_0 = ",fit_ave.param[1],", \\alpha = ",fit_ave.param[2]),",\n",
+                     latexstring("\\beta_1 = ",fit_ave.param[3],", \\beta_2 = ",fit_ave.param[4])),fontsize=10)
         legend(loc="upper left")
         splot = string(outfolder,set.name,".pdf")
         savefig(splot)
