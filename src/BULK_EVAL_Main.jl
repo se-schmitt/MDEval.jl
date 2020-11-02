@@ -113,7 +113,7 @@ function read_input()
 
     # Check input structure
     if (inpar.n_equ == -1 || inpar.do_eval == -1 ||
-        inpar.do_state == -1 || inpar.n_boot == -1)
+        inpar.do_state == -1 || inpar.n_boot == -1) && inpar.modus == "transport"
         error("-1 in Input Structure: Something is wrong!")
     end
 
