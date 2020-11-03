@@ -20,14 +20,20 @@ function EvalSingle(info)
     # Evaluate Pressure Data to Calculate Viscosities
     η, η_V = calc_viscosities(info)
 
-    # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
-    D = calc_selfdiffusion(info)
-
     # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
     λ = calc_thermalconductivity(info)
 
+    # Loading Dump File
+    dump = load_dump(info)
+
+    # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
+    D = calc_selfdiffusion(info,dump)
+
+    # Get mole fractions from dump data (first timestep)
+    x = get_mole_fraction(info,dump[1])
+
     # Output Results
-    OutputResult(results_struct(T, p, ρ, Etot, Ekin, Epot, c, η, η_V, D, λ), info.folder)
+    OutputResult(results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ), info.folder)
 end
 
 # Subfunctions
@@ -138,67 +144,83 @@ function calc_viscosities(info::info_struct)
 end
 
 # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
-function calc_selfdiffusion(info::info_struct)
-    # Loading Dump File
-    dat = load_dump(info)
-
+function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
     if (!isempty(dat))
+        N_moltype = maximum(dat[1].moltype)
+        D = Array{single_dat,1}(undef,N_moltype)
+
         # Convert atom to molecule coordinates
         mol = atom2mol(dat)
 
-        # Calculation of Mean Square Displacement
-        msd_t, t = calc_msd(mol,info)
+        # Initialize figure and msd_t_all variable
+        colors = ["b","g","r","c","m","y"]
+        figure()
+        msd_t_all = Array{Float64,2}(undef,0,N_moltype)
 
-        # Segmenting the msd and calculation of log-log slope
-        kmax_eval = 0.6
-        δ_tol = 0.075
-        δ = 0
-        N_eval = ceil(Int64,kmax_eval*length(t))
-        L_eval = 50
-        N = N_eval
-        while δ < δ_tol && N > L_eval
-            N = N-L_eval
-            what = Array(N+1:N+L_eval)
-            beta = hcat(ones(L_eval),log10.(t[what]))\log10.(msd_t[what])
-            δ = abs(beta[2]-1)
+        for i = 1:N_moltype
+            # Get all molecules of type 'moltype'
+            mol_i = get_mol_by_type(mol,i)
+
+            # Calculation of Mean Square Displacement
+            msd_t, t = calc_msd(mol_i,info)
+
+            # Segmenting the msd and calculation of log-log slope
+            kmax_eval = 0.6
+            δ_tol = 0.075
+            δ = 0
+            N_eval = ceil(Int64,kmax_eval*length(t))
+            L_eval = 50
+            N = N_eval
+            while δ < δ_tol && N > L_eval
+                N = N-L_eval
+                what = Array(N+1:N+L_eval)
+                beta = hcat(ones(L_eval),log10.(t[what]))\log10.(msd_t[what])
+                δ = abs(beta[2]-1)
+            end
+
+            what_eval = Int64.(N+1:N_eval)
+            if length(what_eval) < 150
+                what_eval = Int64.(ceil(0.25*length(t)):ceil(0.75*length(t)))
+            end
+
+            # Calculation of D by determination of slope of msd
+            beta = hcat(ones(length(what_eval)),t[what_eval]) \ msd_t[what_eval]
+            factor_unit = 1e-8
+            if (reduced_units) factor_unit = 1 end
+            D[i] = single_dat(beta[2]/6*factor_unit,NaN,NaN)
+
+            # Plot MSD of molecule i
+            t1 = round(Int64,t[what_eval[1]])
+            t2 = round(Int64,t[what_eval[end]])
+
+            plot(t, msd_t, linewidth=1, color=colors[i], label=string("Mol. ",i," (",t1," ps - ",t2," ps (",length(what_eval)," steps))"))
+            plot(t,beta[1] .+ beta[2].*t, linestyle="-", linewidth=1, color=colors[i])
+            plot([t1,t1],[0.1,msd_t[what_eval[1]]], color="black", linestyle=":", linewidth=1)
+            plot([t2,t2],[0.1,msd_t[what_eval[end]]], color="black", linestyle=":", linewidth=1)
+
+            # Save MSD in array to save dlm file
+            if i == 1
+                msd_t_all = t
+            end
+            msd_t_all = hcat(msd_t_all, msd_t)
         end
-
-        what_eval = Int64.(N+1:N_eval)
-        if length(what_eval) < 150
-            what_eval = Int64.(ceil(0.25*length(t)):ceil(0.75*length(t)))
-        end
-
-        # Calculation of D by determination of slope of msd
-        beta = hcat(ones(length(what_eval)),t[what_eval]) \ msd_t[what_eval]
-        factor_unit = 1e-8
-        if (reduced_units) factor_unit = 1 end
-        D = single_dat(beta[2]/6*factor_unit,NaN,NaN)
-
-        t1 = t[what_eval[1]]
-        t2 = t[what_eval[end]]
 
         # Save msd as data file
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
-        line2 = "# t[ps] msd[Å]"
+        line2 = string("# t[ps]"," msd[Å]"^N_moltype)
         header = string(line1,"\n",line2)
         file = string(info.folder,"/msd.dat")
         fID = open(file,"w"); println(fID,header)
-        writedlm(fID, hcat(t,msd_t), " ")
+        writedlm(fID, msd_t_all, " ")
         close(fID)
 
-        # Plots of msd
-        infostr = string("MSD 'Evaluation window':\n",t1," ps - ",t2," ps (",length(what_eval)," steps))")
-        figure()
+        # Formatting figure
+        title("Mean square displacement (MSD)")
+        legend()
         tight_layout()
-        title(infostr) #frontsize
-        plot(t, msd_t, linewidth=0.1)
-        plot(t,beta[1] .+ beta[2].*t, linestyle="-", linewidth=0.1)
-        plot([t1,t1],[0.1,msd_t[what_eval[1]]], color="black", linestyle=":", linewidth=0.1)
-        plot([t2,t2],[0.1,msd_t[what_eval[end]]], color="black", linestyle=":", linewidth=0.1)
         splot = string(info.folder,"/fig_msd(t).pdf")
         savefig(splot)
         close()
-
     else
         D = single_dat(NaN,NaN,NaN)
     end
@@ -268,6 +290,21 @@ function calc_thermalconductivity(info::info_struct)
     return λ
 end
 
+# Function to extract mole fraction from dump data (first timestep)
+function get_mole_fraction(info::info_struct, dat::dump_dat)
+    Nmol = length(dat.moltype)
+    moltype = dat.moltype
+
+    # Calculation of mole fractions on the basis of moltype
+    x = Array{single_dat,1}(undef,length(unique(moltype)))
+    i = 0
+    for imoltype in unique(moltype)
+        i += 1
+        x[i] = single_dat(sum(moltype .== imoltype) / Nmol,NaN,NaN)
+    end
+    return x
+end
+
 # Help functions
 # Function to integrate by trapezodial rule
 function cumtrapz(x::Array{Float64},y::Array{Float64})
@@ -327,10 +364,28 @@ function atom2mol(atom)
             y_mol[imol] = (y_atom[what]' * mass_atom[what]) / mass_mol[imol]
             z_mol[imol] = (z_atom[what]' * mass_atom[what]) / mass_mol[imol]
         end
-        mol[i] = dump_dat(atom[i].step,atom[i].t,atom[i].bounds,Int64[],molid_mol,Int64[],mass_mol,x_mol,y_mol,z_mol)
+        mol[i] = dump_dat(atom[i].step,atom[i].t,atom[i].bounds,Int64[],Int64[],molid_mol,atom[1].moltype,mass_mol,x_mol,y_mol,z_mol)
     end
 
     return mol
+end
+
+# Function to extract molecules of given type
+function get_mol_by_type(mol,type)
+    mol_type = Array{Any,1}(undef,length(mol))
+    for i = 1:length(mol)
+        imol = mol[i]
+        imol_type = dump_dat(imol.step,imol.t,imol.bounds,imol.id,imol.type,imol.molid,imol.moltype,imol.mass,imol.x,imol.y,imol.z)
+        what = imol.moltype .== type
+        imol_type.molid = imol.molid[what]
+        imol_type.moltype = imol.moltype[what]
+        imol_type.mass = imol.mass[what]
+        imol_type.x = imol.x[what]
+        imol_type.y = imol.y[what]
+        imol_type.z = imol.z[what]
+        mol_type[i] = imol_type
+    end
+    return mol_type
 end
 
 # Function to calculate mean square displacement
@@ -343,7 +398,9 @@ function calc_msd(dat::Array{Any,1},info)
     x = fill(Float64[],n)
     y = fill(Float64[],n)
     z = fill(Float64[],n)
-    for imol = 1:n
+    i = 0
+    for imol in dat[1].molid
+        i += 1
         xmol = Float64[]
         ymol = Float64[]
         zmol = Float64[]
@@ -353,7 +410,7 @@ function calc_msd(dat::Array{Any,1},info)
             append!(ymol,tmp.y[what])
             append!(zmol,tmp.z[what])
         end
-        x[imol] = xmol; y[imol] = ymol; z[imol] = zmol
+        x[i] = xmol; y[i] = ymol; z[i] = zmol
     end
 
     msd_t = zeros(N)
@@ -374,6 +431,7 @@ function calc_msd(dat::Array{Any,1},info)
 
         msd_t += msd_i ./n
     end
+    msd_t = abs.(msd_t)
 
     return msd_t, t
 end

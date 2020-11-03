@@ -7,7 +7,7 @@
 
 # Main Function
 function EvalState(subfolder::Array{String,1}, inpar::input_struct)
-    
+
     # Get excluded folders
     what_include = Bool[]
     for subf in subfolder
@@ -28,7 +28,7 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
     mass = natoms*molmass/NA    # [mass] = g
 
     # T, p, ρ
-    T, p, ρ, c = StaticProperties(subfolder)
+    T, p, ρ, x, c = StaticProperties(subfolder)
     println(string("ave_state DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     state = state_info(T.val,p.val,ρ.val,natoms,mass)
@@ -40,7 +40,7 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
     println(string("TransportProperties DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Output Data
-    OutputResult(results_struct(T,p,ρ,[],[],[],c,η,η_V,D,λ),folder)
+    OutputResult(results_struct(T,p,ρ,x,[],[],[],c,η,η_V,D,λ),folder)
 end
 
 # Subfunctions
@@ -51,12 +51,14 @@ function StaticProperties(subf)
     Tmat = zeros(n)
     pmat = zeros(n)
     ρmat = zeros(n)
+    x = Array{single_dat,1}(undef,0)
     cmat = zeros(n)
     for i = 1:n
         res = load_result(string(subf[i],"/result.dat"))
         Tmat[i] = res.T.val
         pmat[i] = res.p.val
         ρmat[i] = res.ρ.val
+        if (i == 1) x = res.x end
         cmat[i] = res.c.val
     end
 
@@ -66,7 +68,7 @@ function StaticProperties(subf)
     ρ = single_dat(mean(ρmat), std(ρmat), std(ρmat)/sqrt(n))
     c = single_dat(mean(cmat), std(cmat), std(cmat)/sqrt(n))
 
-    return T, p, ρ, c
+    return T, p, ρ, x, c
 end
 
 # Load result file
@@ -74,7 +76,7 @@ function load_result(file)
     fID = open(file,"r")
     lines = readlines(fID);
     close(fID)
-    res = results_struct([],[],[],[],[],[],[],[],[],[],[])
+    res = results_struct([],[],[],single_dat[],[],[],[],[],[],[],single_dat[],[])
 
     for i = 1:length(lines)
         pos_colon = findfirst(isequal(':'),lines[i])
@@ -83,10 +85,14 @@ function load_result(file)
         pos_close = findfirst(isequal(')'),lines[i])
         if length(lines[i])>1 && !(lines[i][1] == '#')
             if !occursin("---",lines[i])
+                num = 0
                 if lines[i][1] == 'ρ' || lines[i][1] == 'η' || lines[i][1] == 'λ'
                     name = lines[i][1:pos_colon-2]
                 else
                     name = lines[i][1:pos_colon-1]
+                    if lines[i][pos_colon-1] in "123456789"
+                        num = parse(Int64, lines[i][pos_colon-1])
+                    end
                 end
                 if isnothing(pos_open) && isnothing(pos_close)
                     val = parse(Float64,strip(lines[i][pos_colon+1:pos_comma-1]))
@@ -100,17 +106,24 @@ function load_result(file)
                     std = parse(Float64,strip(lines[i][pos_open+1:pos_comma-1]))
                     err = parse(Float64,strip(lines[i][pos_comma+1:pos_close-1]))
                 end
-                if (name == "T") res.T = single_dat(val,std,err) end
-                if (name == "p") res.p = single_dat(val,std,err) end
-                if (name == "ρ") res.ρ = single_dat(val,std,err) end
+                if (name == "T")    res.T = single_dat(val,std,err) end
+                if (name == "p")    res.p = single_dat(val,std,err) end
+                if (name == "ρ")    res.ρ = single_dat(val,std,err) end
+                if (name == string("x",num))
+                                    res.x = vcat(res.x, single_dat(val,std,err))
+                                    if length(res.x) != num @warn("res.x doesn't fit num!") end
+                end
                 if (name == "Etot") res.Etot = single_dat(val,std,err) end
                 if (name == "Ekin") res.Ekin = single_dat(val,std,err) end
                 if (name == "Epot") res.Epot = single_dat(val,std,err) end
-                if (name == "c") res.c = single_dat(val,std,err) end
-                if (name == "η") res.η = single_dat(val,std,err) end
-                if (name == "η_") res.η_V = single_dat(val,std,err) end
-                if (name == "D") res.D = single_dat(val,std,err) end
-                if (name == "λ") res.λ = single_dat(val,std,err) end
+                if (name == "c")    res.c = single_dat(val,std,err) end
+                if (name == "η")    res.η = single_dat(val,std,err) end
+                if (name == "η_")   res.η_V = single_dat(val,std,err) end
+                if (name == string("D",num))
+                                    res.D = vcat(res.D, single_dat(val,std,err))
+                                    if length(res.D) != num @warn("res.D doesn't fit num!") end
+                end
+                if (name == "λ")    res.λ = single_dat(val,std,err) end
             end
         end
     end
