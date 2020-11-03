@@ -289,7 +289,10 @@ function bootstrapping(mat, t, set)
     vals = pmap((x1,x2)->TDMboot(mat,t,set,x1,x2), bootmat, cutcrit)
 
     # Remove outliers
-    what_NaN = abs.(vals) .> 2*median(vals)
+    k = 3
+    what_NaN = abs.(vals) .> k*median(vals)
+    vals[what_NaN] = NaN .* ones(sum(what_NaN))
+    what_NaN = abs.(vals) .< median(vals)/k
     vals[what_NaN] = NaN .* ones(sum(what_NaN))
 
     # # Calculate error from distribution of TDM values
