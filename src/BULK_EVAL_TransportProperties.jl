@@ -342,8 +342,8 @@ end
 # Function to eliminate outlier curves
 function eliminate_outlier_curves(mat::Array{Float64,2},set::set_TDM,fID)
     # Settings
-    fraction = 0.5      # Fraction what timesteps to use for mean calculation
-    factor = 2          # Factor to define outlier curves
+    fraction = 0.25      # Fraction what timesteps to use for mean calculation
+    factor = 3          # Factor to define outlier curves
 
     nrow = size(mat,1)
     ncol = size(mat,2)
