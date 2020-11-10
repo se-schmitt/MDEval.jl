@@ -182,7 +182,7 @@ end
 
     # Calculation of tcut (or cut)
     skip_std = findfirst(t .>= 2)
-    cut = findfirst(fun_std(t[skip:end],fit_std.param)./ave_t[skip:end] .> set.cutcrit)
+    cut = findfirst(fun_std(t[skip_std:end],fit_std.param)./ave_t[skip_std:end] .> set.cutcrit)
     if isnan(set.tskip)
         skip = round(Int64,cut*0.02)
     else
