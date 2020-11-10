@@ -167,8 +167,6 @@ end
                                   (1 .-p[1]).*p[4]).*(1 .-exp(-x./p[4]))) ./
                                   (p[2].*p[3].+(1 .-p[1]).*p[4]) )
 
-    skip = findfirst(t .>= set.tskip)
-
     # Fit standard deviation
     k = 0
     converged = false
@@ -183,7 +181,13 @@ end
     if !(fit_std.converged) println("Std: Not converged!") end
 
     # Calculation of tcut (or cut)
+    skip_std = findfirst(t .>= 2)
     cut = findfirst(fun_std(t[skip:end],fit_std.param)./ave_t[skip:end] .> set.cutcrit)
+    if isnan(set.tskip)
+        skip = round(Int64,cut*0.02)
+    else
+        skip = findfirst(t .>= set.tskip)
+    end
     if fit_std.converged && !(isnothing(cut))
         cut += skip-1
         set.tcut = t[cut]
