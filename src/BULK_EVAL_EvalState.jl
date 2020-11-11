@@ -34,7 +34,7 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
     state = state_info(T.val,p.val,ρ.val,natoms,mass)
 
     setTDM = set_TDM(folder,subfolder,false,NaN,NaN,NaN,"","","",inpar.n_boot)
-    # setTDM.tskip = 20
+    setTDM.tskip = 2
     setTDM.cutcrit = 0.4
 
     # Transport Properties

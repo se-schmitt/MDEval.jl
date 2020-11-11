@@ -193,26 +193,22 @@ end
         set.tcut = t[cut]
 
         # Fit η_ave(t) (start from tstart ps)
-        w = 1 ./ t[skip:cut].^fit_std.param[2]
+        k_exponent = 0.5        # 1 for original TDM (leads to bad fits) -> ~ 0.1 - 1.0
+        w = 1 ./ t[skip:cut].^(fit_std.param[2]*k_exponent)
         k = 0
         converged = false
 
-        β_max = 0.01*set.tcut       # Upper bound for decays time β1 and β2, compare Fischer et al.
-        p_upper_bound = [Inf, Inf, β_max, β_max]
-        p_lower_bound = [0, -Inf, 0, 0]
-
         p0_1 = mean(ave_t[round(Int64,cut/2):cut])
-        p0_ave = [  [p0_1, 1.0, min(1.0,β_max),  min(1.0,β_max)],
-                    [p0_1, 1.0, min(0.1,β_max),  min(10.0,β_max)],
-                    [p0_1, 1.0, min(1e-3,β_max), min(1.0,β_max)],
-                    [p0_1, 0.1, min(0.1,β_max), min(1.0,β_max)],
-                    [0.1,  1.0, min(0.1,β_max), min(1.0,β_max)] ]
+        p0_ave = [  [p0_1, 1.0, 1.0,  1.0],
+                    [p0_1, 1.0, 0.1,  10.0],
+                    [p0_1, 1.0, 1e-3, 1.0],
+                    [p0_1, 0.1, 0.1,  1.0],
+                    [0.1,  1.0, 0.1,  1.0] ]
         fit_ave = []
 
         while !(converged)
             k += 1
             fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0_ave[k])
-            # fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0_ave[k]; upper = p_upper_bound, lower = p_lower_bound)
             converged = fit_ave.converged
             if (k == length(p0_ave)) break end
         end
