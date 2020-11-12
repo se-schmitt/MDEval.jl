@@ -12,10 +12,6 @@ function TransportProperties(state::state_info,set::set_TDM)
     do_D = 1
     do_λ = 1
 
-    if set.nboot == 0
-        do_η = 0;   do_λ = 0
-    end
-
     # Create new folder if it not yet exists
     if !(isdir(string(set.folder,"/TransportProperties")))
         mkdir(string(set.folder,"/TransportProperties"))
@@ -196,6 +192,7 @@ end
         k_exponent = 0.5        # 1 for original TDM (leads to bad fits) -> ~ 0.1 - 1.0
         w = 1 ./ t[skip:cut].^(fit_std.param[2]*k_exponent)
         k = 0
+        k_ex = 0
         converged = false
 
         p0_1 = mean(ave_t[round(Int64,cut/2):cut])
@@ -208,8 +205,17 @@ end
 
         while !(converged)
             k += 1
-            fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0_ave[k])
-            converged = fit_ave.converged
+            try
+                fit_ave = curve_fit(fun_ave, t[skip:cut], ave_t[skip:cut], w, p0_ave[k])
+                converged = fit_ave.converged
+            catch x
+                if  string(x) == "LinearAlgebra.SingularException(4)" && k_ex < 5
+                    println("HERE")
+                    for i=1:length(p0_ave) setindex!(p0_ave,p0_ave[i].*[2,1,1,1],i) end
+                    k -= 1;         k_ex += 1
+                else rethrow(x)
+                end
+            end
             if (k == length(p0_ave)) break end
         end
 
