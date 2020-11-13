@@ -238,10 +238,10 @@ function dlm_output(folders)
         # writedlm(fID,mat,' ')
         for i = 1:size(mat,1)
             for j = 1:size(mat,2)
-                if vheader[j][1] == "x"
-                    @printf(fID,"%.8e ",mat[i,j])
-                else
+                if vheader[j][1] == 'x'
                     @printf(fID,"%.3f ",mat[i,j])
+                else
+                    @printf(fID,"%.8e ",mat[i,j])
                 end
             end
             @printf(fID,"\n")
