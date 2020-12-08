@@ -7,10 +7,12 @@
 
 # Main
 function TransportProperties(state::state_info,set::set_TDM)
-    # Set what to calculate
+    # Set what to calculate and output modus
     do_η = 1
     do_D = 1
     do_λ = 1
+    out_modus = 1       # 1 - Take mean value of bootstrapping
+                        # 2 - Take result of single fit
 
     # Create new folder if it not yet exists
     if !(isdir(string(set.folder,"/TransportProperties")))
@@ -41,17 +43,23 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_η.do_out = true
         plot_all_curves(t, ηmat, set_η)
         ηmat = eliminate_outlier_curves(ηmat,set_η,fID_info)
-        ηval, set_η = TDM(ηmat, t, set_η)
+        ηfit, set_η = TDM(ηmat, t, set_η)
         # Calculation of statistical uncertainties by bootstrapping method
         if set.nboot > 0
             println("Bootstrapping Viscosity ...")
-            ηstd, ηerr = bootstrapping(ηmat, t, set)
+            ηboot, ηstd, ηerr = bootstrapping(ηmat, t, set)
         else
+            ηboot = NaN
             ηstd = NaN
             ηerr = NaN
         end
         # Save in struct
-        η = single_dat(ηval, ηstd, ηerr)
+        if !(isnan(ηboot)) && out_modus == 1
+            η = single_dat(ηboot, ηstd, ηerr)
+        else
+            η = single_dat(ηfit, ηstd, ηerr)
+        end
+
     elseif do_η == 0
         η = []
     else
@@ -104,17 +112,22 @@ function TransportProperties(state::state_info,set::set_TDM)
         set_λ.do_out = true
         plot_all_curves(t, λmat, set_λ)
         λmat = eliminate_outlier_curves(λmat,set_λ,fID_info)
-        λval, set_λ = TDM(λmat, t, set_λ)
+        λfit, set_λ = TDM(λmat, t, set_λ)
         # Calculation of statistical uncertainties by bootstrapping method
         if set.nboot > 0
             println("Bootstrapping Thermal Conductivity ...")
-            λstd, λerr = bootstrapping(λmat, t, set)
+            λboot, λstd, λerr = bootstrapping(λmat, t, set)
         else
+            λboot = NaN
             λstd = NaN
             λerr = NaN
         end
         # Save in struct
-        λ = single_dat(λval, λstd, λerr)
+        if !(isnan(λboot)) && out_modus == 1
+            λ = single_dat(λboot, λstd, λerr)
+        else
+            λ = single_dat(λfit, λstd, λerr)
+        end
     elseif do_λ == 0
         λ = []
     else
@@ -189,7 +202,7 @@ end
         set.tcut = t[cut]
 
         # Fit η_ave(t) (start from tstart ps)
-        k_exponent = 0.5        # 1 for original TDM (leads to bad fits) -> ~ 0.1 - 1.0
+        k_exponent = 0.2        # 1 for original TDM (leads to bad fits) -> ~ 0.1 - 1.0
         w = 1 ./ t[skip:cut].^(fit_std.param[2]*k_exponent)
         k = 0
         k_ex = 0
@@ -322,18 +335,18 @@ function bootstrapping(mat, t, set)
 
     # Plot histogram
     figure()
-    tight_layout()
     hist(vals, bins=round(Int,nboot/15), label="Data")
     plot(x,y, label="Fit", linewidth=2)
     outfolder = string(set.folder,"/TransportProperties/")
-    splot = string(outfolder,"histogram_",set.name,".pdf")
     legend(loc="upper left")
-    savefig(splot)
+    title(latexstring("Histogram with: $\mu = ",μ,"$ ",set.unit,", $\sigma = ",σ,"$ ",set.unit))
+    tight_layout()
+    savefig(string(outfolder,"histogram_",set.name,".pdf"))
     close()
 
     err = 1.96*σ
 
-    return σ, err
+    return μ, σ, err
 end
 
 # Help function for efficient TDM calculation in bootstrapping
