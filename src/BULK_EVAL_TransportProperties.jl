@@ -1,3 +1,4 @@
+
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalData
 # Function to apply Time Decomposition Method to Calculate Viscosity
@@ -339,7 +340,7 @@ function bootstrapping(mat, t, set)
     plot(x,y, label="Fit", linewidth=2)
     outfolder = string(set.folder,"/TransportProperties/")
     legend(loc="upper left")
-    title(latexstring("Histogram with: $\mu = ",μ,"$ ",set.unit,", $\sigma = ",σ,"$ ",set.unit))
+    title(string(L"Histogram with: $\mu = $",μ," ",set.unit,L", $\sigma = $",σ," ",set.unit))
     tight_layout()
     savefig(string(outfolder,"histogram_",set.name,".pdf"))
     close()
