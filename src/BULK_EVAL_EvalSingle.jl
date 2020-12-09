@@ -116,20 +116,19 @@ function calc_viscosities(info::info_struct)
         # Plots
         teve = 100        # Just take data every 'teve' timesteps
         figure()
-        tight_layout()
         plot(t[2:teve:end],abs.(acf_η[2:teve:end]), linewidth=0.1)
         loglog()
         if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
         if !(reduced_units) ylabel(L"|ACF| / Pa^2") elseif reduced_units ylabel(L"|ACF*|") end
-        splot = string(info.folder,"/fig_eta-acf(t).pdf")
-        savefig(splot)
-        close()
+        tight_layout()
+        savefig(string(info.folder,"/fig_eta-acf(t).pdf"))
+
         figure()
         plot(t[1:teve:end],η_t[1:teve:end], linewidth=0.1)
         if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
         if !(reduced_units) ylabel(L"η / Pa^2") elseif reduced_units ylabel(L"η*") end
-        splot = string(info.folder,"/fig_eta(t).pdf")
-        savefig(splot)
+        tight_layout()
+        savefig(string(info.folder,"/fig_eta(t).pdf"))
         close()
 
         # Save Results
@@ -215,11 +214,12 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
         close(fID)
 
         # Formatting figure
+        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
+        if !(reduced_units) ylabel(L"MSD / Å$^2$") elseif reduced_units xlabel(L"MSD*") end
         title("Mean square displacement (MSD)")
         legend()
         tight_layout()
-        splot = string(info.folder,"/fig_msd(t).pdf")
-        savefig(splot)
+        savefig(string(info.folder,"/fig_msd(t).pdf"))
         close()
     else
         D = single_dat(NaN,NaN,NaN)
@@ -271,15 +271,13 @@ function calc_thermalconductivity(info::info_struct)
         loglog()
         if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
         if !(reduced_units) ylabel(L"|ACF| / eV^2/(Å^4*ps)") elseif reduced_units ylabel(L"|ACF*|") end
-        splot = string(info.folder,"/fig_lambda_acf(t).pdf")
-        savefig(splot)
+        savefig(string(info.folder,"/fig_lambda_acf(t).pdf"))
         close()
         figure()
         plot(t[1:teve:end],λ_t[1:teve:end], linewidth=0.1)
         if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
         if !(reduced_units) ylabel(L"λ / (W/(m*K)") elseif reduced_units ylabel(L"λ*") end
-        splot = string(info.folder,"/fig_lambda(t).pdf")
-        savefig(splot)
+        savefig(string(info.folder,"/fig_lambda(t).pdf"))
         close()
 
         λ = single_dat(λ_t[end],NaN,NaN)
