@@ -215,7 +215,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
 
         # Formatting figure
         if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-        if !(reduced_units) ylabel(L"MSD / Å$^2$") elseif reduced_units xlabel(L"MSD*") end
+        if !(reduced_units) ylabel(L"MSD / Å$^2$") elseif reduced_units ylabel(L"MSD*") end
         title("Mean square displacement (MSD)")
         legend()
         tight_layout()

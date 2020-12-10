@@ -336,7 +336,7 @@ function bootstrapping(mat, t, set)
 
     # Plot histogram
     figure()
-    hist(vals, bins=round(Int,nboot/15), label="Data")
+    hist(vals, bins=round(Int,nboot/15), label="Data", density=true)
     plot(x,y, label="Fit", linewidth=2)
     outfolder = string(set.folder,"/TransportProperties/")
     legend(loc="upper left")
