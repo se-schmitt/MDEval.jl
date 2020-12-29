@@ -100,8 +100,10 @@ function load_pressure(info)
             if (skip1 == 0) skip1 = 1 end
         end
     end
-    return pdat
-    if isempty(pdat.step) error("No pressure data loaded!") end
+    if isempty(pdat.step)
+        pdat = []
+        @warn("No pressure data loaded!")
+    end
     return pdat
 end
 
@@ -216,26 +218,28 @@ function load_dump(info)
         end
     end
 
-    # Caluclation of moltypes (just for first timestep)
-    Nmol = length(unique(posdat[1].molid))
-    moltype = zeros(Int64,Nmol)
-    types_mol = []
+    if !(isempty(posdat))
+        # Caluclation of moltypes (just for first timestep)
+        Nmol = length(unique(posdat[1].molid))
+        moltype = zeros(Int64,Nmol)
+        types_mol = []
 
-    # Loop over all molecules
-    i = 0
-    for molid in sort(unique(posdat[1].molid))
-        i += 1
-        what = posdat[1].molid .== molid
-        types = sort(posdat[1].type[what])
+        # Loop over all molecules
+        i = 0
+        for molid in sort(unique(posdat[1].molid))
+            i += 1
+            what = posdat[1].molid .== molid
+            types = sort(posdat[1].type[what])
 
-        if types in types_mol
-            moltype[i] = findfirst(types_mol .== [types])
-        else
-            moltype[i] = maximum(moltype)+1
-            append!(types_mol,[types])
+            if types in types_mol
+                moltype[i] = findfirst(types_mol .== [types])
+            else
+                moltype[i] = maximum(moltype)+1
+                append!(types_mol,[types])
+            end
         end
+        posdat[1].moltype = moltype
     end
-    posdat[1].moltype = moltype
 
     return posdat
 end
@@ -263,8 +267,10 @@ function load_heatflux(info)
             if (skip1 == 0) skip1 = 1 end
         end
     end
-    return jdat
-    if isempty(jdat.step) error("No heatflux data loaded!") end
+    if isempty(jdat.step)
+        jdat = []
+        @warn("No heatflux data loaded!")
+    end
     return jdat
 end
 function load_heatflux_file(file,info,skip)

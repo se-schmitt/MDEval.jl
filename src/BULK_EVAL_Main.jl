@@ -124,7 +124,7 @@ end
 function dlm_output(folders)
     # Settings
     error_type = :std                       # :std, :err or :none
-    props = [:T,:p,:ρ,:x,:c,:η,:D,:λ]       # Properties to write out
+    props = [:T,:p,:ρ,:x,:η,:D,:λ]          # Properties to write out
 
     # Get results
     results = []

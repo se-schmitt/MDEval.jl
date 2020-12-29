@@ -224,7 +224,6 @@ end
                 converged = fit_ave.converged
             catch x
                 if  string(x) == "LinearAlgebra.SingularException(4)" && k_ex < 5
-                    println("HERE")
                     for i=1:length(p0_ave) setindex!(p0_ave,p0_ave[i].*[2,1,1,1],i) end
                     k -= 1;         k_ex += 1
                 else rethrow(x)

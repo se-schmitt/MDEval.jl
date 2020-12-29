@@ -30,7 +30,11 @@ function EvalSingle(info)
     D = calc_selfdiffusion(info,dump)
 
     # Get mole fractions from dump data (first timestep)
-    x = get_mole_fraction(info,dump[1])
+    if !(isempty(dump))
+        x = get_mole_fraction(info,dump[1])
+    else
+        x = NaN
+    end
 
     # Output Results
     OutputResult(results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ), info.folder)
