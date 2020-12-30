@@ -1,8 +1,8 @@
 #modus
-vle
+transport
 
 #folder
-F:/MD_Bulk/VLE_Methane_2
+F:/MD_Bulk/Validierungen/Potoff_Viscosity_Octane/SIM_T_293K_rho_0.76416gml_Vergleich
 
 #ensemble
 NVT
@@ -17,4 +17,4 @@ NVT
 1
 
 #N_boot
-200
+0
