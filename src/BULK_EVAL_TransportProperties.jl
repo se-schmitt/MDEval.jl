@@ -182,9 +182,10 @@ end
     converged = false
     p0_std = [[1.0,1.0], [2.0,0.5], [0.5,2.0], [1e-4,1.0], [1.0,1e-4]]
     fit_std = []
+    cut_std = round(Int64,1.1 .* findfirst(std_t./ave_t .> set.cutcrit)[1])
     while !(converged)
         k += 1
-        fit_std = curve_fit(fun_std, t, std_t, p0_std[k])
+        fit_std = curve_fit(fun_std, t[1:cut_std], std_t[1:cut_std], p0_std[k])
         converged = fit_std.converged
         if (k == length(p0_std)) break end
     end
@@ -203,7 +204,7 @@ end
         set.tcut = t[cut]
 
         # Fit η_ave(t) (start from tstart ps)
-        k_exponent = 0.2        # 1 for original TDM (leads to bad fits) -> ~ 0.1 - 1.0
+        k_exponent = 1.0        # 1 for original TDM; if bad fit -> reduce to ~ 0.1 - 1.0
         w = 1 ./ t[skip:cut].^(fit_std.param[2]*k_exponent)
         k = 0
         k_ex = 0
@@ -259,20 +260,37 @@ end
 
         # Plot: γ(t) average values and fitted curve
         figure()
-        tight_layout()
-        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-        nstring = latexstring(set.symbol," / ",set.unit)
-        rstring = latexstring(set.symbol,"*")
-        if !(reduced_units) ylabel(nstring) elseif reduced_units ylabel(rstring) end
+        if !(reduced_units)
+            xlabel(L"t / ps")
+            ylabel(latexstring(set.symbol," / ",set.unit))
+        elseif reduced_units
+            xlabel(L"t*")
+            ylabel(latexstring(set.symbol,"*"))
+        end
         plot(t[1:cut],mat[1:cut,:], color="gray", linestyle=":", linewidth=0.1)
         plot(t[1:cut],ave_t[1:cut], color="blue", label="Average", linewidth=0.1)
-        plot(t[1:cut],fun_ave(t[1:cut],fit_ave.param), color="red", label="Fit", linewidth=1) #label="Fit",linecolor=:red
+        plot(t[1:cut],fun_ave(t[1:cut],fit_ave.param), color="red", label="Fit", linewidth=1)
         title(string(latexstring("Fit: ",set.symbol,"_0 = ",fit_ave.param[1],", \\alpha = ",fit_ave.param[2]),",\n",
                      latexstring("\\beta_1 = ",fit_ave.param[3],", \\beta_2 = ",fit_ave.param[4])),fontsize=10)
         legend(loc="upper left")
-        splot = string(outfolder,set.name,".pdf")
-        savefig(splot)
-        close()
+        tight_layout()
+        savefig(string(outfolder,set.name,".pdf"))
+
+        # Plot: σ_γ(t) standard deviation and fitted curve
+        figure()
+        if !(reduced_units)
+            xlabel(L"t / ps")
+            ylabel(latexstring("\\sigma_{",set.symbol,"} / ",set.unit))
+        elseif reduced_units
+            xlabel(L"t*")
+            ylabel(latexstring("\\sigma_{",set.symbol,"}*"))
+        end
+        plot(t[1:cut],std_t[1:cut], color="blue", label="Average", linewidth=0.1)
+        plot(t[1:cut],fun_std(t[1:cut],fit_std.param), color="red", label="Fit", linewidth=1)
+        title(string(latexstring("Fit: A = ",fit_std.param[1],", b = ",fit_std.param[2])),fontsize=10)
+        legend(loc="upper left")
+        tight_layout()
+        savefig(string(outfolder,set.name,"_std.pdf"))
 
         if (val < 0)
             error("Negative value for ",set.name,"!")
@@ -280,6 +298,7 @@ end
             error("NaN value for ",set.name," (-> fit did not converge)!")
         end
     end
+    close("all")
 
     return val, set
 end
@@ -392,10 +411,13 @@ function plot_all_curves(t, mat, set)
     for i = 1:size(mat,2)
         plot(t,mat[:,i],label=string("Sim ",i),lw=0.5)
     end
-    if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-    nstring = latexstring(set.symbol," / ",set.unit)
-    rstring = latexstring(set.symbol,"*")
-    if !(reduced_units) ylabel(nstring) elseif reduced_units ylabel(rstring) end
+    if !(reduced_units)
+        xlabel(L"t / ps")
+        ylabel(latexstring(set.symbol," / ",set.unit))
+    elseif reduced_units
+        xlabel(L"t*")
+        ylabel(latexstring(set.symbol,"*"))
+    end
     legend(loc="upper left", fontsize=5, ncol=maximum([1,round(Int,size(mat,2)/10)]))
     tight_layout()
     savefig(outfile)
