@@ -182,7 +182,7 @@ end
     converged = false
     p0_std = [[1.0,1.0], [2.0,0.5], [0.5,2.0], [1e-4,1.0], [1.0,1e-4]]
     fit_std = []
-    cut_std = round(Int64,1.1 .* findfirst(std_t./ave_t .> set.cutcrit)[1])
+    cut_std = minimum([length(t), round(Int64,1.1 .* findfirst(std_t./ave_t .> set.cutcrit)[1])])
     while !(converged)
         k += 1
         fit_std = curve_fit(fun_std, t[1:cut_std], std_t[1:cut_std], p0_std[k])
@@ -321,7 +321,7 @@ function bootstrapping(mat, t, set)
     bootmat = unique(randmat)[1:nboot,:]
 
     # Create cut off for every TDM evaluation
-    cutcrit = rand(Float64, nboot) .* 0.2 .+ 0.4
+    cutcrit = rand(Float64, nboot) .* 0.2 .+ set.cutcrit
 
     # TDM for all combinations of single simulations
     vals = pmap((x1,x2)->TDMboot(mat,t,set,x1,x2), bootmat, cutcrit)

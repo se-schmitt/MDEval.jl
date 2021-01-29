@@ -35,6 +35,7 @@ function EvalSingle(info)
     else
         x = NaN
     end
+    close("all")
 
     # Output Results
     OutputResult(results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ), info.folder)
