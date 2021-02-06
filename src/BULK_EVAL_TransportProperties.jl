@@ -182,7 +182,9 @@ end
     converged = false
     p0_std = [[1.0,1.0], [2.0,0.5], [0.5,2.0], [1e-4,1.0], [1.0,1e-4]]
     fit_std = []
-    cut_std = minimum([length(t), round(Int64,1.1 .* findfirst(std_t./ave_t .> set.cutcrit)[1])])
+    pos = findfirst((std_t./ave_t)[:] .> set.cutcrit)
+    if isnothing(pos) pos = length(t) end
+    cut_std = minimum([length(t), round(Int64,1.1 .* pos)])
     while !(converged)
         k += 1
         fit_std = curve_fit(fun_std, t[1:cut_std], std_t[1:cut_std], p0_std[k])
