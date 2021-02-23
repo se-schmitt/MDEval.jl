@@ -190,6 +190,6 @@ end
 function get_subfolder(folder)
     # Get all subfolders
     paths = string.(folder,"/",readdir(folder))
-    what = isdir.(paths) .& .!(occursin.("TransportProperties",paths))
+    what = isdir.(paths) .& .!(occursin.("TransportProperties",paths)) .& .!(startswith.(readdir(folder),"X"))
     subf = paths[what]
 end
