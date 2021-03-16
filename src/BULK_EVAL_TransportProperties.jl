@@ -8,11 +8,11 @@
 
 # Main
 function TransportProperties(state::state_info,set::set_TDM)
-    # Set what to calculate and output modus
+    # Set what to calculate and output mode
     do_η = 1
     do_D = 1
     do_λ = 1
-    out_modus = 1       # 1 - Take mean value of bootstrapping
+    out_mode = 1        # 1 - Take mean value of bootstrapping
                         # 2 - Take result of single fit
 
     # Create new folder if it not yet exists
@@ -55,7 +55,7 @@ function TransportProperties(state::state_info,set::set_TDM)
             ηerr = NaN
         end
         # Save in struct
-        if !(isnan(ηboot)) && out_modus == 1
+        if !(isnan(ηboot)) && out_mode == 1
             η = single_dat(ηboot, ηstd, ηerr)
         else
             η = single_dat(ηfit, ηstd, ηerr)
@@ -124,7 +124,7 @@ function TransportProperties(state::state_info,set::set_TDM)
             λerr = NaN
         end
         # Save in struct
-        if !(isnan(λboot)) && out_modus == 1
+        if !(isnan(λboot)) && out_mode == 1
             λ = single_dat(λboot, λstd, λerr)
         else
             λ = single_dat(λfit, λstd, λerr)
@@ -150,7 +150,7 @@ function load_runs(file::String, index::Int64, set::set_TDM)
     tdat = Array{Array{Float64,1}}(undef,n)
     dat = Array{Array{Float64,1}}(undef,n)
     for i = 1:n
-        filedat = readdlm(string(set.subfolder[i],"/",file), skipstart=2)
+        filedat = readdlm(string(set.subfolder[i],"/",file), skipstart=3)
         dat[i] = filedat[:,index]
         tdat[i] = filedat[:,1]
     end

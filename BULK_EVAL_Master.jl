@@ -19,6 +19,8 @@ include("src/BULK_EVAL_EvalSingle.jl")
 include("src/BULK_EVAL_EvalState.jl")
 include("src/BULK_EVAL_EvalVLE.jl")
 include("src/BULK_EVAL_OutputResult.jl")
+include("src/BULK_EVAL_GreenKubo.jl")
+include("src/BULK_EVAL_StokesEinstein.jl")
 include("src/BULK_EVAL_TransportProperties.jl")
 
 # --- Start Program ---

@@ -6,62 +6,86 @@
 # ------------------------------------------------------------------------------
 
 function main()
-    println(string("----------\nSTART: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n----------"))
+    sline = "------------------------------------------------------------------"
+    dline = "=================================================================="
+    fdate = "yyyy-mm-dd HH:MM:SS"
+    println(dline)
+    println(string("START: \t",Dates.format(now(),fdate)))
+    println(sline)
     println(string("Number of processors: ",no_procs))
-    println("----------")
+    println(sline)
 
     # Read input parameters
     inpar = read_input()
 
     # Loop over all folders
     for folder in inpar.folders
-        ## Evaluation of transport properties (mode "transport")
-        if inpar.modus == "transport"
+        println(string("Folder: ",folder))
+
+        ## Mode "single_run" ---------------------------------------------------
+        if inpar.mode == "single_run"
+            print(string(Dates.format(now(),fdate),": RUNNING ... "))
+
+            # Evaluate Data
+            EvalSingle(folder,inpar)
+
+            println(string("   →    ",Dates.format(now(),fdate),": DONE"))
+
+        ## Mode "tdm" ----------------------------------------------------------
+        elseif inpar.mode == "tdm"
             # Get all subfolder
             subfolder = get_subfolder(folder)
+
             if isempty(subfolder)
                 subfolder = [folder]
             end
-            println("Folder: ",folder,"\n---")
 
             # Evaluation of single folder
             if inpar.do_eval == 1
                 for i = 1:length(subfolder)
-                    # Initialization of info structure
-                    info = info_struct(subfolder[i],inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
+                    print(string("Subfolder ",i," / ",length(subfolder)," → RUNNING ... "))
 
                     # Evaluate Data
-                    EvalSingle(info)
-                    println(string("Subfolder ",i," / ",length(subfolder)," DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+                    EvalSingle(subfolder[i],inpar)
+
+                    println(string("   →    ",Dates.format(now(),fdate),": DONE"))
                 end
-                println("---")
+                println(sline)
             end
 
             # Averaging simulations
             if inpar.do_state == 1
+                println("State Evaluation")
+                intro = string(Dates.format(now(),fdate),": RUNNING ... ")
+                println(intro)
+
+                # Do state evaluation
                 EvalState(subfolder, inpar)
-                println(string("---\nState Evaluation DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+
+                println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
             end
 
-        ## Evaluation of VLE (mode "vle")
-        elseif inpar.modus == "vle"
+        ## Mode "vle" ----------------------------------------------------------
+        elseif inpar.mode == "vle"
             info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
             EvalVLE(info)
         end
-        println("----------")
+        println(sline)
     end
 
     # Output in single file
-    if inpar.modus == "transport"
+    if inpar.mode == "transport"
         dlm_output(inpar.folders)
-    elseif inpar.modus == "vle"
+    elseif inpar.mode == "vle"
     end
 
     # END
     if nprocs() > 1
         rmprocs(workers())
     end
-    println(string("DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"),"\n----------"))
+
+    println(string(Dates.format(now(),fdate),": DONE"))
+    println(dline)
 end
 
 ## Subfunctions
@@ -71,13 +95,13 @@ function read_input()
     file = "INPUT.txt"
 
     # Initialization of input variables
-    inpar = input_struct("",[],"",-1,-1,-1,-1)
+    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1)
 
     fID = open(file,"r")
     while !eof(fID)
         line = readline(fID)
-        if line == "#modus"
-            inpar.modus = readline(fID)
+        if line == "#mode"
+            inpar.mode = readline(fID)
         elseif line == "#folder"
             foldername = readline(fID)
             if foldername[end] == '*'
@@ -108,13 +132,23 @@ function read_input()
             inpar.do_state = parse(Int64,readline(fID))
         elseif line == "#N_boot"
             inpar.n_boot = parse(Int64,readline(fID))
+        elseif line == "#corr_length"
+            inpar.corr_length = parse(Int64,readline(fID))
+        elseif line == "#span_corr_fun"
+            inpar.span_corr_fun = parse(Int64,readline(fID))
         end
     end
 
     # Check input structure
+    # Mode "single_run"
+    if (inpar.n_equ == -1 || inpar.corr_length == -1 ||
+        inpar.span_corr_fun == -1) && inpar.mode == "single_run"
+        error("Parameters missing for mode \"single_run\"!")
+    end
+    # Mode "tdm"
     if (inpar.n_equ == -1 || inpar.do_eval == -1 ||
-        inpar.do_state == -1 || inpar.n_boot == -1) && inpar.modus == "transport"
-        error("-1 in Input Structure: Something is wrong!")
+        inpar.do_state == -1 || inpar.n_boot == -1) && inpar.mode == "tdm"
+        error("Parameters missing for mode \"tdm\"!")
     end
 
     return inpar

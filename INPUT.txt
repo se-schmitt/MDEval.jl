@@ -1,8 +1,8 @@
-#modus
-transport
+#mode
+tdm
 
 #folder
-F:/MD_Bulk/Validierungen/Potoff_Viscosity_Octane/SIM_T_293K_rho_0.76416gml_Vergleich
+F:/TEMP/TEST_md-evaluation/TDM/SIM_T*
 
 #ensemble
 NVT
@@ -17,4 +17,4 @@ NVT
 1
 
 #N_boot
-0
+100
