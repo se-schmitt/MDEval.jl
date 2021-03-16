@@ -1,51 +1,74 @@
 
-# MD - Bulk Evaluation
+# Documentation - MD_Evaluation
 
 Program to evaluate MD output files of bulk simulations
 Notes:
 - usable for LAMMPS simulations in metal units
-- required files provided by LAMMPS scipt "in.output"
+- required files provided by specific LAMMPS scripts
 
-## Manual
+## 1. Overview
 
-__Required Folder structure:__
-- "STATE_1"
-  - "Sim_001"
-  - "Sim_002"
-  - ...
-- "STATE_1"
-  - "Sim_001"
-  - "Sim_002"
+Programm evaluates three different simulation types:
+- Evaluation of **single run simulations** for transport properties (**single_run**)
+- **Time decomposition method (TDM)** for transport properties (**tdm**)
+- Evaluation of **VLE simulations** (two phase simualtions) (**vle**)
+
+### Single run simulations
+
+**Required Folder structure:**
+- *SIM_1* [contains all output files of a EMD simulation of one state point]
+- ...
+
+### TDM
+
+**Required Folder structure:**
+- *STATE_1* [contains all simulations of one state point]
+  - *Sim_001*
+  - *Sim_002*
   - ...
 - ...
 
-## Input File
+### VLE simulations
 
-__Name__: 'INPUT.txt' (has to be in same folder as 'Master' file)
+**Required Folder structure:**
+- *FOLDER_1* [contains all simulations done for one substance]
+  - *Sim_T1* [VLE simulation at temperature T1]
+  - *Sim_T2* [VLE simulation at temperature T2]
+  - ...
+- ...
 
-__Format__:
+## 2. Input File
+
+**Name**: 'INPUT.txt' (has to be in same folder as 'Master' file)
+
+**General structure**:
   - first line: '#' + 'keyword'
   - second line: value assigned to keyword
 
-__Keywords:__
+### Keywords:
 
-| Name           | Type                        | Description                                                           |
-| -------------- | --------------------------- | --------------------------------------------------------------------- |
-| modus          | string ["transport","vle"]  | defines the present simulation as 'transport' or 'vle' Simulations    |
-| folder         | string                      | path to main folder containing all simulation data of one thermodynamic state (can occur multiple times), asterisk at the end → all folders one level below are evaluated  |
-| ensemble       | string ["NVT","NVE","NpT"]  | ensemble to evaluate                                                  |
-| timesteps_EQU  | interger (≥ 0)              | number of timesteps to ignore at the start of each simulation         |
-| DO_evalulation | integer [0,1]               | 1 - evaluate single folders, 0 - single folders already evaluated     |
-| DO_state       | integer [0,1]               | 1 - evaluate complete thermodynamic state (main folder)               |
-| N_boot         | integer (≈ No. simulations) | number of bootstrapping repetitions                                   |
+| Name              | Type                              | Modes           | Description |
+| ----------------- | --------------------------------- | --------------- | ----------- |
+| **mode**          | string [*single_run*, *tdm*, *vle*] | all             | defines the mode of the simulations/evaluation |
+| **folder**        | string                            | all             | path to main folder containing all simulation data (see chapter 1) |
+| **ensemble**      | string [*NVT*, *NVE*, *NpT*]        | single_run, tdm | ensemble to evaluate |
+| **timesteps_EQU** | interger (≥ 0)                    | all         | number of timesteps to ignore at the start of each simulation |
+| **DO_single**     | integer [0,1]                     | tdm         | 1 - evaluate single folders, 0 - single folders already evaluated |
+| **DO_state**      | integer [0,1]                     | tdm         | 1 - evaluate complete thermodynamic state (main folder) |
+| **N_boot**        | integer (≥ 0)                     | tdm         | number of bootstrapping repetitions |
+| **corr_length**   | integer (≥ 0)                     | single_run  | length (timesteps) of correlation function |
+| **span_corr_fun** | integer (≥ 0)                     | single_run  | timesteps between single correlation functions |
 
-Example:
+Example *single*:
 ```
-#folder
-F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/SIM_T_273.15K_rho_0.1gml
+#mode
+single_run
 
 #folder
-F:/MD_Bulk/Others/Methane/2020-04-16_trappe-ua/*
+C:/path2simulations/sim_1
+
+#folder
+C:/path2simulations/sim_*
 
 #ensemble
 NVT
@@ -53,14 +76,35 @@ NVT
 #timesteps_EQU
 0
 
-#DO_evaluation
+#corr_length
+100000
+
+#span_corr_fun
+20000
+```
+
+Example *TDM*:
+```
+#folder
+C:/path2simulations/state_1
+
+#folder
+C:/path2simulations/state_*
+
+#ensemble
+NVT
+
+#timesteps_EQU
+0
+
+#DO_single
 1
 
 #DO_state
 1
 
 #N_boot
-5
+100
 ```
 
 ## Output
