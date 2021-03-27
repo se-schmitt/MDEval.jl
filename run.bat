@@ -1,4 +1,4 @@
 
-julia BULK_EVAL_Master.jl
+julia MD_EVAL_Master.jl
 
 @pause
