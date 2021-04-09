@@ -8,8 +8,6 @@
 # --- Global Settings ---
 # Number of processors to use
 no_procs = 1
-# Calculating in reduced units
-reduced_units = false
 
 # --- Define Functions and Structures ---
 include("src/MD_EVAL_Init.jl")
@@ -22,6 +20,7 @@ include("src/MD_EVAL_OutputResult.jl")
 include("src/MD_EVAL_GreenKubo.jl")
 include("src/MD_EVAL_StokesEinstein.jl")
 include("src/MD_EVAL_TransportProperties.jl")
+include("src/MD_EVAL_EvalStructure.jl")
 
 # --- Start Program ---
 main()

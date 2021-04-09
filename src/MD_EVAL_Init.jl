@@ -44,6 +44,9 @@ mutable struct input_struct
     n_boot::Int64
     corr_length::Int64
     span_corr_fun::Int64
+    do_structure::Int64
+    N_bin::Int64
+    r_cut::Float64
 end
 
 # Structure to store general evaluation and simulation options
@@ -55,6 +58,8 @@ mutable struct info_struct
     dt::Float64
     natoms::Int64
     molmass::Float64
+    N_bin::Int64
+    r_cut::Float64
 end
 
 # Data structure to store thermo data (thermo.dat)
@@ -85,7 +90,7 @@ mutable struct pressure_dat
 end
 
 # Data structure to store atoms positions
-mutable struct dump_dat
+@everywhere mutable struct dump_dat
     step::Int64
     t::Float64
     bounds::Array{Float64,2}

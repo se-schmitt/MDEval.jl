@@ -17,7 +17,9 @@ function EvalSingle(subfolder,inpar)
                         moltype,            # info.moltype
                         dt,                 # info.dt
                         natoms,             # info.natoms
-                        molmass)            # info.molmass
+                        molmass,            # info.molmass
+                        inpar.N_bin,        # info.N_bin
+                        inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
     T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info)
@@ -50,7 +52,9 @@ function EvalSingle(subfolder,inpar)
     end
 
     # Structural evaluation
-    # structural = calc_structural(dump,...)
+    if inpar.do_structure == 1
+        structural = eval_structure(dump,info)
+    end
 
     close("all")
 

@@ -241,6 +241,18 @@ function load_dump(info)
         posdat[1].moltype = moltype
     end
 
+    # Sort data such that ID of atoms are sorted
+    for i = 1:length(posdat)
+        p = posdat[i]
+        i_sort = sortperm(p.id)
+        for f in fieldnames(typeof(p))
+            if !(f in [:step, :t, :bounds, :moltype])
+                setfield!(p,f,getfield(p,f)[i_sort])
+            end
+        end
+        posdat[i] = p
+    end
+
     return posdat
 end
 

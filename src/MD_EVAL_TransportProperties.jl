@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalData
 # Function to apply Time Decomposition Method to Calculate Viscosity
