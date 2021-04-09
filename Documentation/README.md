@@ -47,7 +47,7 @@ Programm evaluates three different simulation types:
 
 ### Keywords:
 
-| Name              | Type                              | Modes           | Description |
+| Name              | Type {*standard value*}           | Modes           | Description |
 | ----------------- | --------------------------------- | --------------- | ----------- |
 | **mode**          | string [*single_run*, *tdm*, *vle*] | all             | defines the mode of the simulations/evaluation |
 | **folder**        | string                            | all             | path to main folder containing all simulation data (see chapter 1) |
@@ -58,53 +58,46 @@ Programm evaluates three different simulation types:
 | **N_boot**        | integer (≥ 0)                     | tdm         | number of bootstrapping repetitions |
 | **corr_length**   | integer (≥ 0)                     | single_run  | length (timesteps) of correlation function |
 | **span_corr_fun** | integer (≥ 0)                     | single_run  | timesteps between single correlation functions |
+| **DO_structure**  | integer [0,1] {*0*}               | all         | 1 - do structure evaluation, 0 - skip structure evaluation |
+| **N_bin**         | integer (≥ 0) {*100*}             | all         | number of bins for rdf calculation |
+| **r_cut**         | float (unit: Å) {*10 Å*}          | all         | cut-off radius for rdf calculation |
+| **units**         | string [*real*, *reduced*] {*real*} | all       | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters) |
 
 Example *single*:
 ```
-#mode
-single_run
+# Mode
+mode          =   single_run
 
-#folder
-C:/path2simulations/sim_1
+# Folder
+folder        =   C:/path2simulations/sim_1
+folder        =   C:/path2simulations/sim_*
 
-#folder
-C:/path2simulations/sim_*
+# Ensemble and equilibration
+ensemble      =   NVT
+timesteps_EQU =   0
 
-#ensemble
-NVT
-
-#timesteps_EQU
-0
-
-#corr_length
-100000
-
-#span_corr_fun
-20000
+# Settings for acf
+corr_length   =   100000
+span_corr_fun =   20000
 ```
 
 Example *TDM*:
 ```
-#folder
-C:/path2simulations/state_1
+# Mode
+mode          =   tdm
 
-#folder
-C:/path2simulations/state_*
+# Folder
+folder        =   C:/path2simulations/sim_1
+folder        =   C:/path2simulations/sim_*
 
-#ensemble
-NVT
+# Ensemble and equilibration
+ensemble      =   NVT
+timesteps_EQU =   0
 
-#timesteps_EQU
-0
-
-#DO_single
-1
-
-#DO_state
-1
-
-#N_boot
-100
+# TDM Settings
+DO_single     =   1
+DO_state      =   1
+N_boot        =   100
 ```
 
 ## Output
