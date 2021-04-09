@@ -1,20 +1,17 @@
-#mode
-tdm
+# General settings
+mode            =   single_run
+folder          =   F:/TEMP/TEST_md-evaluation/Single_run/Sim_001
+units           =   real
 
-#folder
-F:/TEMP/TEST_md-evaluation/TDM/SIM_T*
+# Ensemble and equilibration
+ensemble        =   NVT
+timesteps_EQU   =   0
 
-#ensemble
-NVT
+# Settings for acf
+corr_length     =   100000
+span_corr_fun   =   20000
 
-#timesteps_EQU
-0
-
-#DO_single
-1
-
-#DO_state
-1
-
-#N_boot
-100
+# Structure evaluation
+DO_structure    =   1
+N_bin           =   400
+r_cut           =   20

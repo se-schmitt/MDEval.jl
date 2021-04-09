@@ -95,47 +95,60 @@ function read_input()
     file = "INPUT.txt"
 
     # Initialization of input variables
-    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1)
+    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1,-1,-1,-1.0)
+
+    # Set units
+    global reduced_units = false
 
     fID = open(file,"r")
     while !eof(fID)
         line = readline(fID)
-        if line == "#mode"
-            inpar.mode = readline(fID)
-        elseif line == "#folder"
-            foldername = readline(fID)
-            if foldername[end] == '*'
-                pos = findlast(isequal('/'),foldername)
-                folders = string.(foldername[1:pos],readdir(foldername[1:pos]))
-                folders = folders[isdir.(folders)]
+        if !startswith(line,'#')
+            if startswith(line,"mode")
+                inpar.mode = get_val(line,String)
 
-                if pos != length(foldername)-1
-                    startstr = foldername[pos+1:end-1]
-                    what = ones(length(folders)) .== zeros(length(folders))
-                    for i = 1:length(folders)
-                        f = folders[i]
-                        what[i] = length(f) > pos+length(startstr) && f[pos+1:pos+length(startstr)] == startstr
-                    end
-                    folders = folders[what]
+            elseif startswith(line,"folder")
+                foldername = get_val(line,String)
+                append!(inpar.folders,get_folders(foldername))
+
+            elseif startswith(line,"ensemble")
+                inpar.ensemble = get_val(line,String)
+
+            elseif startswith(line,"timesteps_EQU")
+                inpar.n_equ = get_val(line,Int64)
+
+            elseif startswith(line,"DO_single")
+                inpar.do_eval = get_val(line,Int64)
+
+            elseif startswith(line,"DO_state")
+                inpar.do_state = get_val(line,Int64)
+
+            elseif startswith(line,"N_boot")
+                inpar.n_boot = get_val(line,Int64)
+
+            elseif startswith(line,"corr_length")
+                inpar.corr_length = get_val(line,Int64)
+
+            elseif startswith(line,"span_corr_fun")
+                inpar.span_corr_fun = get_val(line,Int64)
+
+            elseif startswith(line,"DO_structure")
+                inpar.do_structure = get_val(line,Int64)
+
+            elseif startswith(line,"N_bin")
+                inpar.N_bin = get_val(line,Int64)
+
+            elseif startswith(line,"r_cut")
+                inpar.r_cut = get_val(line,Int64)
+
+            elseif startswith(line,"units")
+                what_units = get_val(line,String)
+                if what_units == "real"
+                    reduced_units = false
+                elseif what_units == "reduced"
+                    reduced_units = true
                 end
-                inpar.folders = vcat(inpar.folders,folders)
-            else
-                inpar.folders = vcat(inpar.folders,foldername)
             end
-        elseif line == "#ensemble"
-            inpar.ensemble = readline(fID)
-        elseif line == "#timesteps_EQU"
-            inpar.n_equ = parse(Int64,readline(fID))
-        elseif line == "#DO_single"
-            inpar.do_eval = parse(Int64,readline(fID))
-        elseif line == "#DO_state"
-            inpar.do_state = parse(Int64,readline(fID))
-        elseif line == "#N_boot"
-            inpar.n_boot = parse(Int64,readline(fID))
-        elseif line == "#corr_length"
-            inpar.corr_length = parse(Int64,readline(fID))
-        elseif line == "#span_corr_fun"
-            inpar.span_corr_fun = parse(Int64,readline(fID))
         end
     end
 
@@ -151,7 +164,56 @@ function read_input()
         error("Parameters missing for mode \"tdm\"!")
     end
 
+    # Set dafault values
+    if inpar.do_structure == -1
+        inpar.do_structure = 0
+    end
+    if inpar.N_bin == -1
+        inpar.N_bin = 100
+    end
+    if inpar.r_cut == -1.0
+        inpar.r_cut = 10.0
+    end
+
     return inpar
+end
+
+# Function to get value from input line
+function get_val(line::String,T::DataType)
+    # Isolate values
+    pos1 = findfirst('=',line)
+    pos2 = findfirst('#',line)
+    if isnothing(pos2) pos2 = length(line)+1 end
+    valstr = string(strip(line[pos1+1:pos2-1]))
+
+    # Convert to given type
+    if (T == String)    val = valstr
+    else                val = parse(T,valstr)       end
+    return val
+end
+
+# Function to get all folder by input line
+function get_folders(foldername::String)
+    out_folders = []
+    if foldername[end] == '*'
+        pos = findlast(isequal('/'),foldername)
+        folders = string.(foldername[1:pos],readdir(foldername[1:pos]))
+        folders = folders[isdir.(folders)]
+
+        if pos != length(foldername)-1
+            startstr = foldername[pos+1:end-1]
+            what = ones(length(folders)) .== zeros(length(folders))
+            for i = 1:length(folders)
+                f = folders[i]
+                what[i] = length(f) > pos+length(startstr) && f[pos+1:pos+length(startstr)] == startstr
+            end
+            folders = folders[what]
+        end
+        out_folders = vcat(out_folders,folders)
+    else
+        out_folders = vcat(out_folders,foldername)
+    end
+    return out_folders
 end
 
 # Output results in dlm file
