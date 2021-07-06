@@ -96,9 +96,8 @@ function ave_thermo(info::info_struct)
 end
 
 ## Standard Deviation from Block Average ---------------------------------------
-function block_average(x::Array{Float64,1})
+function block_average(x::Array{Float64,1}; M_block=1000)
     # Define maximum Blocklenght and get Number of Blocks
-    M_block = 1000
     N_block = trunc(length(x)/M_block)
     # Change M_block if N_block < 20
     if N_block < 20
