@@ -4,8 +4,10 @@
 # ---
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
+# References:
+# (1) Fischer, M.; Bauer, G.; Gross, J. Force Fields with Fixed Bond Lengths and with Flexible Bond Lengths: Comparing Static and Dynamic Fluid Properties. Journal of Chemical & Engineering Data 2020. https://doi.org/10.1021/acs.jced.9b01031.
 
-# Main
+## Main
 function TransportProperties(state::state_info,set::set_TDM)
     # Set what to calculate and output mode
     do_η = 1
@@ -171,7 +173,7 @@ end
 
     # Function to fit running standard deviation (p[1]: A, p[2]: b)
     @. fun_std(x, p) = p[1] .* x .^ p[2]
-    # Function to fit running viscosity (p[1]: η(t→∞), p[2]: α, p[3]: β₁, p[4]: β₂)
+    # Function to fit running viscosity (p[1]: η(t→∞), p[2]: α, p[3]: β₁, p[4]: β₂), following Ref. (1)
     @. fun_ave(x, p) = p[1] .* ( ((p[2].*p[3].*(1 .-exp(-x./p[3])) .+
                                   (1 .-p[1]).*p[4]).*(1 .-exp(-x./p[4]))) ./
                                   (p[2].*p[3].+(1 .-p[1]).*p[4]) )
