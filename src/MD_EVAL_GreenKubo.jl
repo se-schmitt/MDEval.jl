@@ -7,6 +7,8 @@
 # ------------------------------------------------------------------------------
 # References:
 # (1) Humbert, M. T.; Zhang, Y.; Maginn, E. J. PyLAT: Python LAMMPS Analysis Tools. J. Chem. Inf. Model. 2019, 59 (4), 1301–1305. https://doi.org/10.1021/acs.jcim.9b00066.
+# (2) Maginn, E. J.; Messerly, R. A.; Carlson, D. J.; Roe, D. R.; Elliott, J. R. Best Practices for Computing Transport Properties 1. Self-Diffusivity and Viscosity from Equilibrium Molecular Dynamics [Article v1.0]. LiveCoMS 2019, 1 (1). https://doi.org/10.33011/livecoms.1.1.6324.
+# (3) Fischer, M.; Bauer, G.; Gross, J. Force Fields with Fixed Bond Lengths and with Flexible Bond Lengths: Comparing Static and Dynamic Fluid Properties. Journal of Chemical & Engineering Data 2020. https://doi.org/10.1021/acs.jced.9b01031.
 
 ## Settings --------------------------------------------------------------------
 # Calculation of autocorrelation function (mainly in TDM method)
@@ -14,6 +16,13 @@
 #   2 - FFT (calculation by FFT algorithm -> very fast, but just estimation (??))
 mode_acf_single = 1             # recommended: mode_acf_single = 1
 mode_acf_tdm = 2                # mode_acf_tdm = 1 can be ver slowly
+
+# ↓↓↓ *** to be added to INPUT file syntax *** ↓↓↓
+# Mode of calculation of mean of running integral
+#   1 - simple averaging
+#   2 - fitting procedure following (2) Eq. 10
+mode_integral = 2
+# ↑↑↑ *** to be added to INPUT file syntax *** ↑↑↑
 
 ## Viscosity -------------------------------------------------------------------
 # Calculation of viscosity from pressure tensor
@@ -72,22 +81,23 @@ function calc_viscosities(info::info_struct, CorrLength::Int64, SpanCorrFun::Int
             acf_η_V_all[:,i] = acf_η_V_tmp
             η_V_t_all[:,i] = cumtrapz(dat.t[what_pos],acf_η_V_tmp).*factor
         end
+        what_pos1 = pos_step_start[1]:pos_step_end[1]
+
+        # Shear viscosity
+        val, std, err = calc_average_GK(dat.step[what_pos1], η_t_all, CorrLength, SpanCorrFun, mode_integral, info; sym="η", name="viscosity", unit="Pa*s")
+        plot_acf(dat.step[what_pos1],acf_η_all, info; sym="J_{η}^{(acf)}", name="viscosity", unit="Pa^2")
+        η = single_dat(val, std, err)
+
+        # Bulk viscosity
+        val, std, err = calc_average_GK(dat.step[what_pos1], η_V_t_all, CorrLength, SpanCorrFun, 1, info; do_plt = 0)
+        η_V = single_dat(val, std, err)
+
+        # Write data to file
         η_t = mean(η_t_all,dims=2)
         acf_η = mean(acf_η_all,dims=2)
         η_V_t = mean(η_V_t_all,dims=2)
         acf_η_V = mean(acf_η_V_all,dims=2)
 
-        # Averaging and error estimation
-        what_ave = dat.step[dat.step .<= CorrLength] .>= minimum([SpanCorrFun,round(CorrLength/3)])
-        η = single_dat( mean(η_t[what_ave]),                                    # Mean value
-                        block_average(η_t[what_ave])[1],                        # Block average
-                        maximum(abs.(η_t[what_ave].-mean(η_t[what_ave]))))      # Max deviation
-        η_V = single_dat(mean(η_V_t[what_ave]),                                 # Mean value
-                        block_average(η_V_t[what_ave])[1],                      # Block average
-                        maximum(abs.(η_V_t[what_ave].-mean(η_V_t[what_ave]))))  # Max deviation
-
-        # Write data to file
-        what_pos1 = pos_step_start[1]:pos_step_end[1]
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
         line2 = string("# t η(t) ACF_η η_V(t) ACF_η_V\n",
                        "# ps Pa*s Pa^2 Pa*s Pa^2")
@@ -97,26 +107,6 @@ function calc_viscosities(info::info_struct, CorrLength::Int64, SpanCorrFun::Int
         fID = open(file,"w"); println(fID,header)
         writedlm(fID, hcat(dat.t[what_pos1],η_t,acf_η,η_V_t,acf_η_V), " ")
         close(fID)
-
-        # Plots
-        figure()
-        plot(dat.t[what_pos1],acf_η, linewidth=0.5)
-        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-        if !(reduced_units) ylabel(L"|ACF| / Pa^2") elseif reduced_units ylabel(L"|ACF*|") end
-        tight_layout()
-        savefig(string(info.folder,"/fig_eta-acf(t).pdf"))
-
-        figure()
-        plot(dat.t[what_pos1], η_t, "b", linewidth=1)
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*η.val, "k", linewidth=1, label="mean")
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*(η.val + η.std), "k--", linewidth=0.5, label="standard deviation")
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*(η.val - η.std), "k--", linewidth=0.5)
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*maximum(η_t[what_ave]), "k:", linewidth=0.5, label="max/min")
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*minimum(η_t[what_ave]), "k:", linewidth=0.5)
-        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-        if !(reduced_units) ylabel(L"η / Pa^2") elseif reduced_units ylabel(L"η*") end
-        tight_layout()
-        savefig(string(info.folder,"/fig_eta(t).pdf"))
 
         close("all")
     else
@@ -189,7 +179,7 @@ function calc_viscosities(info::info_struct)
         if !(reduced_units) ylabel(L"η / Pa^2") elseif reduced_units ylabel(L"η*") end
         tight_layout()
         savefig(string(info.folder,"/fig_eta(t).pdf"))
-        close()
+        close("all")
 
         # Save Results
         η = single_dat(η_t[end], NaN, NaN)
@@ -244,17 +234,17 @@ function calc_thermalconductivity(info::info_struct, CorrLength::Int64, SpanCorr
             acf_λ_all[:,i] = acf_λ_tmp
             λ_t_all[:,i] = cumtrapz(dat.t[what_pos],acf_λ_tmp).*factor
         end
-        λ_t = mean(λ_t_all,dims=2)
-        acf_λ = mean(acf_λ_all,dims=2)
+        what_pos1 = pos_step_start[1]:pos_step_end[1]
 
         # Averaging and error estimation
-        what_ave = dat.step[dat.step .<= CorrLength] .>= minimum([SpanCorrFun,round(CorrLength/3)])
-        λ = single_dat( mean(λ_t[what_ave]),                                    # Mean value
-                        block_average(λ_t[what_ave])[1],                        # Block average
-                        maximum(abs.(λ_t[what_ave].-mean(λ_t[what_ave]))))      # Max deviation
+        val, std, err = calc_average_GK(dat.step[what_pos1], λ_t_all, CorrLength, SpanCorrFun, mode_integral, info; sym="λ", name="thermalconductivity", unit="W/(m*K)")
+        plot_acf(dat.step[what_pos1],acf_λ_all, info; sym="J_{λ}^{(acf)}", name="thermalconductivity", unit="eV^2/(Å^4*ps)")
+        close("all")
+        λ = single_dat(val, std, err)
 
         # Write data to file
-        what_pos1 = pos_step_start[1]:pos_step_end[1]
+        λ_t = mean(λ_t_all,dims=2)
+        acf_λ = mean(acf_λ_all,dims=2)
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", info.folder)
         line2 = string("# t λ(t) ACF_λ\n",
                        "# ps W/(m*K) eV^2/(Å^4*ps)")
@@ -264,28 +254,6 @@ function calc_thermalconductivity(info::info_struct, CorrLength::Int64, SpanCorr
         fID = open(file,"w"); println(fID,header)
         writedlm(fID, hcat(dat.t[what_pos1],λ_t,acf_λ), " ")
         close(fID)
-
-        # Plots
-        figure()
-        plot(dat.t[what_pos1],acf_λ, linewidth=0.5)
-        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-        if !(reduced_units) ylabel(L"|ACF| / eV^2/(Å^4*ps)") elseif reduced_units ylabel(L"|ACF*|") end
-        tight_layout()
-        savefig(string(info.folder,"/fig_lambda-acf(t).pdf"))
-
-        figure()
-        plot(dat.t[what_pos1], λ_t, "b", linewidth=1)
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*λ.val, "k", linewidth=1, label="mean")
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*(λ.val + λ.std), "k--", linewidth=0.5, label="standard deviation")
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*(λ.val - λ.std), "k--", linewidth=0.5)
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*maximum(λ_t[what_ave]), "k:", linewidth=0.5, label="max/min")
-        plot(dat.t[what_pos1][what_ave], ones(sum(what_ave)).*minimum(λ_t[what_ave]), "k:", linewidth=0.5)
-        if !(reduced_units) xlabel(L"t / ps") elseif reduced_units xlabel(L"t*") end
-        if !(reduced_units) ylabel(L"λ / (W/(m*K)") elseif reduced_units ylabel(L"λ*") end
-        tight_layout()
-        savefig(string(info.folder,"/fig_lambda(t).pdf"))
-
-        close("all")
     else
         λ = single_dat(NaN,NaN,NaN)
     end
@@ -389,4 +357,107 @@ end
         out = out ./ (L:-1:1)
     end
     return out
+end
+
+# Function to calculate averge from GK integral
+function calc_average_GK(steps, ave_t_all, CorrLength, SpanCorrFun, mode, info; do_plt=1, do_err=1, N_block=100, sym="", name="", unit="")
+    ## Average value calculation
+    # Running integral average
+    ave_t = mean(ave_t_all,dims=2)[:]
+
+    if mode == 1
+        ## Mode 1: Simple averaging
+        step_start = maximum([SpanCorrFun,round(CorrLength/3)])
+        what_ave = steps .>= step_start
+        val = mean(ave_t[what_ave])
+
+    elseif mode == 2
+        ## Mode 2: Fitting procedure following (2) Eq. 10
+        # Function to fit following Ref. (3)
+        @. fun_ave(x, p) = p[1] .* ( ((p[2].*p[3].*(1 .-exp(-x./p[3])) .+
+                                      (1 .-p[1]).*p[4]).*(1 .-exp(-x./p[4]))) ./
+                                      (p[2].*p[3].+(1 .-p[1]).*p[4]) )
+
+        # Fitting
+        p0 = [abs(ave_t[end]), 0.1, 0.1 ,1.0]
+        fit_ave = curve_fit(fun_ave, steps, ave_t, p0)
+        if fit_ave.converged
+            val = fit_ave.param[1]
+        else
+            error("Not converged!")
+        end
+    end
+
+    ## Error bar calculation
+    if do_err == 1
+        # Get number of independent ACF's
+        N = size(ave_t_all, 2)
+        M_block = floor(Int64,N/N_block)
+
+        # Loop all blocks
+        vals = []
+        col_start = 1
+        for i = 1:N_block
+            if i < N_block
+                what = col_start:col_start+M_block-1
+            else
+                what = col_start:N
+            end
+            push!(vals,calc_average_GK(steps, ave_t_all[:,what], CorrLength, SpanCorrFun, mode, info; do_plt = 0, do_err = 0)[1])
+        end
+
+        # Calculation of standard deviation and standard error
+        μ = mean(vals)
+        std = sqrt(sum((vals.-μ).^2)/N_block)
+        err = std./sqrt(N_block)
+    else
+        std = NaN
+        err = NaN
+    end
+
+    # Plotting
+    if do_plt == 1
+        t = steps.*info.dt
+        figure()
+        plot(t, ave_t, "b", linewidth=1, label="running integral")
+        if mode == 1
+            plot([step_start,step_start].*info.dt, [0,ave_t[findfirst(steps .>= step_start)]],"k:")
+        elseif mode == 2
+            plot(t,fun_ave(steps, fit_ave.param),"r", lw=0.75, label="fit to running integral")
+        end
+        # fill_between(t,minimum(ave_t_all,dims=2)[:],maximum(ave_t_all,dims=2)[:],color="blue",alpha=0.2)
+        plot([t[1],t[end]],[val,val],"k",label="result value", linewidth=0.5)
+        if do_err == 1
+            plot([t[1],t[end]], [val+std, val+std], "k--", linewidth=0.5, label="calculated standard deviation")
+            plot([t[1],t[end]], [val-std, val-std], "k--", linewidth=0.5)
+        end
+        if !(reduced_units) xlabel("\$t\$ / ps") elseif reduced_units xlabel("\$t*\$") end
+        if !(reduced_units) ylabel("\$$sym\$ / $unit") elseif reduced_units ylabel("\$$sym*\$") end
+        legend()
+        tight_layout()
+        savefig(string(info.folder,"/fig_$name(t).pdf"))
+
+        close("all")
+    end
+
+    return val, std, err
+end
+
+# Function to calculate error bars from all GK integrals
+function plot_acf(steps,acf_all, info; sym="", name="", unit="")
+    # Calculate average of acf
+    t = steps.*info.dt
+    ave_acf = mean(acf_all,dims=2)
+    min_acf = minimum(acf_all,dims=2)[:]
+    max_acf = maximum(acf_all,dims=2)[:]
+
+    # Plots
+    figure()
+    plot(t,ave_acf, "b")
+    fill_between(t,min_acf,max_acf, color = "blue", alpha = 0.2)
+    if !(reduced_units) xlabel("\$t\$ / ps") elseif reduced_units xlabel("\$t*\$") end
+    if !(reduced_units) ylabel("\$$sym\$ / $unit") elseif reduced_units ylabel("\$$sym*\$") end
+    tight_layout()
+    savefig(string(info.folder,"/fig_$name-acf(t).pdf"))
+    close("all")
 end
