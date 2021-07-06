@@ -126,7 +126,7 @@ function eval_profiles(folder,info)
     pxy = sum(dat.pxy .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
     pxz = sum(dat.pxz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
     pyz = sum(dat.pyz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
-
+    
     # Get position of interfaces
     ρm_ = (maximum(ρm) - minimum(ρm))/2 + minimum(ρm)
     x_flu = x[ρm .> ρm_]
@@ -166,7 +166,78 @@ function eval_profiles(folder,info)
         case = 2
     end
     D = fit.param[3]
+    
+    
+    # Error calculation for densities
+    errorblock = 20
+    counter = 0
+    val_start = 1
+    val_end = val_start + 1
+    ρm_submean = []
+    ρm_subtemp = zeros(0)
+    for i = 1:size(dat.ρm,1)./errorblock
+        ρ_temp = mean(dat.ρm[val_start:val_end,:],dims=1)
+        if counter == 0
+            ρm_subtemp = hcat(ρ_temp)
+        else counter
+            ρm_subtemp = vcat(ρm_subtemp, hcat(ρ_temp))
+        end
+        val_start += errorblock
+        val_end += errorblock
+        counter += 1
+    end
+    ρm_calcerr = ρm_subtemp
+    
+    calcerr_ρ_l_liste = zeros(0)
+    calcerr_ρ_v_liste = zeros(0)
+    calcerr_D_liste = zeros(0)
+    for i = 1:size(ρm_calcerr[:,1],1)
+        calcerr_ρm_ = (maximum(ρm_calcerr[i,:]) - minimum(ρm_calcerr[i,:]))/2 + minimum(ρm_calcerr[i,:])
+        calcerr_x_flu = x[ρm_calcerr[i,:] .> calcerr_ρm_]
+        calcerr_ind = sortperm(ρm_calcerr[i,:])
+        calcerr_ρm_sorted = (ρm_calcerr[i,:])[calcerr_ind]
+        calcerr_x_sorted = x[calcerr_ind]
+        calcerr_what = calcerr_x_sorted.<mean(calcerr_x_flu)
+        calcerr_fun_int1 = Spline1D(calcerr_ρm_sorted[calcerr_what],calcerr_x_sorted[calcerr_what],k=1)
+        calcerr_x_interface1 = calcerr_fun_int1(calcerr_ρm_)
+        calcerr_what = calcerr_x_sorted.>mean(calcerr_x_flu)
+        calcerr_fun_int2 = Spline1D(calcerr_ρm_sorted[calcerr_what],calcerr_x_sorted[calcerr_what],k=1)
+        calcerr_x_interface2 = calcerr_fun_int2(calcerr_ρm_)
 
+        calcerr_x_flu_mid = (calcerr_x_interface2+calcerr_x_interface1)/2
+        calcerr_part1 = x .< calcerr_x_flu_mid
+        calcerr_part2 = x .>= calcerr_x_flu_mid
+
+        calcerr_dx = zeros(size(x))
+        calcerr_dx[calcerr_part1] = x[calcerr_part1] .- calcerr_x_interface1
+        calcerr_dx[calcerr_part2] = -1 .* (x[calcerr_part2] .- calcerr_x_interface2)
+
+        calcerr_p0 = [maximum(ρm_calcerr[i,:]),minimum(ρm_calcerr[i,:]),10,0]
+        calcerr_fit = curve_fit(fun_profile, calcerr_dx, ρm_calcerr[i,:], calcerr_p0)
+
+        if calcerr_fit.param[1] > calcerr_fit.param[2]
+            calcerr_ρ_l = calcerr_fit.param[1]
+            calcerr_ρ_v = calcerr_fit.param[2]
+            calcerr_case = 1
+        else
+            calcerr_ρ_v = calcerr_fit.param[1]
+            calcerr_ρ_l = calcerr_fit.param[2]
+            calcerr_case = 2
+        end
+        calcerr_D = calcerr_fit.param[3]
+        
+        append!(calcerr_ρ_l_liste,calcerr_ρ_l)
+        append!(calcerr_ρ_v_liste, calcerr_ρ_v)
+        append!(calcerr_D_liste, calcerr_D)
+    end
+    ρ_l_calcerr = mean(calcerr_ρ_l_liste,dims=1)
+    ρ_v_calcerr = mean(calcerr_ρ_v_liste,dims=1)
+    D_calcerr = mean(calcerr_D_liste,dims=1)
+    ρ_l_calcerr_err = block_average(calcerr_ρ_l_liste,M_block=errorblock)
+    ρ_v_calcerr_err = block_average(calcerr_ρ_v_liste,M_block=errorblock)
+    D_calcerr_err = block_average(calcerr_D_liste,M_block=errorblock)
+    
+    # Calculation of pressures from profile data
     if case == 1
         what_l = dx .< -2*D
         what_v = dx .> 2*D
@@ -183,9 +254,9 @@ function eval_profiles(folder,info)
     # Data file
     fID = open(string(folder,"/result.dat"),"a")
     print_prop(fID, single_dat(Tm,NaN,NaN), "Tpro")
-    print_prop(fID, single_dat(ρ_l,NaN,NaN), "ρl")
-    print_prop(fID, single_dat(ρ_v,NaN,NaN), "ρv")
-    print_prop(fID, single_dat(D,NaN,NaN), "D")
+    print_prop(fID, single_dat(ρ_l,ρ_l_calcerr_err[1],ρ_l_calcerr_err[2]), "ρl")
+    print_prop(fID, single_dat(ρ_v,ρ_v_calcerr_err[1],ρ_v_calcerr_err[2]), "ρv")
+    print_prop(fID, single_dat(D,D_calcerr_err[1],D_calcerr_err[2]), "D")
     close(fID)
 
     # Figure
