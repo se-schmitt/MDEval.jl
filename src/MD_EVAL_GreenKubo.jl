@@ -379,8 +379,20 @@ function calc_average_GK(steps, ave_t_all, CorrLength, SpanCorrFun, mode, info; 
                                       (p[2].*p[3].+(1 .-p[1]).*p[4]) )
 
         # Fitting
-        p0 = [abs(ave_t[end]), 0.1, 0.1 ,1.0]
-        fit_ave = curve_fit(fun_ave, steps, ave_t, p0)
+        p0 = [  [abs(ave_t[end]), 1.0, 1.0,  1.0],
+                [abs(ave_t[end]), 1.0, 0.1,  10.0],
+                [abs(ave_t[end]), 1.0, 1e-3, 1.0],
+                [abs(ave_t[end]), 0.1, 0.1,  1.0],
+                [0.1,             1.0, 0.1,  1.0] ]
+        fit_ave = []
+        converged = false
+        k = 0
+        while !(converged) && k <= length(p0)
+            k += 1
+            fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
+            converged = fit_ave.converged
+        end
+
         if fit_ave.converged
             val = fit_ave.param[1]
         else
