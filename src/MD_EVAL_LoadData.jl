@@ -351,10 +351,15 @@ function read_profile1D(filename,data,ts_add)
     line1 = readline(fID)
     line2 = readline(fID)
     line3 = readline(fID)
-    if (line2 != "# Timestep Number-of-chunks Total-count") ||
-       (line3 != "# Chunk Coord1 Ncount density/number density/mass temp v_p_xx v_p_yy v_p_zz v_p_xy v_p_xz v_p_yz")
-        error("Dataset not fitting to 'load_profile1D' function!")
+    type = ""
+    if line2 == "# Timestep Number-of-chunks Total-count"
+        if line3 == "# Chunk Coord1 Ncount density/number density/mass temp v_p_xx v_p_yy v_p_zz v_p_xy v_p_xz v_p_yz"
+            type = "vle"
+        elseif line3 == "#######"
+            type = "shear"
+        end
     end
+    if isempty(type) error("File format of \"$filename\" is unknown to 'load_profile1D' function!") end
 
     # Read data body
     txt = readlines(fID)
@@ -365,10 +370,13 @@ function read_profile1D(filename,data,ts_add)
     lines_per_ts = (no_chunks+1)
     n_steps = Int64(length(txt)/lines_per_ts)
 
-    if typeof(data) != profile_data
+    if (typeof(data) != profile_data_vle) || (typeof(data) != profile_data_shear)
         # Initialization of profile_data strucutre
         init = Array{Float64,2}(undef,0,no_chunks)
-        data = profile_data(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
+        if type == "vle"
+            data = profile_data_vle(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
+        elseif type == "shear"
+            data = profile_data_shear()
     end
 
     for i = 1:n_steps
@@ -386,17 +394,24 @@ function read_profile1D(filename,data,ts_add)
         # cols = length(properties)
         body = Array(transpose(parse.(Float64,hcat(split.(txt[istart+1:iend])...))))
         data.id_chunk = vcat(data.id_chunk,body[:,1]')
-        data.x = vcat(data.x,body[:,2]')
-        data.Ncount = vcat(data.Ncount,body[:,3]')
-        data.ρn = vcat(data.ρn,body[:,4]')
-        data.ρm = vcat(data.ρm,body[:,5]')
-        data.T = vcat(data.T,body[:,6]')
-        data.pxx = vcat(data.pxx,body[:,7]')
-        data.pyy = vcat(data.pyy,body[:,8]')
-        data.pzz = vcat(data.pzz,body[:,9]')
-        data.pxy = vcat(data.pxy,body[:,10]')
-        data.pxz = vcat(data.pxz,body[:,11]')
-        data.pyz = vcat(data.pyz,body[:,12]')
+        if type == "vle"
+            data.x = vcat(data.x,body[:,2]')
+            data.Ncount = vcat(data.Ncount,body[:,3]')
+            data.ρn = vcat(data.ρn,body[:,4]')
+            data.ρm = vcat(data.ρm,body[:,5]')
+            data.T = vcat(data.T,body[:,6]')
+            data.pxx = vcat(data.pxx,body[:,7]')
+            data.pyy = vcat(data.pyy,body[:,8]')
+            data.pzz = vcat(data.pzz,body[:,9]')
+            data.pxy = vcat(data.pxy,body[:,10]')
+            data.pxz = vcat(data.pxz,body[:,11]')
+            data.pyz = vcat(data.pyz,body[:,12]')
+        elseif type == "shear"
+            data.x = vcat(data.x,body[:,2]')
+            data.Ncount = vcat(data.Ncount,body[:,3]')
+            data.vx = vcat(data.ρn,body[:,4]')
+            data.σxy = vcat(data.ρm,body[:,5]')
+        end
     end
 
     return data

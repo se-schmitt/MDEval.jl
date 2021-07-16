@@ -69,6 +69,12 @@ function main()
         elseif inpar.mode == "vle"
             info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
             EvalVLE(info)
+
+        ## Mode "nemd-shear" --------------------------------------------------------
+    elseif inpar.mode == "nemd-shear"
+            info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
+            EvalNEMDShear(info)
+
         end
         println(sline)
     end

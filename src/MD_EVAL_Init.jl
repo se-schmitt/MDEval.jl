@@ -175,8 +175,8 @@ mutable struct thermo_vle_dat
     Epot::Array{Float64,1}
 end
 
-# Data structure to save profile information
-mutable struct profile_data
+# Data structure to save profile information of vle simulations
+mutable struct profile_data_vle
     timestep::Array{Float64,1}
     id_chunk::Array{Float64,2}
     x::Array{Float64,2}
@@ -190,6 +190,17 @@ mutable struct profile_data
     pxy::Array{Float64,2}
     pxz::Array{Float64,2}
     pyz::Array{Float64,2}
+end
+
+# Data structure to save profile information
+mutable struct profile_data_shear
+    timestep::Array{Float64,1}
+    id_chunk::Array{Float64,2}
+    x::Array{Float64,2}
+    Ncount::Array{Float64,2}
+    vx::Array{Float64,2}
+    σxy::Array{Float64,2}
+    # to be continued
 end
 
 # Functions
