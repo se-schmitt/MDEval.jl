@@ -1,3 +1,4 @@
+## EvalVLE.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalVLE
 # Function to evaluate VLE simulations
@@ -126,7 +127,7 @@ function eval_profiles(folder,info)
     pxy = sum(dat.pxy .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
     pxz = sum(dat.pxz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
     pyz = sum(dat.pyz .* dat.Ncount,dims=1)[:] ./ sum(dat.Ncount,dims=1)[:] .*0.1
-    
+
     # Get position of interfaces
     ρm_ = (maximum(ρm) - minimum(ρm))/2 + minimum(ρm)
     x_flu = x[ρm .> ρm_]
@@ -166,8 +167,8 @@ function eval_profiles(folder,info)
         case = 2
     end
     D = fit.param[3]
-    
-    
+
+
     # Error calculation for densities
     errorblock = 20
     counter = 0
@@ -187,7 +188,7 @@ function eval_profiles(folder,info)
         counter += 1
     end
     ρm_calcerr = ρm_subtemp
-    
+
     calcerr_ρ_l_liste = zeros(0)
     calcerr_ρ_v_liste = zeros(0)
     calcerr_D_liste = zeros(0)
@@ -225,7 +226,7 @@ function eval_profiles(folder,info)
             calcerr_case = 2
         end
         calcerr_D = calcerr_fit.param[3]
-        
+
         append!(calcerr_ρ_l_liste,calcerr_ρ_l)
         append!(calcerr_ρ_v_liste, calcerr_ρ_v)
         append!(calcerr_D_liste, calcerr_D)
@@ -236,7 +237,7 @@ function eval_profiles(folder,info)
     ρ_l_calcerr_err = block_average(calcerr_ρ_l_liste,M_block=errorblock)
     ρ_v_calcerr_err = block_average(calcerr_ρ_v_liste,M_block=errorblock)
     D_calcerr_err = block_average(calcerr_D_liste,M_block=errorblock)
-    
+
     # Calculation of pressures from profile data
     if case == 1
         what_l = dx .< -2*D

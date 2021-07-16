@@ -1,3 +1,4 @@
+## NEMDShear.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for NEMD shear simulations (with sllod algorithm)
 # Containing functions to evaluate output files of NEMD shear simulations to

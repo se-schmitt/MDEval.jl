@@ -1,3 +1,4 @@
+## EvalState.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalState
 # Function to evaluate simulations of the same state

@@ -1,3 +1,4 @@
+## EvalStructure.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalStructure
 # Function to calculate structural properties from position data

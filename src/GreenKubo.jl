@@ -1,3 +1,4 @@
+## GreenKubo.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - GreenKubo
 # Containing functions to apply Green-Kubo method to viscosity and thermal

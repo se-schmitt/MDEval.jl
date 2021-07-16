@@ -1,3 +1,4 @@
+## LoadData.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - LoadData
 # Function to load data from simulation folder to variables

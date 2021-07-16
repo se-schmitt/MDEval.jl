@@ -1,3 +1,4 @@
+## Main.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - Main
 # Contains main function to run evaluation of bulk simulations

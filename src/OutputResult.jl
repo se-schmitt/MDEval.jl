@@ -1,3 +1,4 @@
+## OutputResult.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalData
 # Function to evaluate data from single MD run

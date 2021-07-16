@@ -1,3 +1,4 @@
+## Init.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - Init
 # Initializaiton of used structures and general functions

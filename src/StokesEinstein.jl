@@ -1,3 +1,4 @@
+## StokesEinstein.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - StokesEinstein
 # Containing functions to apply Stokes-Einstein method to self difussion
