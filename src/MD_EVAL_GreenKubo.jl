@@ -406,22 +406,29 @@ function calc_average_GK(steps, ave_t_all, CorrLength, SpanCorrFun, mode, info; 
         N = size(ave_t_all, 2)
         M_block = floor(Int64,N/N_block)
 
-        # Loop all blocks
-        vals = []
-        col_start = 1
-        for i = 1:N_block
-            if i < N_block
-                what = col_start:col_start+M_block-1
-            else
-                what = col_start:N
+        M_block_min = 3
+        if M_block < M_block_min
+            std = NaN
+            err = NaN
+            @warn("M_block [$M_block] < M_block_min [$M_block_min]\nError calculation by block averaging not reasonable!")
+        else
+            # Loop all blocks
+            vals = []
+            for i = 1:N_block
+                col_start = (i-1)*M_block + 1
+                if i < N_block
+                    what = col_start:(col_start+M_block-1)
+                else
+                    what = col_start:N
+                end
+                push!(vals,calc_average_GK(steps, ave_t_all[:,what], CorrLength, SpanCorrFun, mode, info; do_plt = 0, do_err = 0)[1])
             end
-            push!(vals,calc_average_GK(steps, ave_t_all[:,what], CorrLength, SpanCorrFun, mode, info; do_plt = 0, do_err = 0)[1])
-        end
 
-        # Calculation of standard deviation and standard error
-        μ = mean(vals)
-        std = sqrt(sum((vals.-μ).^2)/N_block)
-        err = std./sqrt(N_block)
+            # Calculation of standard deviation and standard error
+            μ = mean(vals)
+            std = sqrt(sum((vals.-μ).^2)/N_block)
+            err = std./sqrt(N_block)
+        end
     else
         std = NaN
         err = NaN
