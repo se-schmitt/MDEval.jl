@@ -11,17 +11,18 @@
 no_procs = 1
 
 # --- Define Functions and Structures ---
-include("src/MD_EVAL_Init.jl")
-include("src/MD_EVAL_Main.jl")
-include("src/MD_EVAL_LoadData.jl")
-include("src/MD_EVAL_EvalSingle.jl")
-include("src/MD_EVAL_EvalState.jl")
-include("src/MD_EVAL_EvalVLE.jl")
-include("src/MD_EVAL_OutputResult.jl")
-include("src/MD_EVAL_GreenKubo.jl")
-include("src/MD_EVAL_StokesEinstein.jl")
-include("src/MD_EVAL_TransportProperties.jl")
-include("src/MD_EVAL_EvalStructure.jl")
+include("src/Init.jl")
+include("src/Main.jl")
+include("src/LoadData.jl")
+include("src/EvalSingle.jl")
+include("src/EvalState.jl")
+include("src/EvalVLE.jl")
+include("src/OutputResult.jl")
+include("src/GreenKubo.jl")
+include("src/StokesEinstein.jl")
+include("src/TransportProperties.jl")
+include("src/EvalStructure.jl")
+include("src/NEMDShear.jl")
 
 # --- Start Program ---
 main()
