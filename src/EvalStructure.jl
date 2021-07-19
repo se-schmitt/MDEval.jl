@@ -9,14 +9,23 @@
 ## Main function ---------------------------------------------------------------
 function eval_structure(dump, info)
 
-    # Calculation of radial distribution function
-    calc_rdf(dump,info)
+    # Read RDF file if available
+    list = readdir(info.folder)
+    filepaths = string.("$(info.folder)/",list[startswith.(list,"rdf.$(info.ensemble)")])
+    if !(isempty(filepaths))
+        # if RDF computed in LAMMPS
+        read_rdf(filepaths,info)
+    else
+        # if RDF not computed in LAMMPS
+        # Calculation of radial distribution function
+        calc_rdf(dump,info)
+    end
 
     close("all")
 end
 
 ## Subfunction -----------------------------------------------------------------
-# Function to calculate rdf
+# Function to calculate and output rdf
 function calc_rdf(dump,info)
     # General
     N_bin = info.N_bin
@@ -144,5 +153,47 @@ function calc_rdf(dump,info)
     fID = open(filename,"w")
     println(fID,header)
     writedlm(fID,[rv g_r_all],' ')
+    close(fID)
+end
+
+# Function to read LAMMPS file and output rdf
+function read_rdf(filepaths,info)
+    dat_rdf = []
+    ts_add = 0
+    for f in filepaths
+        dat_rdf = read_profile1D(f,dat_rdf,ts_add)
+        ts_add = dat_rdf.timestep
+    end
+
+    g_r = dropdims.(mean.(dat_rdf.g_r,dims=1),dims=1)
+    r = mean(dat_rdf.r,dims=1)[:]
+
+    # Plot RDF
+    figure()
+    count = 0
+    for g_r_i in g_r
+        count += 1
+        plot(r,g_r_i,label="RDF #$count")
+    end
+    legend()
+    if reduced_units
+        xlabel(L"r^*")
+        ylabel(L"g(r^*)")
+    else
+        xlabel(L"r / Å")
+        ylabel(L"g(r)")
+    end
+    tight_layout()
+    savefig(string(info.folder,"/fig_rdf.pdf"))
+
+    # Output as text file
+    filename = string(info.folder,"/rdf.dat")
+    header = "r/Å"
+    for i in 1:length(g_r)
+        header = "$header g_r_$i"
+    end
+    fID = open(filename,"w")
+    println(fID,header)
+    writedlm(fID,[r hcat(g_r...)],' ')
     close(fID)
 end

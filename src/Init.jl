@@ -193,7 +193,7 @@ mutable struct profile_data_vle
     pyz::Array{Float64,2}
 end
 
-# Data structure to save profile information
+# Data structure to save profile information of shear simulations
 mutable struct profile_data_shear
     timestep::Array{Float64,1}
     id_chunk::Array{Float64,2}
@@ -202,6 +202,15 @@ mutable struct profile_data_shear
     vx::Array{Float64,2}
     σxy::Array{Float64,2}
     # to be continued
+end
+
+# Data structure to save profile information of rdf
+mutable struct profile_data_rdf
+    timestep::Array{Float64,1}
+    id_chunk::Array{Float64,2}
+    r::Array{Float64,2}
+    g_r::Array{Any,1}
+    N_coord::Array{Any,1}
 end
 
 # Functions

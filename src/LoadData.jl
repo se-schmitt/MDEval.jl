@@ -359,6 +359,11 @@ function read_profile1D(filename,data,ts_add)
         elseif line3 == "#######"
             type = "shear"
         end
+    elseif line2 == "# TimeStep Number-of-rows"
+        if startswith(line3,"# Row c_myRDF[1] c_myRDF[2] c_myRDF[3]")
+            N_rdf = Int64((sum(startswith.(split(line3),"c_myRDF")) - 1)/2)
+            type = "rdf"
+        end
     end
     if isempty(type) error("File format of \"$filename\" is unknown to 'load_profile1D' function!") end
 
@@ -378,6 +383,9 @@ function read_profile1D(filename,data,ts_add)
             data = profile_data_vle(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
         elseif type == "shear"
             data = profile_data_shear()
+        elseif type == "rdf"
+            data = profile_data_rdf(Float64[],init,init,repeat([init],N_rdf),repeat([init],N_rdf))
+        end
     end
 
     for i = 1:n_steps
@@ -387,9 +395,7 @@ function read_profile1D(filename,data,ts_add)
 
         # Get information from first line
         line_start = txt[istart]
-        pos = vcat(findall(isequal(' '),line_start),length(line_start)+1)
-        timestep = parse(Int64,line_start[1:pos[1]-1]) + ts_add
-        total_count = parse(Float64,line_start[pos[2]+1:end])
+        timestep = parse(Int64,split(line_start)[1]) + ts_add
         append!(data.timestep,timestep)
 
         # cols = length(properties)
@@ -412,6 +418,12 @@ function read_profile1D(filename,data,ts_add)
             data.Ncount = vcat(data.Ncount,body[:,3]')
             data.vx = vcat(data.ρn,body[:,4]')
             data.σxy = vcat(data.ρm,body[:,5]')
+        elseif type == "rdf"
+            data.r = vcat(data.r,body[:,2]')
+            for i in 1:N_rdf
+                data.g_r[i] = vcat(data.g_r[i],body[:,3+(i-1)*2]')
+                data.N_coord[i] = vcat(data.N_coord[i],body[:,4+(i-1)*2]')
+            end
         end
     end
 
