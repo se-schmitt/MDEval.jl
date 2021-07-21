@@ -84,10 +84,10 @@ function main()
             if inpar.do_eval == 1
                 for i = 1:length(subfolder)
                     print(string("Subfolder ",i," / ",length(subfolder)," → RUNNING ... "))
-            
+
                     # Evaluate NEMD data
                     EvalNEMDShear(subfolder[i],inpar)
-            
+
                     println(string("   →    ",Dates.format(now(),fdate),": DONE"))
                 end
                 println(sline)
@@ -103,7 +103,7 @@ function main()
                 EvalStateNEMD(subfolder, inpar)
 
                 println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
-            end    
+            end
         end
     end
 

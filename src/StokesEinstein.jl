@@ -123,7 +123,7 @@ function calc_msd(dat::Array{Any,1},info)
     for i = 1:n
         r2 = x[i] .^ 2 + y[i] .^ 2 + z[i] .^ 2
 
-        s_AB = sum(pmap(x -> calc_acf(x,2),[x[i],y[i],z[i]]))
+        s_AB = sum(pmap(x -> calc_acf(x,"FFT"),[x[i],y[i],z[i]]))
 
         msd_i = Array{Float64,1}(undef,N)
         sumsq = []
