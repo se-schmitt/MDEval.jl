@@ -73,8 +73,10 @@ function main()
 
         ## Mode "nemd-shear" --------------------------------------------------------
     elseif inpar.mode == "nemd-shear"
-            info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
-            EvalNEMDShear(info)
+            #subfolder = get_subfolder(folder)
+            #info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
+            #EvalNEMDShear(subfolder,inpar)
+            EvalNEMDShear(folder,inpar,results_struct,thermo_dat)
 
         end
         println(sline)

@@ -1,11 +1,11 @@
 # General settings
-mode            =   single_run
-folder          =   F:/TEMP/TEST_md-evaluation/Single_run/Sim_001
-units           =   real
+mode            =   nemd-shear
+folder          =   C:\Users\kn9-f\Desktop\TD_Master\src Implementierung NEMD\md-evaluation\SIM_T_373.15K_rho_0.67534gml_srate_1.0e+09
+units           =   metal
 
 # Ensemble and equilibration
 ensemble        =   NVT
-timesteps_EQU   =   0
+timesteps_EQU   =   1000000
 
 # Settings for acf
 corr_length     =   100000

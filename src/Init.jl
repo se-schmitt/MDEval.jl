@@ -27,6 +27,8 @@ pygui(:qt)
 @everywhere using PyPlot
 close("all")
 @everywhere using StatsBase
+@everywhere using Infiltrator
+
 
 # Physical Constants
 global kB = 1.380649e-23        # J/K
@@ -73,6 +75,8 @@ mutable struct thermo_dat
     Etot::Array{Float64,1}
     Ekin::Array{Float64,1}
     Epot::Array{Float64,1}
+    pyz::Array{Float64,1}
+    eta::Array{Float64,1}
 end
 
 # Data structure to store pressure tensor (pressure.dat)
@@ -137,6 +141,20 @@ mutable struct results_struct
     η_V
     D
     λ
+    s_rate
+end
+
+mutable struct results_struct_nemd
+    T
+    ρ
+    x
+    Etot
+    Ekin
+    Epot
+    pyz
+    η
+    s_rate
+    r_squared
 end
 
 # Data strucutre to store TDM settings
@@ -199,8 +217,9 @@ mutable struct profile_data_shear
     id_chunk::Array{Float64,2}
     x::Array{Float64,2}
     Ncount::Array{Float64,2}
-    vx::Array{Float64,2}
-    σxy::Array{Float64,2}
+    vy::Array{Float64,2}
+    x_id::Array{Float64,1}
+    #σyz::Array{Float64,2}
     # to be continued
 end
 

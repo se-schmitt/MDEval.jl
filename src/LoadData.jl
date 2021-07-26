@@ -34,7 +34,7 @@ end
 
 # Loading Thermo File
 function load_thermo(info::info_struct)
-    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
     if length(files) > 9
@@ -43,7 +43,7 @@ function load_thermo(info::info_struct)
     stepADD=0
     timeADD=0
     for file in files
-        step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info)
+        step, time, T, p, ρ, Etot, Ekin, Epot, pyz, eta = load_thermo_file(file,info)
         thermodat.step = vcat(thermodat.step,step.+stepADD)
         thermodat.t = vcat(thermodat.t,time.+timeADD)
         thermodat.T = vcat(thermodat.T,T)
@@ -52,6 +52,8 @@ function load_thermo(info::info_struct)
         thermodat.Etot = vcat(thermodat.Etot,Etot)
         thermodat.Ekin = vcat(thermodat.Ekin,Ekin)
         thermodat.Epot = vcat(thermodat.Epot,Epot)
+        thermodat.pyz = vcat(thermodat.pyz,pyz)
+        thermodat.eta = vcat(thermodat.eta,eta)
         stepADD = thermodat.step[end]
         timeADD = thermodat.t[end]
     end
@@ -63,7 +65,9 @@ end
 function load_thermo_file(file::String, info::info_struct)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
     if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
+        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot v_pyz v_eta"
         error("Format of File \"thermo.dat\" not right")
+        end
     end
     # Read data
     dat = readdlm(file, skipstart=2)
@@ -71,7 +75,8 @@ function load_thermo_file(file::String, info::info_struct)
     T    = dat[:,2];    p    = dat[:,3]
     ρ    = dat[:,4];    Etot = dat[:,5]
     Ekin = dat[:,6];    Epot = dat[:,7]
-    return step, time, T, p, ρ, Etot, Ekin, Epot
+    pyz  = dat[:,8];    eta  = dat[:,9]
+    return step, time, T, p, ρ, Etot, Ekin, Epot, pyz, eta
 end
 
 # Loading Pressure File
@@ -356,7 +361,7 @@ function read_profile1D(filename,data,ts_add)
     if line2 == "# Timestep Number-of-chunks Total-count"
         if line3 == "# Chunk Coord1 Ncount density/number density/mass temp v_p_xx v_p_yy v_p_zz v_p_xy v_p_xz v_p_yz"
             type = "vle"
-        elseif line3 == "#######"
+        elseif line3 == "# Chunk Coord1 Ncount vy"
             type = "shear"
         end
     elseif line2 == "# TimeStep Number-of-rows"
@@ -382,7 +387,7 @@ function read_profile1D(filename,data,ts_add)
         if type == "vle"
             data = profile_data_vle(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
         elseif type == "shear"
-            data = profile_data_shear()
+            data = profile_data_shear(Float64[],init,init,init,init,Float64[])
         elseif type == "rdf"
             data = profile_data_rdf(Float64[],init,init,repeat([init],N_rdf),repeat([init],N_rdf))
         end
@@ -416,8 +421,8 @@ function read_profile1D(filename,data,ts_add)
         elseif type == "shear"
             data.x = vcat(data.x,body[:,2]')
             data.Ncount = vcat(data.Ncount,body[:,3]')
-            data.vx = vcat(data.ρn,body[:,4]')
-            data.σxy = vcat(data.ρm,body[:,5]')
+            data.vy = vcat(data.vy,body[:,4]')
+            data.x_id = [0]
         elseif type == "rdf"
             data.r = vcat(data.r,body[:,2]')
             for i in 1:N_rdf
@@ -427,5 +432,5 @@ function read_profile1D(filename,data,ts_add)
         end
     end
 
-    return data
+    return data, no_chunks, n_steps
 end

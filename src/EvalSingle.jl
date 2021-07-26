@@ -10,7 +10,7 @@
 function EvalSingle(subfolder,inpar)
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(subfolder)
-
+    @infiltrate
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
                         inpar.ensemble,     # info.ensemble
@@ -61,6 +61,7 @@ function EvalSingle(subfolder,inpar)
 
     # Output Results
     OutputResult(results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ), info.folder)
+    @infiltrate
 end
 
 ## Function to Average Static Thermodynamic Properties -------------------------
@@ -82,18 +83,20 @@ function ave_thermo(info::info_struct)
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
     p = single_dat(mean(dat.p[what].*factor_p), block_average(dat.p[what])[1].*factor_p, block_average(dat.p[what])[2].*factor_p )
+    pyz  = single_dat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
     # Density
     ρ = single_dat(mean(dat.ρ[what]), block_average(dat.ρ[what])[1], block_average(dat.ρ[what])[2])
     # Energies
     Etot = single_dat(mean(dat.Etot[what]), block_average(dat.Etot[what])[1], block_average(dat.Etot[what])[2])
     Ekin = single_dat(mean(dat.Ekin[what]), block_average(dat.Ekin[what])[1], block_average(dat.Ekin[what])[2])
     Epot = single_dat(mean(dat.Epot[what]), block_average(dat.Epot[what])[1], block_average(dat.Epot[what])[2])
+    eta  = single_dat(mean(dat.eta[what]), block_average(dat.eta[what])[1], block_average(dat.eta[what])[2])
     # Heat capacity
     if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
     elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
     c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ T.val^2 * factor_c, NaN, NaN)
 
-    return T, p, ρ, Etot, Ekin, Epot, c
+    return T, p, ρ, Etot, Ekin, Epot, c, pyz, eta
 end
 
 ## Standard Deviation from Block Average ---------------------------------------

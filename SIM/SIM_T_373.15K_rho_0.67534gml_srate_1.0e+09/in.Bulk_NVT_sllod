@@ -1,0 +1,101 @@
+echo            both
+
+#----------------------------------------------#
+#-------------- BULK SIMULATION ---------------#
+#----------------------------------------------#
+
+# ---------- INPUT ----------
+# Molecule data
+variable        MolData     string "Decane.TraPPE-UA"	
+variable        N           equal 2000                   # Nr. of molecules
+# Read data
+variable        i_ReadData  equal 0                     # 0 - create atoms, 1,2,3,... - read data file
+variable        file        string "Bulk_NVT"           # Data file to read (just file ending)
+# State point
+variable        tmp         equal 373.15
+variable        rho_in      equal 0.67534
+# Strain rate
+variable        s_rate      equal 1.0e+09
+# Numerics
+variable        dt          equal 0.0005
+variable        n_run       equal 22e6                   # NVT run
+variable        n_equ       equal 1e4                   # Nr. of ts before production run
+variable        c_Tdamp     equal 100                   # Suggested by lammps: 100
+# Ensemble string
+variable        ensemble    string "NVT"
+# Write data
+variable        do_set_E    equal 0                     # Scale total Energy at the end of run
+# ---------------------------
+
+# ---------- Simulation setup ---------
+variable        norun       equal ${i_ReadData}+1
+
+
+# Set simulation conditions
+units           metal
+atom_style      full
+
+dimension       3
+atom_modify     map array
+boundary        p p p
+neighbor        2 multi
+neigh_modify    every 2 delay 2 check yes
+
+# Set timestep
+timestep        ${dt}
+
+# Define lower start density
+variable        rho_start equal 0.5*${rho_in}
+
+include         ${MolData}.inMolData
+
+change_box      all triclinic
+
+# Set density by setting box length
+variable 		factor_L equal "(density / v_rho_in)^(1/3)"
+if "${rho_in} == 0 && ${i_ReadData} == 0" then "quit"
+if "${rho_in} != 0" then &
+    "change_box 		all x scale ${factor_L} y scale ${factor_L} z scale ${factor_L} remap"
+
+# Set velocity atoms defined by temperature
+if "${i_ReadData} == 0" then "velocity all create ${tmp} 310"
+
+# ---------- Minimize Eenergy ---------
+if "${i_ReadData} == 0" then   "minimize   0.001 1.0e-4 1000 10000"
+
+# -------------- MD NVT ---------------
+# NpT/NVT Setup
+variable        Tdamp equal ${c_Tdamp}*dt
+
+# Log File
+thermo          1000
+thermo_style    custom step atoms vol temp press density etotal pe ke
+
+# Ensemble Setup and Shake Fix
+if "${do_shake} == 1" then      "fix        shk all shake 1e-5 100 10000 b 2"
+fix             NVT all nvt temp ${tmp} ${tmp} ${Tdamp}
+
+# --- Equilibration ---
+run             ${n_equ}
+
+# --- Actual Run ---
+reset_timestep  0
+
+unfix           NVT
+
+# Setup for sllod
+fix             NVT_sllod all nvt/sllod temp ${tmp} ${tmp} ${Tdamp}
+variable        s_rate_ps equal ${s_rate}*1e-12
+fix             shear all deform 1 yz erate ${s_rate_ps} remap v
+
+include         in.ThermoOutput_sllod
+
+run             ${n_run}
+
+if "${do_shake} == 1" then      "unfix      shk"
+unfix           NVT_sllod
+
+# Write Data File
+write_data      data.${norun}.Bulk_NVT nocoeff nofix
+
+shell           mv log.lammps log.${norun}.Bulk_NVT

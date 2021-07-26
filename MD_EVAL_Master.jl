@@ -22,7 +22,7 @@ include("src/GreenKubo.jl")
 include("src/StokesEinstein.jl")
 include("src/TransportProperties.jl")
 include("src/EvalStructure.jl")
-include("src/NEMDShear.jl")
+include("src/EvalNEMDShear.jl")
 
 # --- Start Program ---
 main()
