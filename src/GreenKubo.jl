@@ -13,7 +13,7 @@
 
 ## Viscosity -------------------------------------------------------------------
 # Calculation of viscosity from pressure tensor
-function calc_viscosities(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1)
+function calc_viscosities(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
     # Loading Pressure File
     dat = load_pressure(info)
 
@@ -39,13 +39,14 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         end
 
         # Allocate arrays
-        η_t_all = NaN .* ones(pos_step_end[1].-pos_step_start[1]+1,length(pos_step_start))
-        η_V_t_all = NaN .* ones(pos_step_end[1].-pos_step_start[1]+1,length(pos_step_start))
-        acf_η_all = NaN .* ones(pos_step_end[1].-pos_step_start[1]+1,length(pos_step_start))
-        acf_η_V_all = NaN .* ones(pos_step_end[1].-pos_step_start[1]+1,length(pos_step_start))
+        if (nEvery > 1) print("\n"); @warn("Only every $(nEvery). step used for ACF calculation (viscosity).") end
+        η_t_all =     NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
+        η_V_t_all =   NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
+        acf_η_all =   NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
+        acf_η_V_all = NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
 
         for i in 1:length(pos_step_start)
-            what_pos = pos_step_start[i]:pos_step_end[i]
+            what_pos = pos_step_start[i]:nEvery:pos_step_end[i]
 
             # Shear viscosity
             # Calculate autocorrelation function
@@ -57,7 +58,7 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
                      dat.pxx[what_pos] .- dat.pzz[what_pos]]
             P_diag = [dat.pxx[what_pos], dat.pyy[what_pos], dat.pzz[what_pos]]
 
-            acf_P = pmap(x -> calc_acf(x,mode_acf),vcat(P_mat,P_diag))
+            acf_P = pmap(x -> calc_acf(x, mode_acf), vcat(P_mat,P_diag))
 
             # Shear viscosity
             # -> method adopted from PyLat code (1)
@@ -71,7 +72,7 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
             acf_η_V_all[:,i] = acf_η_V_tmp
             η_V_t_all[:,i] = cumtrapz(dat.t[what_pos],acf_η_V_tmp).*factor
         end
-        what_pos1 = pos_step_start[1]:pos_step_end[1]
+        what_pos1 = pos_step_start[1]:nEvery:pos_step_end[1]
 
         if mode == "single"
             calc_error = 1
@@ -115,7 +116,7 @@ end
 
 ## Thermal conducitvity --------------------------------------------------------
 # Calculation of thermal conducitvity from heat current vector
-function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1)
+function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
     # Loading Heat Flux File
     dat = load_heatflux(info)
 
@@ -141,23 +142,24 @@ function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::Str
         end
 
         # Allocate arrays
-        λ_t_all = NaN .* ones(pos_step_end[1].-pos_step_start[1]+1,length(pos_step_start))
-        acf_λ_all = NaN .* ones(pos_step_end[1].-pos_step_start[1]+1,length(pos_step_start))
+        if (nEvery > 1) print("\n"); @warn("Only every $(nEvery). step used for ACF calculation (thermal conductivity).") end
+        λ_t_all =   NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery),length(pos_step_start))
+        acf_λ_all = NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery),length(pos_step_start))
 
         for i in 1:length(pos_step_start)
-            what_pos = pos_step_start[i]:pos_step_end[i]
+            what_pos = pos_step_start[i]:nEvery:pos_step_end[i]
 
             # Calculate autocorrelation function
             J_mat = [dat.jx[what_pos]./dat.V[what_pos],
                      dat.jy[what_pos]./dat.V[what_pos],
                      dat.jz[what_pos]./dat.V[what_pos]]
-            acf_J = pmap(x -> calc_acf(x,mode_acf),J_mat)
+            acf_J = pmap(x -> calc_acf(x, mode_acf),J_mat)
 
             acf_λ_tmp = (acf_J[1] .+ acf_J[2] .+ acf_J[3])
             acf_λ_all[:,i] = acf_λ_tmp
             λ_t_all[:,i] = cumtrapz(dat.t[what_pos],acf_λ_tmp).*factor
         end
-        what_pos1 = pos_step_start[1]:pos_step_end[1]
+        what_pos1 = pos_step_start[1]:nEvery:pos_step_end[1]
 
         if mode == "single"
             calc_error = 1
