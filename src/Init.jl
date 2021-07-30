@@ -46,6 +46,7 @@ mutable struct input_struct
     n_boot::Int64
     corr_length::Int64
     span_corr_fun::Int64
+    n_every::Int64
     do_structure::Int64
     N_bin::Int64
     r_cut::Float64

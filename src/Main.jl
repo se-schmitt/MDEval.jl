@@ -129,7 +129,7 @@ function read_input()
     file = "INPUT.txt"
 
     # Initialization of input variables
-    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1,-1,-1,-1.0)
+    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1,-1,-1,-1,-1.0)
 
     # Set units
     global reduced_units = false
@@ -166,6 +166,9 @@ function read_input()
             elseif startswith(line,"span_corr_fun")
                 inpar.span_corr_fun = get_val(line,Int64)
 
+            elseif startswith(line,"n_every")
+                inpar.n_every = get_val(line,Int64)
+
             elseif startswith(line,"DO_structure")
                 inpar.do_structure = get_val(line,Int64)
 
@@ -199,15 +202,10 @@ function read_input()
     end
 
     # Set dafault values
-    if inpar.do_structure == -1
-        inpar.do_structure = 0
-    end
-    if inpar.N_bin == -1
-        inpar.N_bin = 100
-    end
-    if inpar.r_cut == -1.0
-        inpar.r_cut = 10.0
-    end
+    if inpar.n_every      == -1     inpar.n_every = 1       end
+    if inpar.do_structure == -1     inpar.do_structure = 0  end
+    if inpar.N_bin        == -1     inpar.N_bin = 100       end
+    if inpar.r_cut        == -1.0   inpar.r_cut = 10.0      end
 
     return inpar
 end

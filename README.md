@@ -65,6 +65,7 @@ Programm evaluates three different simulation types:
 | **N_boot**        | integer (≥ 0)                     | tdm         | number of bootstrapping repetitions |
 | **corr_length**   | integer (≥ 0)                     | single_run  | length (timesteps) of correlation function |
 | **span_corr_fun** | integer (≥ 0)                     | single_run  | timesteps between single correlation functions |
+| **n_every**       | integer (≥ 1)                     | single_run  | skip n_every timesteps when calculating acf (useful for slowly converging states, e.g. ideal gas) |
 | **DO_structure**  | integer [0,1] {*0*}               | all         | 1 - do structure evaluation, 0 - skip structure evaluation |
 | **N_bin**         | integer (≥ 0) {*100*}             | all         | number of bins for rdf calculation |
 | **r_cut**         | float (unit: Å) {*10 Å*}          | all         | cut-off radius for rdf calculation |
