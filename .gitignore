@@ -1,5 +1,2 @@
 run.bat
-INPUT.txt
-SIM_T_373.15K_rho_0.67534gml_srate_1.0e+10vy_plot.pdf
-*.pdf
-/SIM_T_373.15K_rho_0.76028gml_srate_1.0e+10/
+INPUT*
