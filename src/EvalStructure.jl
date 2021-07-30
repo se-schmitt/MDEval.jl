@@ -165,15 +165,27 @@ function read_rdf(filepaths,info)
         ts_add = dat_rdf.timestep
     end
 
+    # Calculation of average
     g_r = dropdims.(mean.(dat_rdf.g_r,dims=1),dims=1)
     r = mean(dat_rdf.r,dims=1)[:]
+
+    # Calculation of standard deviation
+    std_g_r = []
+    for i = 1:length(g_r)
+        g_r_i = g_r[i]                  # Mean g_r
+        mat_g_r_i = dat_rdf.g_r[i]      # Matrix of all g_r's
+        N = size(mat_g_r_i,1)           # Number of single g_r's
+        std_i = sqrt.(sum((mat_g_r_i .- repeat(g_r_i',N,1)).^2,dims=1) ./ N)[:]
+        push!(std_g_r,std_i)
+    end
 
     # Plot RDF
     figure()
     count = 0
     for g_r_i in g_r
         count += 1
-        plot(r,g_r_i,label="RDF #$count")
+        # plot(r,g_r_i,label="RDF #$count")
+        fill_between(r,g_r_i.-std_g_r[count],g_r_i.-std_g_r[count],color="blue",alpha=0.2)
     end
     legend()
     if reduced_units
@@ -190,10 +202,10 @@ function read_rdf(filepaths,info)
     filename = string(info.folder,"/rdf.dat")
     header = "r/Å"
     for i in 1:length(g_r)
-        header = "$header g_r_$i"
+        header = "$header g_r_$i std_g_r_$i"
     end
     fID = open(filename,"w")
     println(fID,header)
-    writedlm(fID,[r hcat(g_r...)],' ')
+    writedlm(fID,[r hcat([g_r std_g_r]'[:]'...)],' ')
     close(fID)
 end
