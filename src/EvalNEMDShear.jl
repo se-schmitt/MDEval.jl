@@ -6,7 +6,7 @@
 # ---
 # created by Sebastian Schmitt, 16.07.2021
 
-function EvalNEMDShear(subfolder,inpar,results_struct,thermo_dat)
+function EvalNEMDShear(subfolder,inpar)
     moltype, dt, natoms, molmass = load_info(subfolder)
 
     # Initialization of info structure
@@ -21,7 +21,7 @@ function EvalNEMDShear(subfolder,inpar,results_struct,thermo_dat)
                         inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
-    T, p, ρ, Etot, Ekin, Epot, c, pyz, eta = ave_thermo(info)
+    T, p, ρ, Etot, Ekin, Epot, c, pyz = ave_thermo_NEMD(info)
 
     # Load data
     filename = "$(info.folder)/vy_profile.dat"
@@ -52,7 +52,7 @@ function EvalNEMDShear(subfolder,inpar,results_struct,thermo_dat)
 
     s_rate = 10^12*b/L #10^15 for ReaxFF 10^12 for others
     #η_vec = -pyz.val*1e6/s_rate
-    dat = load_thermo(info)
+    dat = load_thermo_NEMD(info)
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
 

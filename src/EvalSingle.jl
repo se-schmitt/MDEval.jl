@@ -10,7 +10,6 @@
 function EvalSingle(subfolder,inpar)
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(subfolder)
-    @infiltrate
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
                         inpar.ensemble,     # info.ensemble
@@ -65,9 +64,9 @@ function EvalSingle(subfolder,inpar)
 end
 
 ## Function to Average Static Thermodynamic Properties -------------------------
-function ave_thermo(info::info_struct)
+function ave_thermo_NEMD(info::info_struct)
     # Loading Thermo File
-    dat = load_thermo(info)
+    dat = load_thermo_NEMD(info)
 
     what = dat.step .>= info.n_equ
 
@@ -90,13 +89,13 @@ function ave_thermo(info::info_struct)
     Etot = single_dat(mean(dat.Etot[what]), block_average(dat.Etot[what])[1], block_average(dat.Etot[what])[2])
     Ekin = single_dat(mean(dat.Ekin[what]), block_average(dat.Ekin[what])[1], block_average(dat.Ekin[what])[2])
     Epot = single_dat(mean(dat.Epot[what]), block_average(dat.Epot[what])[1], block_average(dat.Epot[what])[2])
-    eta  = single_dat(mean(dat.eta[what]), block_average(dat.eta[what])[1], block_average(dat.eta[what])[2])
+
     # Heat capacity
     if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
     elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
     c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ T.val^2 * factor_c, NaN, NaN)
 
-    return T, p, ρ, Etot, Ekin, Epot, c, pyz, eta
+    return T, p, ρ, Etot, Ekin, Epot, c, pyz
 end
 
 ## Standard Deviation from Block Average ---------------------------------------
