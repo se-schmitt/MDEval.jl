@@ -184,8 +184,8 @@ function read_rdf(filepaths,info)
     count = 0
     for g_r_i in g_r
         count += 1
-        # plot(r,g_r_i,label="RDF #$count")
-        fill_between(r,g_r_i.-std_g_r[count],g_r_i.-std_g_r[count],color="blue",alpha=0.2)
+        plot(r,g_r_i,label="RDF #$count")
+        # fill_between(r,g_r_i.-std_g_r[count],g_r_i.-std_g_r[count],color="blue",alpha=0.2)
     end
     legend()
     if reduced_units

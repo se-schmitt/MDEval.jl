@@ -102,7 +102,7 @@ function read_input()
     file = "INPUT.txt"
 
     # Initialization of input variables
-    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1,-1,-1,-1,-1.0)
+    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1.0)
 
     # Set units
     global reduced_units = false
@@ -132,6 +132,9 @@ function read_input()
 
             elseif startswith(line,"N_boot")
                 inpar.n_boot = get_val(line,Int64)
+
+            elseif startswith(line,"DO_transport")
+                inpar.do_transport = get_val(line,Int64)
 
             elseif startswith(line,"corr_length")
                 inpar.corr_length = get_val(line,Int64)
@@ -175,6 +178,7 @@ function read_input()
     end
 
     # Set dafault values
+    if inpar.do_transport == -1     inpar.do_transport = 1  end
     if inpar.n_every      == -1     inpar.n_every = 1       end
     if inpar.do_structure == -1     inpar.do_structure = 0  end
     if inpar.N_bin        == -1     inpar.N_bin = 100       end

@@ -43,6 +43,7 @@ mutable struct input_struct
     do_eval::Int64
     do_state::Int64
     n_boot::Int64
+    do_transport::Int64
     corr_length::Int64
     span_corr_fun::Int64
     n_every::Int64
