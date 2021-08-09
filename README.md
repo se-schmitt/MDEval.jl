@@ -63,6 +63,7 @@ Programm evaluates three different simulation types:
 | **DO_single**     | integer [0,1]                     | tdm         | 1 - evaluate single folders, 0 - single folders already evaluated |
 | **DO_state**      | integer [0,1]                     | tdm         | 1 - evaluate complete thermodynamic state (main folder) |
 | **N_boot**        | integer (≥ 0)                     | tdm         | number of bootstrapping repetitions |
+| **DO_transport** | integer [0,1] | single_run | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties |
 | **corr_length**   | integer (≥ 0)                     | single_run  | length (timesteps) of correlation function |
 | **span_corr_fun** | integer (≥ 0)                     | single_run  | timesteps between single correlation functions |
 | **n_every**       | integer (≥ 1)                     | single_run  | skip n_every timesteps when calculating acf (useful for slowly converging states, e.g. ideal gas) |
@@ -110,14 +111,15 @@ N_boot        =   100
 
 ## Output
 
-Units:
-- Length:                 [L] = m
-- Mass:                   [m] = g/mol
-- Time:                   [t] = s
-- Temperature:            [T] = K
-- Pressure:               [p] = MPa
-- Density:                [ρ] = g/ml
-- Energy:                 [E] = eV
-- Viscosity:              [η] = Pa*s
-- Diffusion Coefficient:  [D] = m²/s
-- Thermal Conductivity:   [λ] = W/(m*K)
+### Units
+
+| Property                   | Symbol | Unit    |
+| -------------------------- | ------ | ------- |
+| mass                       | *m*    | g/mol   |
+| time                       | *t*    | ps      |
+| temperature                | *T*    | K       |
+| pressure                   | *p*    | MPa     |
+| energy                     | *E*    | eV      |
+| viscosity                  | *η*    | Pa*s    |
+| self-diffusion coefficient | *D*    | m²/s    |
+| thermal conductivity       | *λ*    | W/(m*K) |
