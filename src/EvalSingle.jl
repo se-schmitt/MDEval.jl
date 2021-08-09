@@ -8,6 +8,7 @@
 
 ## Superior Function -----------------------------------------------------------
 function EvalSingle(subfolder,inpar)
+
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(subfolder)
     # Initialization of info structure
@@ -24,25 +25,37 @@ function EvalSingle(subfolder,inpar)
     # Average Thermodynamic Properties
     T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info)
 
-    # Evaluate Pressure Data to Calculate Viscosities
-    if inpar.mode == "single_run"
-        η, η_V = calc_viscosities(info, "single"; mode_acf="autocov", CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
-    elseif inpar.mode == "tdm"
-        η, η_V = calc_viscosities(info, "tdm"; mode_acf="FFT")
-    end
+    if inpar.do_transport == 1
+        # Evaluate Pressure Data to Calculate Viscosities
+        if inpar.mode == "single_run"
+            η, η_V = calc_viscosities(info, "single"; mode_acf="autocov", CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+        elseif inpar.mode == "tdm"
+            η, η_V = calc_viscosities(info, "tdm"; mode_acf="FFT")
+        end
 
-    # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
-    if inpar.mode == "single_run"
-        λ = calc_thermalconductivity(info, "single"; mode_acf="autocov", CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
-    elseif inpar.mode == "tdm"
-        λ = calc_thermalconductivity(info, "tdm"; mode_acf="FFT")
+        # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
+        if inpar.mode == "single_run"
+            λ = calc_thermalconductivity(info, "single"; mode_acf="autocov", CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+        elseif inpar.mode == "tdm"
+            λ = calc_thermalconductivity(info, "tdm"; mode_acf="FFT")
+        end
+    else
+        η = NaN
+        η_V = NaN
+        λ = NaN
     end
 
     # Loading Dump File
-    dump = load_dump(info)
+    if inpar.do_transport == 1 | inpar.do_structure == 1
+        dump = load_dump(info)
+    end
 
-    # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
-    D = calc_selfdiffusion(info,dump)
+    if inpar.do_transport == 1
+        # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
+        D = calc_selfdiffusion(info,dump)
+    else
+        D = NaN
+    end
 
     # Get mole fractions from dump data (first timestep)
     if !(isempty(dump))
