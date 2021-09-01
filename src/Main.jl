@@ -18,6 +18,8 @@ function main()
 
     # Read input parameters
     inpar = read_input()
+    println(sline)
+    @infiltrate
 
     # Loop over all folders
     for folder in inpar.folders
@@ -102,59 +104,66 @@ function read_input()
     file = "INPUT.txt"
 
     # Initialization of input variables
-    inpar = input_struct("",[],"",-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1.0)
+    inpar = input_struct("",[],"",-1,-1,-1,-1,-1.0,-1,-1,-1,-1,"",-1,-1,-1.0)
 
     # Set units
     global reduced_units = false
 
-    fID = open(file,"r")
-    while !eof(fID)
-        line = readline(fID)
+    println("↓ INPUT FILE ↓")
+
+    inputfile = readlines(file)
+    for line in inputfile
         if !startswith(line,'#')
-            if startswith(line,"mode")
+            if startswith(lowercase(line),"mode")
                 inpar.mode = get_val(line,String)
 
-            elseif startswith(line,"folder")
+            elseif startswith(lowercase(line),"folder")
                 foldername = get_val(line,String)
                 append!(inpar.folders,get_folders(foldername))
 
-            elseif startswith(line,"ensemble")
+            elseif startswith(lowercase(line),"ensemble")
                 inpar.ensemble = get_val(line,String)
 
-            elseif startswith(line,"timesteps_EQU")
+            elseif startswith(lowercase(line),"timesteps_equ")
                 inpar.n_equ = get_val(line,Int64)
 
-            elseif startswith(line,"DO_single")
+            elseif startswith(lowercase(line),"do_single")
                 inpar.do_eval = get_val(line,Int64)
 
-            elseif startswith(line,"DO_state")
+            elseif startswith(lowercase(line),"do_state")
                 inpar.do_state = get_val(line,Int64)
 
-            elseif startswith(line,"N_boot")
+            elseif startswith(lowercase(line),"n_boot")
                 inpar.n_boot = get_val(line,Int64)
 
-            elseif startswith(line,"DO_transport")
+            elseif startswith(lowercase(line),"cutcrit")
+                inpar.cutcrit = get_val(line,Float64)
+
+            elseif startswith(lowercase(line),"do_transport")
                 inpar.do_transport = get_val(line,Int64)
 
-            elseif startswith(line,"corr_length")
+            elseif startswith(lowercase(line),"corr_length")
                 inpar.corr_length = get_val(line,Int64)
 
-            elseif startswith(line,"span_corr_fun")
+            elseif startswith(lowercase(line),"span_corr_fun")
                 inpar.span_corr_fun = get_val(line,Int64)
 
-            elseif startswith(line,"n_every")
+            elseif startswith(lowercase(line),"n_every")
                 inpar.n_every = get_val(line,Int64)
 
-            elseif startswith(line,"DO_structure")
+            elseif startswith(lowercase(line),"acf_calc_mode")
+                inpar.acf_calc_mode = get_val(line,String)
+
+            elseif startswith(lowercase(line),"do_structure")
                 inpar.do_structure = get_val(line,Int64)
 
-            elseif startswith(line,"N_bin")
+            elseif startswith(lowercase(line),"n_bin")
                 inpar.N_bin = get_val(line,Int64)
 
-            elseif startswith(line,"r_cut")
+            elseif startswith(lowercase(line),"r_cut")
                 inpar.r_cut = get_val(line,Int64)
 
-            elseif startswith(line,"units")
+            elseif startswith(lowercase(line),"units")
                 what_units = get_val(line,String)
                 if what_units == "real"
                     reduced_units = false
@@ -162,6 +171,8 @@ function read_input()
                     reduced_units = true
                 end
             end
+        else
+            println(line)
         end
     end
 
@@ -178,17 +189,24 @@ function read_input()
     end
 
     # Set dafault values
-    if inpar.do_transport == -1     inpar.do_transport = 1  end
-    if inpar.n_every      == -1     inpar.n_every = 1       end
-    if inpar.do_structure == -1     inpar.do_structure = 0  end
-    if inpar.N_bin        == -1     inpar.N_bin = 100       end
-    if inpar.r_cut        == -1.0   inpar.r_cut = 10.0      end
+    if inpar.cutcrit     == -1.0        inpar.cutcrit = 0.4                end
+    if inpar.do_transport == -1         inpar.do_transport = 1              end
+    if inpar.n_every      == -1         inpar.n_every = 1                   end
+    if inpar.do_structure == -1         inpar.do_structure = 0              end
+    if inpar.N_bin        == -1         inpar.N_bin = 100                   end
+    if inpar.r_cut        == -1.0       inpar.r_cut = 10.0                  end
+    if isempty(inpar.acf_calc_mode)
+        if inpar.mode == "single_run"   inpar.acf_calc_mode = "autocov" 	end
+        if inpar.mode == "tdm"          inpar.acf_calc_mode = "fft"         end
+    end
 
     return inpar
 end
 
 # Function to get value from input line
 function get_val(line::String,T::DataType)
+    println(line)
+
     # Isolate values
     pos1 = findfirst('=',line)
     pos2 = findfirst('#',line)

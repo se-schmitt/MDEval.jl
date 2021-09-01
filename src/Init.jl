@@ -43,10 +43,12 @@ mutable struct input_struct
     do_eval::Int64
     do_state::Int64
     n_boot::Int64
+    cutcrit::Float64
     do_transport::Int64
     corr_length::Int64
     span_corr_fun::Int64
     n_every::Int64
+    acf_calc_mode::String
     do_structure::Int64
     N_bin::Int64
     r_cut::Float64

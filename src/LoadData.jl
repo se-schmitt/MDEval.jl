@@ -75,16 +75,16 @@ function load_thermo_file(file::String, info::info_struct)
 end
 
 # Loading Pressure File
-function load_pressure(info)
+function load_pressure(info, nEvery)
     pdat = pressure_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("pressure.",info.ensemble,"."),list)])
     if length(files) > 9
         files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
     end
-    let stepADD=0,timeADD=0, skip1=0
+    let stepADD=0,timeADD=0, skip=0
         for file in files
-            step, time, V, T, p, pxx, pyy, pzz, pxy, pxz, pyz = load_pressure_file(file,info,skip1)
+            step, time, V, T, p, pxx, pyy, pzz, pxy, pxz, pyz = load_pressure_file(file, info, skip, nEvery)
             pdat.step = vcat(pdat.step,step.+stepADD)
             pdat.t = vcat(pdat.t,time.+timeADD)
             pdat.V = vcat(pdat.V,V)
@@ -98,7 +98,7 @@ function load_pressure(info)
             pdat.pyz = vcat(pdat.pyz,pyz)
             stepADD = pdat.step[end]
             timeADD = pdat.t[end]
-            if (skip1 == 0) skip1 = 1 end
+            if (skip == 0) skip = 1 end
         end
     end
     if isempty(pdat.step)
@@ -108,17 +108,21 @@ function load_pressure(info)
     return pdat
 end
 
-function load_pressure_file(file,info,skip)
+function load_pressure_file(file, info, skip, nEvery)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
     if line2 != "# TimeStep v_V v_T c_thermo_press c_thermo_press[1] c_thermo_press[2] c_thermo_press[3] c_thermo_press[4] c_thermo_press[5] c_thermo_press[6]"
         error("Format of File \"pressure.dat\" not right")
     end
     # Read data
     dat = readdlm(file, skipstart=(2+skip))
-    step = dat[:,1];    time = step*info.dt
-    V    = dat[:,2];    T    = dat[:,3];    p    = dat[:,4]
-    pxx  = dat[:,5];    pyy  = dat[:,6];    pzz  = dat[:,7]
-    pxy  = dat[:,8];    pxz  = dat[:,9];    pyz  = dat[:,10]
+    what = skip*nEvery+1-skip:nEvery:size(dat,1)
+    if mod(size(dat,1)-1+skip,nEvery) != 0
+        error("n_every must be a divisor of $(size(dat,1)-1+skip)!")
+    end
+    step = dat[what,1];    time = step*info.dt
+    V    = dat[what,2];    T    = dat[what,3];    p    = dat[what,4]
+    pxx  = dat[what,5];    pyy  = dat[what,6];    pzz  = dat[what,7]
+    pxy  = dat[what,8];    pxz  = dat[what,9];    pyz  = dat[what,10]
     return step, time, V, T, p, pxx, pyy, pzz, pxy, pxz, pyz
 end
 
@@ -135,7 +139,7 @@ function load_dump(info)
     end
 
     # Read dump file timestep by timestep
-    let stepADD=0, timeADD=0, skip1=0
+    let stepADD=0, timeADD=0, skip=0
         for file in files
             fID = open(file,"r")
             while !eof(fID)
@@ -209,11 +213,11 @@ function load_dump(info)
                     end
                 else error("Dump file format wrong") end
 
-                if !(step==0 && skip1==1)
+                if !(step==0 && skip==1)
                     posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, type, molid, Int64[], mass, x, y, z))
                 end
             end
-            skip1 = 1
+            skip = 1
             stepADD = posdat[end].step
             timeADD = posdat[end].t
         end
@@ -258,16 +262,16 @@ function load_dump(info)
 end
 
 # Loading Heat Flux File
-function load_heatflux(info)
+function load_heatflux(info, nEvery)
     jdat = heat_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("heat_flux.",info.ensemble,"."),list)])
     if length(files) > 9
         files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
     end
-    let stepADD=0,timeADD=0, skip1=0
+    let stepADD=0,timeADD=0, skip=0
         for file in files
-            step, time, V, T, jx, jy, jz = load_heatflux_file(file,info,skip1)
+            step, time, V, T, jx, jy, jz = load_heatflux_file(file, info, skip, nEvery)
             jdat.step = vcat(jdat.step,step.+stepADD)
             jdat.t = vcat(jdat.t,time.+timeADD)
             jdat.V = vcat(jdat.V,V)
@@ -277,7 +281,7 @@ function load_heatflux(info)
             jdat.jz = vcat(jdat.jz,jz)
             stepADD = jdat.step[end]
             timeADD = jdat.t[end]
-            if (skip1 == 0) skip1 = 1 end
+            if (skip == 0) skip = 1 end
         end
     end
     if isempty(jdat.step)
@@ -286,16 +290,20 @@ function load_heatflux(info)
     end
     return jdat
 end
-function load_heatflux_file(file,info,skip)
+function load_heatflux_file(file, info, skip, nEvery)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
     if line2 != "# TimeStep v_V v_T c_j[1] c_j[2] c_j[3]"
         error("Format of File \"heat_flux.dat\" not right")
     end
     # Read data
     dat = readdlm(file, skipstart=(2+skip))
-    step = dat[:,1];    time = step*info.dt
-    V    = dat[:,2];    T    = dat[:,3]
-    jx   = dat[:,4];    jy   = dat[:,5];    jz = dat[:,6]
+    what = skip*nEvery+1-skip:nEvery:size(dat,1)
+    if mod(size(dat,1)-1+skip,nEvery) != 0
+        error("n_every must be a divisor of $(size(dat,1)-1+skip)!")
+    end
+    step = dat[what,1];    time = step*info.dt
+    V    = dat[what,2];    T    = dat[what,3]
+    jx   = dat[what,4];    jy   = dat[what,5];    jz = dat[what,6]
     return step, time, V, T, jx, jy, jz
 end
 

@@ -59,16 +59,18 @@ Programm evaluates three different simulation types:
 | **mode**          | string [*single_run*, *tdm*, *vle*] | all             | defines the mode of the simulations/evaluation |
 | **folder**        | string                            | all             | path to main folder containing all simulation data (see chapter 1) |
 | **ensemble**      | string [*NVT*, *NVE*, *NpT*]        | single_run, tdm | ensemble to evaluate |
-| **timesteps_EQU** | interger (≥ 0)                    | all         | number of timesteps to ignore at the start of each simulation |
-| **DO_single**     | integer [0,1]                     | tdm         | 1 - evaluate single folders, 0 - single folders already evaluated |
-| **DO_state**      | integer [0,1]                     | tdm         | 1 - evaluate complete thermodynamic state (main folder) |
-| **N_boot**        | integer (≥ 0)                     | tdm         | number of bootstrapping repetitions |
-| **DO_transport** | integer [0,1] | single_run | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties |
+| **timesteps_equ** | interger (≥ 0)                    | all         | number of timesteps to ignore at the start of each simulation |
+| **do_single**     | integer [0,1]                     | tdm         | 1 - evaluate single folders, 0 - single folders already evaluated |
+| **do_state**      | integer [0,1]                     | tdm         | 1 - evaluate complete thermodynamic state (main folder) |
+| **n_boot**        | integer (≥ 0)                     | tdm         | number of bootstrapping repetitions |
+| **cutcrit**       | float (≥ 0) {*0.4*}             | tdm         | cut criteria for tdm method |
+| **do_transport**  | integer [0,1] | single_run | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties |
 | **corr_length**   | integer (≥ 0)                     | single_run  | length (timesteps) of correlation function |
 | **span_corr_fun** | integer (≥ 0)                     | single_run  | timesteps between single correlation functions |
 | **n_every**       | integer (≥ 1)                     | single_run  | skip n_every timesteps when calculating acf (useful for slowly converging states, e.g. ideal gas) |
-| **DO_structure**  | integer [0,1] {*0*}               | all         | 1 - do structure evaluation, 0 - skip structure evaluation |
-| **N_bin**         | integer (≥ 0) {*100*}             | all         | number of bins for rdf calculation |
+| **acf_calc_mode** | string [*autocov*, *fft*] {single_run → *autocov*, tdm → *fft*} | single_run, tdm  | mode for acf calculation (*autocov*: full acf by Julia *autocov* command (can be slowly for long signals), *fft*: acf calculation by FFT (fast, but inaccurate for long signals)) |
+| **do_structure**  | integer [0,1] {*0*}               | all         | 1 - do structure evaluation, 0 - skip structure evaluation |
+| **n_bin**         | integer (≥ 0) {*100*}             | all         | number of bins for rdf calculation |
 | **r_cut**         | float (unit: Å) {*10 Å*}          | all         | cut-off radius for rdf calculation |
 | **units**         | string [*real*, *reduced*] {*real*} | all       | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters) |
 
