@@ -8,7 +8,7 @@
 
 # Main Function
 function EvalState(subfolder::Array{String,1}, inpar::input_struct)
-    
+
     # Get excluded folders
     what_include = Bool[]
     for subf in subfolder
@@ -26,20 +26,19 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
 
     # Initialization of info structure
     moltype, dt, natoms, molmass = load_info(subfolder[1])
-    mass = natoms*molmass/NA    # [mass] = g
-
+    mass_total = natoms*molmass/NA                          # [mass] = g
+    L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)             # [L_box] = m
+    
     # T, p, ρ
     T, p, ρ, x, c = StaticProperties(subfolder)
     println(string("ave_state DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
-
-    state = state_info(T.val,p.val,ρ.val,natoms,mass)
 
     setTDM = set_TDM(folder,subfolder,false,NaN,NaN,NaN,"","","",inpar.n_boot)
     setTDM.tskip = 2
     setTDM.cutcrit = inpar.cutcrit
 
     # Transport Properties
-    η, η_V, D, λ = TransportProperties(state,setTDM)
+    η, η_V, D, λ = TransportProperties(T.val, L_box, setTDM)
     println(string("TransportProperties DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Output Data
