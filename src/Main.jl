@@ -19,7 +19,6 @@ function main()
     # Read input parameters
     inpar = read_input()
     println(sline)
-    @infiltrate
 
     # Loop over all folders
     for folder in inpar.folders
