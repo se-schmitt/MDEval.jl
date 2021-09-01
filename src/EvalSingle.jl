@@ -12,8 +12,12 @@ function EvalSingle(subfolder,inpar)
 
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(subfolder)
-    mass_total = natoms*molmass/NA                          # [mass] = g
-    L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)             # [L_box] = m
+    mass_total = natoms*molmass/NA                          # [mass] = g | 1
+    if (reduced)
+        L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
+    else
+        L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
+    end
 
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
@@ -62,7 +66,7 @@ function EvalSingle(subfolder,inpar)
         if inpar.mode == "single_run"
             ξ = 2.837298
             if (reduced_units)
-                Dcorr = T*ξ/(6*π*η.val)
+                Dcorr = T*ξ/(6*π*η.val*L_box)
             else
                 Dcorr = kB*T*ξ/(6*π*η.val*L_box)
             end

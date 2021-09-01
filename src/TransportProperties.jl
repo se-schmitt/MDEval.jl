@@ -90,8 +90,8 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
             end
             # Finite size correction [1]
             ξ = 2.837298
-            if (reduced)
-                Dcorr = T*ξ/(6*π*η.val)
+            if (reduced_units)
+                Dcorr = T*ξ/(6*π*η.val*L_box)
             else
                 Dcorr = kB*T*ξ/(6*π*η.val*L_box)
             end
