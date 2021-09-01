@@ -28,16 +28,16 @@ function EvalSingle(subfolder,inpar)
     if inpar.do_transport == 1
         # Evaluate Pressure Data to Calculate Viscosities
         if inpar.mode == "single_run"
-            η, η_V = calc_viscosities(info, "single"; mode_acf="autocov", CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+            η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
         elseif inpar.mode == "tdm"
-            η, η_V = calc_viscosities(info, "tdm"; mode_acf="FFT")
+            η, η_V = calc_viscosities(info, "tdm"; mode_acf=inpar.acf_calc_mode)
         end
 
         # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
         if inpar.mode == "single_run"
-            λ = calc_thermalconductivity(info, "single"; mode_acf="autocov", CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+            λ = calc_thermalconductivity(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
         elseif inpar.mode == "tdm"
-            λ = calc_thermalconductivity(info, "tdm"; mode_acf="FFT")
+            λ = calc_thermalconductivity(info, "tdm"; mode_acf=inpar.acf_calc_mode)
         end
     else
         η = NaN

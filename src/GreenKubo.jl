@@ -15,7 +15,8 @@
 # Calculation of viscosity from pressure tensor
 function calc_viscosities(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
     # Loading Pressure File
-    dat = load_pressure(info)
+    dat = load_pressure(info, nEvery)
+    if (nEvery > 1) print("\n"); @warn("Only every $(nEvery). step of pressure tensor used for ACF calculation.") end
 
     if (dat isa pressure_dat)
         what = (dat.step .>= info.n_equ)
@@ -30,8 +31,8 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         pos_step_end = []
         if mode == "single"
             for i_step in info.n_equ:SpanCorrFun:(maximum(dat.step) - CorrLength)
-                append!(pos_step_start,findfirst(dat.step .>= i_step))
-                append!(pos_step_end,findfirst(dat.step .>= i_step+CorrLength))
+                append!(pos_step_start, findfirst(dat.step .>= i_step))
+                append!(pos_step_end,   findfirst(dat.step .>= i_step+CorrLength))
             end
         elseif mode == "tdm"
             append!(pos_step_start,findfirst(what))
@@ -39,14 +40,13 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         end
 
         # Allocate arrays
-        if (nEvery > 1) print("\n"); @warn("Only every $(nEvery). step used for ACF calculation (viscosity).") end
-        η_t_all =     NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
-        η_V_t_all =   NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
-        acf_η_all =   NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
-        acf_η_V_all = NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery), length(pos_step_start))
+        η_t_all =     NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
+        η_V_t_all =   NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
+        acf_η_all =   NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
+        acf_η_V_all = NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
 
         for i in 1:length(pos_step_start)
-            what_pos = pos_step_start[i]:nEvery:pos_step_end[i]
+            what_pos = pos_step_start[i]:pos_step_end[i]
 
             # Shear viscosity
             # Calculate autocorrelation function
@@ -72,7 +72,17 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
             acf_η_V_all[:,i] = acf_η_V_tmp
             η_V_t_all[:,i] = cumtrapz(dat.t[what_pos],acf_η_V_tmp).*factor
         end
-        what_pos1 = pos_step_start[1]:nEvery:pos_step_end[1]
+        what_pos1 = pos_step_start[1]:pos_step_end[1]
+
+        # Cut viscosity due to large noise at long times
+        if (mode == "single") & (mode_acf == "fft")
+            cut_ratio = 0.9
+            what_pos1 = what_pos1[1:round(Int64,length(what_pos1)*cut_ratio)]
+            η_t_all = η_t_all[what_pos1,:]
+            acf_η_all = acf_η_all[what_pos1,:]
+            η_V_t_all = η_V_t_all[what_pos1,:]
+            acf_η_V_all = acf_η_V_all[what_pos1,:]
+        end
 
         if mode == "single"
             calc_error = 1
@@ -81,12 +91,12 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         end
 
         # Shear viscosity
-        val, std, err = calc_average_GK(dat.step[what_pos1], η_t_all, CorrLength, SpanCorrFun, info; do_err=calc_error, sym="η", name="viscosity", unit="Pa*s")
+        val, std, err = calc_average_GK(dat.step[what_pos1], η_t_all, info; do_err=calc_error, sym="η", name="viscosity", unit="Pa*s")
         plot_acf(dat.step[what_pos1],acf_η_all, info; sym="J_{η}^{(acf)}", name="viscosity", unit="Pa^2")
         η = single_dat(val, std, err)
 
         # Bulk viscosity
-        val, std, err = calc_average_GK(dat.step[what_pos1], η_V_t_all, CorrLength, SpanCorrFun, info; do_plt=0, do_err=0)
+        val, std, err = calc_average_GK(dat.step[what_pos1], η_V_t_all, info; do_plt=0, do_err=0)
         η_V = single_dat(val, std, err)
 
         # Write data to file
@@ -118,7 +128,8 @@ end
 # Calculation of thermal conducitvity from heat current vector
 function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
     # Loading Heat Flux File
-    dat = load_heatflux(info)
+    dat = load_heatflux(info,nEvery)
+    if (nEvery > 1) @warn("Only every $(nEvery). step of heat flux vector used for ACF calculation.") end
 
     if (dat isa heat_dat)
         what = (dat.step .>= info.n_equ)
@@ -142,12 +153,11 @@ function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::Str
         end
 
         # Allocate arrays
-        if (nEvery > 1) print("\n"); @warn("Only every $(nEvery). step used for ACF calculation (thermal conductivity).") end
-        λ_t_all =   NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery),length(pos_step_start))
-        acf_λ_all = NaN .* ones(ceil(Int64,(pos_step_end[1].-pos_step_start[1]+1)/nEvery),length(pos_step_start))
+        λ_t_all =   NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
+        acf_λ_all = NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
 
         for i in 1:length(pos_step_start)
-            what_pos = pos_step_start[i]:nEvery:pos_step_end[i]
+            what_pos = pos_step_start[i]:pos_step_end[i]
 
             # Calculate autocorrelation function
             J_mat = [dat.jx[what_pos]./dat.V[what_pos],
@@ -159,7 +169,15 @@ function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::Str
             acf_λ_all[:,i] = acf_λ_tmp
             λ_t_all[:,i] = cumtrapz(dat.t[what_pos],acf_λ_tmp).*factor
         end
-        what_pos1 = pos_step_start[1]:nEvery:pos_step_end[1]
+        what_pos1 = pos_step_start[1]:pos_step_end[1]
+
+        # Cut viscosity due to large noise at long times
+        if (mode == "single") & (mode_acf == "fft")
+            cut_ratio = 0.9
+            what_pos1 = what_pos1[1:round(Int64,length(what_pos1)*cut_ratio)]
+            λ_t_all = λ_t_all[what_pos1,:]
+            acf_λ_all = acf_λ_all[what_pos1,:]
+        end
 
         if mode == "single"
             calc_error = 1
@@ -168,7 +186,7 @@ function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::Str
         end
 
         # Averaging and error estimation
-        val, std, err = calc_average_GK(dat.step[what_pos1], λ_t_all, CorrLength, SpanCorrFun, info; do_err=calc_error, sym="λ", name="thermalconductivity", unit="W/(m*K)")
+        val, std, err = calc_average_GK(dat.step[what_pos1], λ_t_all, info; do_err=calc_error, sym="λ", name="thermalconductivity", unit="W/(m*K)")
         plot_acf(dat.step[what_pos1],acf_λ_all, info; sym="J_{λ}^{(acf)}", name="thermalconductivity", unit="eV^2/(Å^4*ps)")
         λ = single_dat(val, std, err)
 
@@ -219,7 +237,7 @@ end
     L = length(in)
     if mode == "autocov"            # Mode: autocov
         out = autocov(in,Array(0:L-1),demean=false)
-    elseif mode == "FFT"            # Mode: FFT
+    elseif mode == "fft"            # Mode: FFT
         in0 = vcat(in,zeros(L))
         out = real(ifft(fft(in0) .* conj(fft(in0))))[1:L]
         out = out ./ (L:-1:1)
@@ -228,7 +246,7 @@ end
 end
 
 # Function to calculate averge from GK integral
-function calc_average_GK(steps, ave_t_all, CorrLength, SpanCorrFun, info; do_plt=1, do_err=1, N_block=100, sym="", name="", unit="")
+function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100, sym="", name="", unit="")
     ## Average value calculation
     # Running integral average
     ave_t = mean(ave_t_all,dims=2)[:]
@@ -248,7 +266,7 @@ function calc_average_GK(steps, ave_t_all, CorrLength, SpanCorrFun, info; do_plt
     fit_ave = []
     converged = false
     k = 0
-    while !(converged) && k <= length(p0)
+    while !(converged) && k < length(p0)
         k += 1
         fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
         converged = fit_ave.converged
@@ -282,7 +300,7 @@ function calc_average_GK(steps, ave_t_all, CorrLength, SpanCorrFun, info; do_plt
                 else
                     what = col_start:N
                 end
-                push!(vals,calc_average_GK(steps, ave_t_all[:,what], CorrLength, SpanCorrFun, info; do_plt = 0, do_err = 0)[1])
+                push!(vals,calc_average_GK(steps, ave_t_all[:,what], info; do_plt = 0, do_err = 0)[1])
             end
 
             # Calculation of standard deviation and standard error

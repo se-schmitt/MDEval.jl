@@ -8,9 +8,7 @@
 
 # Main Function
 function EvalState(subfolder::Array{String,1}, inpar::input_struct)
-    # Settings
-    cutcrit = 0.4
-
+    
     # Get excluded folders
     what_include = Bool[]
     for subf in subfolder
@@ -38,7 +36,7 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
 
     setTDM = set_TDM(folder,subfolder,false,NaN,NaN,NaN,"","","",inpar.n_boot)
     setTDM.tskip = 2
-    setTDM.cutcrit = cutcrit
+    setTDM.cutcrit = inpar.cutcrit
 
     # Transport Properties
     η, η_V, D, λ = TransportProperties(state,setTDM)
