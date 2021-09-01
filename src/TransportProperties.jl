@@ -6,10 +6,11 @@
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
 # References:
-# (1) Fischer, M.; Bauer, G.; Gross, J. Force Fields with Fixed Bond Lengths and with Flexible Bond Lengths: Comparing Static and Dynamic Fluid Properties. Journal of Chemical & Engineering Data 2020. https://doi.org/10.1021/acs.jced.9b01031.
+# [1] Fischer, M.; Bauer, G.; Gross, J. Force Fields with Fixed Bond Lengths and with Flexible Bond Lengths: Comparing Static and Dynamic Fluid Properties. Journal of Chemical & Engineering Data 2020. https://doi.org/10.1021/acs.jced.9b01031.
+# [2] Maginn, E. J.; Messerly, R. A.; Carlson, D. J.; Roe, D. R.; Elliott, J. R. Best Practices for Computing Transport Properties 1. Self-Diffusivity and Viscosity from Equilibrium Molecular Dynamics [Article v1.0]. LiveCoMS 2019, 1 (1). https://doi.org/10.33011/livecoms.1.1.6324.
 
 ## Main
-function TransportProperties(state::state_info,set::set_TDM)
+function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
     # Set what to calculate and output mode
     do_η = 1
     do_D = 1
@@ -87,11 +88,14 @@ function TransportProperties(state::state_info,set::set_TDM)
                     Nmol = length(restmp.x)
                 end
             end
-            # ξ = 2.837298
-            # L = (state.m /state.ρ * 1e-6)^(1/3)
-            # Dcorr = kB*state.T*ξ/(6*π*η.val*L)
-            Dcorr = 0
-            Dval = mean(Dv) .+ Dcorr
+            # Finite size correction [1]
+            ξ = 2.837298
+            if (reduced)
+                Dcorr = T*ξ/(6*π*η.val)
+            else
+                Dcorr = kB*T*ξ/(6*π*η.val*L_box)
+            end
+            Dval = mean(Dv) + Dcorr
             D = vcat(D,single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv))))
             if imol == Nmol break end
         end

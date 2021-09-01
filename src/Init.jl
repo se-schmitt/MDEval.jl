@@ -157,15 +157,6 @@ end
     nboot::Int64
 end
 
-# Data structure to save state information
-mutable struct state_info
-    T::Float64
-    p::Float64
-    ρ::Float64
-    n::Int64
-    m::Float64
-end
-
 # Data structure to store thermo data (thermo.vle.2phase.dat)
 mutable struct thermo_vle_dat
     step::Array{Int64,1}

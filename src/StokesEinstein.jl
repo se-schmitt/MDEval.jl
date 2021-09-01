@@ -51,7 +51,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
             # Calculation of D by determination of slope of msd
             beta = hcat(ones(length(what_eval)),t[what_eval]) \ msd_t[what_eval]
             factor_unit = 1e-8
-            if (reduced_units) factor_unit = 1 end
+
             D[i] = single_dat(beta[2]/6*factor_unit,NaN,NaN)
 
             # Plot MSD of molecule i

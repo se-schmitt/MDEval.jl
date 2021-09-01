@@ -5,12 +5,15 @@
 # ---
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
+# [1] Maginn, E. J.; Messerly, R. A.; Carlson, D. J.; Roe, D. R.; Elliott, J. R. Best Practices for Computing Transport Properties 1. Self-Diffusivity and Viscosity from Equilibrium Molecular Dynamics [Article v1.0]. LiveCoMS 2019, 1 (1). https://doi.org/10.33011/livecoms.1.1.6324.
 
 ## Superior Function -----------------------------------------------------------
 function EvalSingle(subfolder,inpar)
 
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(subfolder)
+    mass_total = natoms*molmass/NA                          # [mass] = g
+    L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)             # [L_box] = m
 
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
@@ -53,7 +56,18 @@ function EvalSingle(subfolder,inpar)
 
     if inpar.do_transport == 1
         # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
-        D = calc_selfdiffusion(info,dump)
+        D = calc_selfdiffusion(info, dump)
+
+        # Finite size correction (for tdm, the correction is applied after averaging the single runs) [1]
+        if inpar.mode == "single_run"
+            ξ = 2.837298
+            if (reduced_units)
+                Dcorr = T*ξ/(6*π*η.val)
+            else
+                Dcorr = kB*T*ξ/(6*π*η.val*L_box)
+            end
+            D.val = D.val + Dcorr
+        end
     else
         D = NaN
     end
