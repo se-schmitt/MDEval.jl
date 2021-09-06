@@ -27,7 +27,7 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
     # Initialization of info structure
     moltype, dt, natoms, molmass = load_info(subfolder[1])
     mass_total = natoms*molmass/NA                          # [mass] = g | 1
-    if (reduced)
+    if (reduced_units)
         L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
     else
         L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
