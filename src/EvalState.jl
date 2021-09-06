@@ -24,18 +24,20 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
     pos = findlast(isequal('/'),subfolder[1])-1
     folder = subfolder[1][1:pos]
 
-    # Initialization of info structure
+    # Loading info file
     moltype, dt, natoms, molmass = load_info(subfolder[1])
+
+    # T, p, ρ
+    T, p, ρ, x, c = StaticProperties(subfolder)
+    println(string("ave_state DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
+
+    # Calculation of box length L_box
     mass_total = natoms*molmass/NA                          # [mass] = g | 1
     if (reduced_units)
         L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
     else
         L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
     end
-
-    # T, p, ρ
-    T, p, ρ, x, c = StaticProperties(subfolder)
-    println(string("ave_state DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     setTDM = set_TDM(folder,subfolder,false,NaN,NaN,NaN,"","","",inpar.n_boot)
     setTDM.tskip = 2
