@@ -12,12 +12,6 @@ function EvalSingle(subfolder,inpar)
 
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(subfolder)
-    mass_total = natoms*molmass/NA                          # [mass] = g | 1
-    if (reduced_units)
-        L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
-    else
-        L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
-    end
 
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
@@ -32,6 +26,14 @@ function EvalSingle(subfolder,inpar)
 
     # Average Thermodynamic Properties
     T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info)
+
+    # Calculate box length L_box
+    mass_total = natoms*molmass/NA                          # [mass] = g | 1
+    if (reduced_units)
+        L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
+    else
+        L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
+    end
 
     if inpar.do_transport == 1
         # Evaluate Pressure Data to Calculate Viscosities
