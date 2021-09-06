@@ -270,6 +270,10 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100
         k += 1
         fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
         converged = fit_ave.converged
+
+        if (do_err == 0) && (k == 1)
+            break
+        end
     end
 
     if fit_ave.converged
