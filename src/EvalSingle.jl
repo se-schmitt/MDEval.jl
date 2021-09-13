@@ -68,11 +68,13 @@ function EvalSingle(subfolder,inpar)
         if inpar.mode == "single_run"
             ξ = 2.837298
             if (reduced_units)
-                Dcorr = T*ξ/(6*π*η.val*L_box)
+                Dcorr = T.val*ξ/(6*π*η.val*L_box)
             else
-                Dcorr = kB*T*ξ/(6*π*η.val*L_box)
+                Dcorr = kB*T.val*ξ/(6*π*η.val*L_box)
             end
-            D.val = D.val + Dcorr
+            for i = 1:length(D)
+                D[i].val = D[i].val + Dcorr
+            end
         end
     else
         D = NaN
