@@ -21,20 +21,19 @@ function EvalNEMDShear(subfolder,inpar)
                         inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
-    T, p, ρ, Etot, Ekin, Epot, c, pyz = ave_thermo_NEMD(info)
+    T, p, ρ, Etot, Ekin, Epot, c, pyz = ave_thermo(info; is_nemd=true)
 
     # Load data
     filename = "$(info.folder)/vy_profile.dat"
     ts_add = 0
     data = []
-    data,no_chunks,n_steps = read_profile1D(filename,data,ts_add)
+    data, no_chunks, n_steps = read_profile1D(filename,data,ts_add)
     what = data.timestep .>= info.n_equ
     vy_mean = return_vy_mean(data,what,n_steps,no_chunks)
     x = vy_mean[:,2]
     y = vy_mean[:,4]
     a,b = hcat(fill!(similar(x), 1), x) \ y
     x_0 = ones(size(x,1))
-    @infiltrate
 
     y_predict=a*x_0+b*x
     # Sum of Squares Total, Sum of Squares Regression
@@ -45,7 +44,6 @@ function EvalNEMDShear(subfolder,inpar)
 
 
     timestep_equend = data.timestep[what]
-@infiltrate
 
 #changed from 1e24 to 1e23 since nmol=natoms/10
     L = ((info.natoms*info.molmass*1e23)/(ρ.val*6.02214076e23))^(1/3)
@@ -58,7 +56,6 @@ function EvalNEMDShear(subfolder,inpar)
 
     η_vec = -(dat.pyz.*factor_p)*1e6/s_rate
     η = single_dat(mean(η_vec[what]), block_average(η_vec[what])[1], block_average(η_vec[what])[2])
-@infiltrate
 
     figure()
     xlabel(L"x")
@@ -69,9 +66,9 @@ function EvalNEMDShear(subfolder,inpar)
     tight_layout()
     savefig(string(info.folder,"vy_plot.pdf"))
 
-
-    OutputResultNEMD(results_struct_nemd(T, ρ, x, Etot, Ekin, Epot, pyz, η, s_rate, r_squared), info.folder)
-    @infiltrate
+    # Output results
+    res = results_struct_nemd(T, ρ, x, Etot, Ekin, Epot, pyz, η, s_rate, r_squared)
+    OutputResultNEMD(res, info.folder)
 end
 
 

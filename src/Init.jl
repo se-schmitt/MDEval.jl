@@ -75,18 +75,6 @@ mutable struct thermo_dat
     Etot::Array{Float64,1}
     Ekin::Array{Float64,1}
     Epot::Array{Float64,1}
-end
-
-# Data structure to store thermo data (thermo.dat)
-mutable struct thermo_dat_NEMD
-    step::Array{Int64,1}
-    t::Array{Float64,1}
-    T::Array{Float64,1}
-    p::Array{Float64,1}
-    ρ::Array{Float64,1}
-    Etot::Array{Float64,1}
-    Ekin::Array{Float64,1}
-    Epot::Array{Float64,1}
     pyz::Array{Float64,1}
 end
 
@@ -152,7 +140,6 @@ mutable struct results_struct
     η_V
     D
     λ
-    s_rate
 end
 
 mutable struct results_struct_nemd

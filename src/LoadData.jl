@@ -33,8 +33,8 @@ function load_info(folder)
 end
 
 # Loading Thermo File
-function load_thermo(info::info_struct)
-    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+function load_thermo(info::info_struct; is_nemd=false)
+    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
     if length(files) > 9
@@ -43,7 +43,11 @@ function load_thermo(info::info_struct)
     stepADD=0
     timeADD=0
     for file in files
-        step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info)
+        if !is_nemd
+            step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info)
+        elseif is_nemd
+            step, time, T, p, ρ, Etot, Ekin, Epot, pyz = load_thermo_file_NEMD(file,info)
+        end
         thermodat.step = vcat(thermodat.step,step.+stepADD)
         thermodat.t = vcat(thermodat.t,time.+timeADD)
         thermodat.T = vcat(thermodat.T,T)
@@ -52,43 +56,17 @@ function load_thermo(info::info_struct)
         thermodat.Etot = vcat(thermodat.Etot,Etot)
         thermodat.Ekin = vcat(thermodat.Ekin,Ekin)
         thermodat.Epot = vcat(thermodat.Epot,Epot)
+        if is_nemd
+            thermodat.pyz = vcat(thermodat.pyz,pyz)
+        end
         stepADD = thermodat.step[end]
         timeADD = thermodat.t[end]
     end
 
-    return thermodat
     if isempty(thermodat.step) error("No thermo data loaded!") end
     return thermodat
 end
-# Loading Thermo File of NEMD
-function load_thermo_NEMD(info::info_struct)
-    thermodat = thermo_dat_NEMD(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
-    list = sort(readdir(info.folder))
-    files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
-    if length(files) > 9
-        files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
-    end
-    stepADD=0
-    timeADD=0
-    for file in files
-        step, time, T, p, ρ, Etot, Ekin, Epot, pyz = load_thermo_file_NEMD(file,info)
-        thermodat.step = vcat(thermodat.step,step.+stepADD)
-        thermodat.t = vcat(thermodat.t,time.+timeADD)
-        thermodat.T = vcat(thermodat.T,T)
-        thermodat.p = vcat(thermodat.p,p)
-        thermodat.ρ = vcat(thermodat.ρ,ρ)
-        thermodat.Etot = vcat(thermodat.Etot,Etot)
-        thermodat.Ekin = vcat(thermodat.Ekin,Ekin)
-        thermodat.Epot = vcat(thermodat.Epot,Epot)
-        thermodat.pyz = vcat(thermodat.pyz,pyz)
-        stepADD = thermodat.step[end]
-        timeADD = thermodat.t[end]
-    end
 
-    return thermodat
-    if isempty(thermodat.step) error("No thermo data loaded!") end
-    return thermodat
-end
 function load_thermo_file(file::String, info::info_struct)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
     if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"

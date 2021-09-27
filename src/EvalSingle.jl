@@ -59,14 +59,14 @@ function EvalSingle(subfolder,inpar)
     close("all")
 
     # Output Results
-    OutputResult(results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ), info.folder)
-    @infiltrate
+    res = results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ)
+    OutputResult(res, info.folder)
 end
 
 ## Function to Average Static Thermodynamic Properties -------------------------
-function ave_thermo_NEMD(info::info_struct)
+function ave_thermo(info::info_struct; is_nemd=false)
     # Loading Thermo File
-    dat = load_thermo_NEMD(info)
+    dat = load_thermo(info; is_nemd=is_nemd)
 
     what = dat.step .>= info.n_equ
 
@@ -82,7 +82,11 @@ function ave_thermo_NEMD(info::info_struct)
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
     p = single_dat(mean(dat.p[what].*factor_p), block_average(dat.p[what])[1].*factor_p, block_average(dat.p[what])[2].*factor_p )
-    pyz  = single_dat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
+    if is_nemd
+        pyz  = single_dat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
+    else
+        pyz = Float64[]
+    end
     # Density
     ρ = single_dat(mean(dat.ρ[what]), block_average(dat.ρ[what])[1], block_average(dat.ρ[what])[2])
     # Energies
