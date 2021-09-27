@@ -28,10 +28,11 @@ function EvalSingle(subfolder,inpar)
     T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info)
 
     # Calculate box length L_box
-    mass_total = natoms*molmass/NA                          # [mass] = g | 1
     if (reduced_units)
+        mass_total = natoms*molmass                         # mass_total = natoms*molmass/NA
         L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
     else
+        mass_total = natoms*molmass/NA                      # mass_total = natoms*molmass/NA
         L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
     end
 
