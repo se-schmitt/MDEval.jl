@@ -175,18 +175,6 @@ function read_input()
         end
     end
 
-    # Check input structure
-    # Mode "single_run"
-    if (inpar.n_equ == -1 || inpar.corr_length == -1 ||
-        inpar.span_corr_fun == -1) && inpar.mode == "single_run"
-        error("Parameters missing for mode \"single_run\"!")
-    end
-    # Mode "tdm"
-    if (inpar.n_equ == -1 || inpar.do_eval == -1 ||
-        inpar.do_state == -1 || inpar.n_boot == -1) && inpar.mode == "tdm"
-        error("Parameters missing for mode \"tdm\"!")
-    end
-
     # Set dafault values
     if inpar.cutcrit     == -1.0        inpar.cutcrit = 0.4                end
     if inpar.do_transport == -1         inpar.do_transport = 1              end
@@ -197,6 +185,20 @@ function read_input()
     if isempty(inpar.acf_calc_mode)
         if inpar.mode == "single_run"   inpar.acf_calc_mode = "autocov" 	end
         if inpar.mode == "tdm"          inpar.acf_calc_mode = "fft"         end
+    end
+
+    # Check input structure
+    # Mode "single_run"
+    if (inpar.n_equ == -1 ||
+        (inpar.do_transport == 1 && (inpar.corr_length == -1 ||
+        inpar.span_corr_fun == -1))) &&
+       inpar.mode == "single_run"
+        error("Parameters missing for mode \"single_run\"!")
+    end
+    # Mode "tdm"
+    if (inpar.n_equ == -1 || inpar.do_eval == -1 ||
+        inpar.do_state == -1 || inpar.n_boot == -1) && inpar.mode == "tdm"
+        error("Parameters missing for mode \"tdm\"!")
     end
 
     return inpar

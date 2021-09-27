@@ -56,8 +56,10 @@ function EvalSingle(subfolder,inpar)
     end
 
     # Loading Dump File
+    dumpexists = false
     if inpar.do_transport == 1 | inpar.do_structure == 1
         dump = load_dump(info)
+        dumpexists = true
     end
 
     if inpar.do_transport == 1
@@ -81,7 +83,7 @@ function EvalSingle(subfolder,inpar)
     end
 
     # Get mole fractions from dump data (first timestep)
-    if !(isempty(dump))
+    if dumpexists
         x = get_mole_fraction(info,dump[1])
     else
         x = NaN
