@@ -453,3 +453,32 @@ function read_profile1D(filename,data,ts_add)
 
     return data, no_chunks, n_steps
 end
+
+# Function to read molcount/atoms per molecule
+function read_inputfile(filename)
+    fID = open(filename,"r")
+
+    # Read first three lines
+    #line1 = readline(fID)
+    #line2 = readline(fID)
+    #line3 = readline(fID)
+    #type = ""
+    #if line2 == "variable        N           equal"
+txts=readlines(fID)
+tst=length(txts)
+close(fID)
+fID = open(filename,"r")
+local N_mol, n
+    for i in 1:tst
+        txt=readline(fID)
+        string_0 = replace(txt," " => "" )
+        if startswith(string_0, "variableNequal")
+            n=findfirst("variableNequal", string_0)
+            N_mol=string_0[15:end]
+            m=findfirst("#", N_mol)
+            N_mol=N_mol[1:m[1]-1]
+            N_mol=parse(Int,N_mol)
+        end
+    end
+    return N_mol
+end

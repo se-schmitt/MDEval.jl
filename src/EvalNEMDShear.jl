@@ -44,18 +44,18 @@ function EvalNEMDShear(subfolder,inpar)
 
 
     timestep_equend = data.timestep[what]
+    filename2 = "$(info.folder)/in.Bulk_NVT_sllod"
+    N_mol = read_inputfile(filename2)
 
-#changed from 1e24 to 1e23 since nmol=natoms/10
-    L = ((info.natoms*info.molmass*1e23)/(ρ.val*6.02214076e23))^(1/3)
-
+L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
     s_rate = 10^12*b/L #10^15 for ReaxFF 10^12 for others
-    #η_vec = -pyz.val*1e6/s_rate
-    dat = load_thermo_NEMD(info)
+    dat = load_thermo(info; is_nemd=true)
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
 
     η_vec = -(dat.pyz.*factor_p)*1e6/s_rate
-    η = single_dat(mean(η_vec[what]), block_average(η_vec[what])[1], block_average(η_vec[what])[2])
+
+    η = single_dat(mean(η_vec), block_average(η_vec; M_block=100)[1], block_average(η_vec; M_block=100)[2])
 
     figure()
     xlabel(L"x")

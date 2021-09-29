@@ -1,11 +1,11 @@
 # General settings
 mode            =   nemd-shear
-folder          =   C:\Users\kn9-f\Desktop\TD_Master\src Implementierung NEMD\md-evaluation\SIM_T_373.15K_rho_0.67534gml_srate_1.0e+09
+folder          =   C:\Users\kn9-f\Desktop\TD_Master\src Implementierung NEMD\md-evaluation\SIM_T_373.15K_rho_0.76028gml_srate_1.0e+10
 units           =   metal
 
 # Ensemble and equilibration
 ensemble        =   NVT
-timesteps_EQU   =   1000000
+timesteps_EQU   =   2000000
 
 # Settings for acf
 corr_length     =   100000

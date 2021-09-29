@@ -75,7 +75,6 @@ function ave_thermo(info::info_struct; is_nemd=false)
         beta = A\dat.Etot;
         println(info.folder," | ave Etot: ",beta[1]," | slope E_tot: ",beta[2])
     end
-
     # Temperature
     T = single_dat(mean(dat.T[what]), block_average(dat.T[what])[1], block_average(dat.T[what])[2])
     # Pressure
