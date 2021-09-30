@@ -56,7 +56,6 @@ L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
     η_vec = -(dat.pyz.*factor_p)*1e6/s_rate
 
     η = single_dat(mean(η_vec), block_average(η_vec; M_block=100)[1], block_average(η_vec; M_block=100)[2])
-
     figure()
     xlabel(L"x")
     ylabel(L"vy")

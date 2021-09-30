@@ -27,7 +27,6 @@ pygui(:qt)
 @everywhere using PyPlot
 close("all")
 @everywhere using StatsBase
-@everywhere using Infiltrator
 
 
 # Physical Constants
