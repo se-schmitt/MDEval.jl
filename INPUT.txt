@@ -1,6 +1,6 @@
 # General settings
 mode            =   nemd-shear
-folder          =   C:\Users\kn9-f\Desktop\TD_Master\SLLOD\FF TraPPE\SIM_FINAL\373.15K_100MPa\SIM_T_373.15K_rho_0.76028gml_srate_1.0e+10
+folder          =   C:\Users\kn9-f\Desktop\TD_Master\SLLOD\FF TraPPE\SIM_FINAL\373.15K_100MPa\SIM_T_373.15K_rho_0.76028gml_srate_4.7e+12
 units           =   metal
 
 # Ensemble and equilibration
