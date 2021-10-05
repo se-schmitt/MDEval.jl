@@ -21,6 +21,7 @@ function EvalSingle(subfolder,inpar)
                         dt,                 # info.dt
                         natoms,             # info.natoms
                         molmass,            # info.molmass
+                        inpar.n_blocks,     # info.n_blocks
                         inpar.N_bin,        # info.N_bin
                         inpar.r_cut)        # info.r_cut
 
@@ -65,7 +66,11 @@ function EvalSingle(subfolder,inpar)
 
     if inpar.do_transport == 1
         # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
-        D = calc_selfdiffusion(info, dump)
+        if inpar.mode == "single_run"
+            D = calc_selfdiffusion(info, dump)
+        elseif inpar.mode == "tdm"
+            D = calc_selfdiffusion(info, dump, N_blocks = 0)
+        end
 
         # Finite size correction (for tdm, the correction is applied after averaging the single runs) [1]
         if inpar.mode == "single_run"
@@ -115,17 +120,23 @@ function ave_thermo(info::info_struct)
     end
 
     # Temperature
-    T = single_dat(mean(dat.T[what]), block_average(dat.T[what])[1], block_average(dat.T[what])[2])
+    T_std_err = block_average(dat.T[what],N_blocks=info.n_blocks)
+    T = single_dat(mean(dat.T[what]), T_std_err[1], T_std_err[2])
     # Pressure
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
-    p = single_dat(mean(dat.p[what].*factor_p), block_average(dat.p[what])[1].*factor_p, block_average(dat.p[what])[2].*factor_p )
+    p_std_err = block_average(dat.p[what],N_blocks=info.n_blocks)
+    p = single_dat(mean(dat.p[what].*factor_p), p_std_err[1].*factor_p, p_std_err[2].*factor_p )
     # Density
-    ρ = single_dat(mean(dat.ρ[what]), block_average(dat.ρ[what])[1], block_average(dat.ρ[what])[2])
+    ρ_std_err = block_average(dat.ρ[what],N_blocks=info.n_blocks)
+    ρ = single_dat(mean(dat.ρ[what]), ρ_std_err[1], ρ_std_err[2])
     # Energies
-    Etot = single_dat(mean(dat.Etot[what]), block_average(dat.Etot[what])[1], block_average(dat.Etot[what])[2])
-    Ekin = single_dat(mean(dat.Ekin[what]), block_average(dat.Ekin[what])[1], block_average(dat.Ekin[what])[2])
-    Epot = single_dat(mean(dat.Epot[what]), block_average(dat.Epot[what])[1], block_average(dat.Epot[what])[2])
+    Etot_std_err = block_average(dat.Etot[what],N_blocks=info.n_blocks)
+    Etot = single_dat(mean(dat.Etot[what]), Etot_std_err[1], Etot_std_err[2])
+    Ekin_std_err = block_average(dat.Ekin[what],N_blocks=info.n_blocks)
+    Ekin = single_dat(mean(dat.Ekin[what]), Ekin_std_err[1], Ekin_std_err[2])
+    Epot_std_err = block_average(dat.Epot[what],N_blocks=info.n_blocks)
+    Epot = single_dat(mean(dat.Epot[what]), Epot_std_err[1], Epot_std_err[2])
     # Heat capacity
     if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
     elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
@@ -135,23 +146,28 @@ function ave_thermo(info::info_struct)
 end
 
 ## Standard Deviation from Block Average ---------------------------------------
-function block_average(x::Array{Float64,1}; M_block=1000)
-    # Define maximum Blocklenght and get Number of Blocks
-    N_block = trunc(length(x)/M_block)
-    # Change M_block if N_block < 20
-    if N_block < 20
-        N_block = 20
-        M_block = trunc(length(x)/N_block)
+function block_average(x::Array{Float64,1}; M_block=1000, N_blocks=0)
+    if N_blocks == 0
+        # Define maximum Blocklenght and get Number of Blocks
+        N_blocks = trunc(length(x)/M_block)
+        # Change M_block if N_blocks < 20
+        if N_blocks < 20
+            N_blocks = 20
+            M_block = trunc(length(x)/N_blocks)
+        end
+    elseif N_blocks > 0
+        M_block = trunc(length(x)/N_blocks)
     end
+
     # Get Dataset of Blockaverages
     blocks = []
-    for k = 1:N_block
+    for k = 1:N_blocks
         bblock = (round(Int,1+(k-1)*M_block))
         if k == 1
             bblock = 1
         end
         eblock = (round(Int,(k*M_block)))
-        if k == N_block
+        if k == N_blocks
             eblock = round(Int,length(x))
         end
     block = sum(x[bblock:eblock])/M_block
@@ -162,9 +178,9 @@ function block_average(x::Array{Float64,1}; M_block=1000)
     for k = 1:length(blocks)
         sum_block = sum_block + (blocks[k]-mean(x)).^2
     end
-    var_block = sum_block/(N_block-1)
+    var_block = sum_block/(N_blocks-1)
     std_block = sqrt(var_block) # Standard Derivation
-    err_block = sqrt(var_block/(N_block-1)) # Standard Error
+    err_block = sqrt(var_block/(N_blocks-1)) # Standard Error
     return std_block, err_block
 end
 

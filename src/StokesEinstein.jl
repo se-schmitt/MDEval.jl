@@ -9,7 +9,7 @@
 
 ## Self diffusion coefficient --------------------------------------------------
 # Evaluate Atoms Positions to calculate Self Diffusion Coefficient
-function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
+function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; N_blocks=10)
     if (!isempty(dat))
         N_moltype = maximum(dat[1].moltype)
         D = Array{single_dat,1}(undef,N_moltype)
@@ -17,10 +17,10 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
         # Convert atom to molecule coordinates
         mol = atom2mol(dat)
 
-        # Initialize figure and msd_t_all variable
+        # Initialize figure and msd_t_mols variable
         colors = ["b","g","r","c","m","y"]
         figure()
-        msd_t_all = Array{Float64,2}(undef,0,N_moltype)
+        msd_t_mols = Array{Float64,2}(undef,0,N_moltype)
 
         for i = 1:N_moltype
             # Get all molecules of type 'moltype'
@@ -28,6 +28,15 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
 
             # Calculation of Mean Square Displacement
             msd_t, t = calc_msd(mol_i,info)
+
+            if N_blocks > 0
+                mol_i_split = []
+                starts = floor.(Int64,[range(1,length(mol_i),length=N_blocks+1)...])
+                for i_start = 1:length(starts)-1
+                    push!(mol_i_split, mol_i[starts[i_start]:starts[i_start+1]])
+                end
+                msd_t_split = pmap(x -> (calc_msd(x,info)[1]), mol_i_split)
+            end
 
             # Segmenting the msd and calculation of log-log slope
             kmax_eval = 0.6
@@ -49,11 +58,23 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
             end
 
             # Calculation of D by determination of slope of msd
-            beta = hcat(ones(length(what_eval)),t[what_eval]) \ msd_t[what_eval]
+            A = hcat(ones(length(what_eval)),t[what_eval])
+            beta = A \ msd_t[what_eval]
+            what_eval_split = Int64.(ceil(0.25*(starts[2]-1)):ceil(0.75*(starts[2]-1)))
+            A_split = hcat(ones(length(what_eval_split)),t[what_eval_split])
+            beta_split = pmap(x -> A_split \ x[what_eval_split], msd_t_split)
+
             factor_unit = 1e-8
             if (reduced_units) factor_unit = 1 end
 
-            D[i] = single_dat(beta[2]/6*factor_unit,NaN,NaN)
+            if N_blocks > 0
+                D_split = Float64[]
+                for beta_i in beta_split append!(D_split,beta_i[2]/6*factor_unit) end
+            else
+                D_split = NaN
+            end
+
+            D[i] = single_dat(beta[2]/6*factor_unit,std(D_split),std(D_split)/sqrt(N_blocks))
 
             # Plot MSD of molecule i
             t1 = round(Int64,t[what_eval[1]])
@@ -66,9 +87,9 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
 
             # Save MSD in array to save dlm file
             if i == 1
-                msd_t_all = t
+                msd_t_mols = t
             end
-            msd_t_all = hcat(msd_t_all, msd_t)
+            msd_t_mols = hcat(msd_t_mols, msd_t)
         end
 
         # Save msd as data file
@@ -77,7 +98,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1})
         header = string(line1,"\n",line2)
         file = string(info.folder,"/msd.dat")
         fID = open(file,"w"); println(fID,header)
-        writedlm(fID, msd_t_all, " ")
+        writedlm(fID, msd_t_mols, " ")
         close(fID)
 
         # Formatting figure
@@ -120,6 +141,7 @@ function calc_msd(dat::Array{Any,1},info)
     end
 
     msd_t = zeros(N)
+    # msd_t_all = []
 
     for i = 1:n
         r2 = x[i] .^ 2 + y[i] .^ 2 + z[i] .^ 2
@@ -136,8 +158,9 @@ function calc_msd(dat::Array{Any,1},info)
         end
 
         msd_t += msd_i ./n
+        # push!(msd_t_all,msd_i)
     end
     msd_t = abs.(msd_t)
 
-    return msd_t, t
+    return msd_t, t #, msd_t_all
 end
