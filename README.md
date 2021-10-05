@@ -67,6 +67,7 @@ Programm evaluates three different simulation types:
 | **do_transport**  | integer [0,1] | single_run | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties |
 | **corr_length**   | integer (≥ 0)                     | single_run  | length (timesteps) of correlation function |
 | **span_corr_fun** | integer (≥ 0)                     | single_run  | timesteps between single correlation functions |
+| **n_blocks**      | integer (≥ 0)                     | single_run  | number of blocks for static properties |
 | **n_every**       | integer (≥ 1)                     | single_run  | skip n_every timesteps when calculating acf (useful for slowly converging states, e.g. ideal gas) |
 | **acf_calc_mode** | string [*autocov*, *fft*] {single_run → *autocov*, tdm → *fft*} | single_run, tdm  | mode for acf calculation (*autocov*: full acf by Julia *autocov* command (can be slowly for long signals), *fft*: acf calculation by FFT (fast, but inaccurate for long signals)) |
 | **do_structure**  | integer [0,1] {*0*}               | all         | 1 - do structure evaluation, 0 - skip structure evaluation |

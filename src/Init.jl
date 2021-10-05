@@ -48,6 +48,7 @@ mutable struct input_struct
     do_transport::Int64
     corr_length::Int64
     span_corr_fun::Int64
+    n_blocks::Int64
     n_every::Int64
     acf_calc_mode::String
     do_structure::Int64
@@ -64,6 +65,7 @@ mutable struct info_struct
     dt::Float64
     natoms::Int64
     molmass::Float64
+    n_blocks::Int64
     N_bin::Int64
     r_cut::Float64
 end
