@@ -59,7 +59,7 @@ function EvalSingle(subfolder,inpar)
 
     # Loading Dump File
     dumpexists = false
-    if inpar.do_transport == 1 | inpar.do_structure == 1
+    if inpar.do_transport == 1 || inpar.do_structure == 1
         dump = load_dump(info)
         dumpexists = true
     end
