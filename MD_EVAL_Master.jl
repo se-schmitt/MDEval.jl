@@ -8,7 +8,11 @@
 
 # --- Global Settings ---
 # Number of processors to use
-no_procs = 1
+if length(ARGS) >= 2
+    no_procs = parse(Int64,ARGS[2])
+else
+    no_procs = 1
+end
 
 # --- Define Functions and Structures ---
 include("src/Init.jl")
