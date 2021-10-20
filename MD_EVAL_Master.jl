@@ -26,4 +26,4 @@ include("src/EvalNEMDShear.jl")
 include("src/EvalStateNEMD.jl")
 
 # --- Start Program ---
-main()
+main(ARGS)
