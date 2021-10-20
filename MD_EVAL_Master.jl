@@ -25,4 +25,4 @@ include("src/EvalStructure.jl")
 include("src/NEMDShear.jl")
 
 # --- Start Program ---
-main()
+main(ARGS)

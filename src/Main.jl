@@ -6,7 +6,7 @@
 # created by Sebastian Schmitt, 29.03.2020
 # ------------------------------------------------------------------------------
 
-function main()
+function main(args::Array{String,1})
     sline = "------------------------------------------------------------------"
     dline = "=================================================================="
     fdate = "yyyy-mm-dd HH:MM:SS"
@@ -17,7 +17,7 @@ function main()
     println(sline)
 
     # Read input parameters
-    inpar = read_input()
+    inpar = read_input(args)
     println(sline)
 
     # Loop over all folders
@@ -98,9 +98,13 @@ end
 
 ## Subfunctions
 # Function to read input file
-function read_input()
+function read_input(args::Array{String,1})
     # Filename
-    file = "INPUT.txt"
+    if isempty(args)
+        file = "./INPUT.txt"
+    else
+        file = replace(args[1],"\\" => "/")
+    end
 
     # Initialization of input variables
     inpar = input_struct("",[],"",-1,-1,-1,-1,-1.0,-1,-1,-1,-1,-1,"",-1,-1,-1.0)

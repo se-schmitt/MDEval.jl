@@ -46,11 +46,16 @@ Programm evaluates three different simulation types:
 
 ## 2. Input File
 
-**Name**: 'INPUT.txt' (has to be in same folder as 'Master' file)
+**Selecting a input file:**
 
-**General structure**:
-  - first line: '#' + 'keyword'
-  - second line: value assigned to keyword
+Two options:
+
+- There has to be a file *INPUT.txt*  in the MD_Evaluation folder **or**
+- the path of the file can be passed as argument when running the master function *MD_EVAL_Master.jl* (julia *MD_EVAL_Master.jl* [*name of the input file*]) 
+
+**General structure of the input file:**
+
+`name_of_keyword = value_for_parameter`
 
 ### Keywords:
 
