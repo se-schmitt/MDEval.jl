@@ -11,9 +11,9 @@ function main(args::Array{String,1})
     dline = "=================================================================="
     fdate = "yyyy-mm-dd HH:MM:SS"
     println(dline)
-    println(string("START: \t",Dates.format(now(),fdate)))
+    println("START: \t$(Dates.format(now(),fdate))")
     println(sline)
-    println(string("Number of processors: ",no_procs))
+    println("Number of processors: $no_procs")
     println(sline)
 
     # Read input parameters
@@ -22,16 +22,26 @@ function main(args::Array{String,1})
 
     # Loop over all folders
     for folder in inpar.folders
-        println(string("Folder: ",folder))
+        println("Folder: $folder")
 
         ## Mode "single_run" ---------------------------------------------------
         if inpar.mode == "single_run"
-            print(string(Dates.format(now(),fdate),": RUNNING ... "))
+            print("$(Dates.format(now(),fdate)): RUNNING ... ")
+
+            catched_errors = []
 
             # Evaluate Data
-            EvalSingle(folder,inpar)
+            try
+                EvalSingle(folder,inpar)
 
-            println(string("   →    ",Dates.format(now(),fdate),": DONE"))
+                println("   →    $(Dates.format(now(),fdate)): DONE")
+            catch e
+                if e in catched_errors
+                    println("   →    $(Dates.format(now(),fdate)): ERROR ($e)")
+                else
+                    throw(e)
+                end
+            end
 
         ## Mode "tdm" ----------------------------------------------------------
         elseif inpar.mode == "tdm"
@@ -45,12 +55,12 @@ function main(args::Array{String,1})
             # Evaluation of single folder
             if inpar.do_eval == 1
                 for i = 1:length(subfolder)
-                    print(string("Subfolder ",i," / ",length(subfolder)," → RUNNING ... "))
+                    print("Subfolder $i / $(length(subfolder)) → RUNNING ... ")
 
                     # Evaluate Data
                     EvalSingle(subfolder[i],inpar)
 
-                    println(string("   →    ",Dates.format(now(),fdate),": DONE"))
+                    println("   →    $(Dates.format(now(),fdate)): DONE")
                 end
                 println(sline)
             end
@@ -58,13 +68,13 @@ function main(args::Array{String,1})
             # Averaging simulations
             if inpar.do_state == 1
                 println("State Evaluation")
-                intro = string(Dates.format(now(),fdate),": RUNNING ... ")
+                intro = "$(Dates.format(now(),fdate)): RUNNING ... "
                 println(intro)
 
                 # Do state evaluation
                 EvalState(subfolder, inpar)
 
-                println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
+                println("$intro   →    $(Dates.format(now(),fdate)): DONE")
             end
 
         ## Mode "vle" ----------------------------------------------------------
@@ -92,7 +102,7 @@ function main(args::Array{String,1})
         rmprocs(workers())
     end
 
-    println(string(Dates.format(now(),fdate),": DONE"))
+    println("$(Dates.format(now(),fdate)): DONE")
     println(dline)
 end
 
@@ -262,11 +272,11 @@ function dlm_output(folders)
     results = []
     folder_str = "Simulation folder:\n"
     for f in folders
-        if isfile(string(f,"/result.dat"))
-            results = vcat(results,load_result(string(f,"/result.dat")))
-            folder_str = string(folder_str,f,"\n")
+        if isfile("$f/result.dat")
+            results = vcat(results,load_result("$f/result.dat"))
+            folder_str = "$folder_str$f\n"
         else
-            println(string("No result file in folder: \"",f,"\""))
+            println("No result file in folder: \"$f\"")
         end
     end
 
@@ -362,7 +372,7 @@ function dlm_output(folders)
             end
         end
         datestr = Dates.format(now(),"yyyy-mm-dd_HH.MM")
-        file_save = string(folder_save,"results_",datestr,".dat")
+        file_save = "$(folder_save)results_$datestr.dat"
         println("Results saved in file: ",file_save)
 
         fID = open(file_save,"w")
@@ -381,7 +391,7 @@ function dlm_output(folders)
         close(fID)
 
         # Save file with folder names
-        fID = open(string(folder_save,"results_",datestr,"_folder.dat"),"w")
+        fID = open("$(folder_save)results_$(datestr)_folder.dat","w")
         println(fID,folder_str)
         close(fID)
     end
