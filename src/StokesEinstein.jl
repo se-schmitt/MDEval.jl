@@ -9,7 +9,7 @@
 
 ## Self diffusion coefficient --------------------------------------------------
 # Evaluate Atoms Positions to calculate Self Diffusion Coefficient
-function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; N_blocks=10)
+function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, N_blocks = 10, err_mode="")
     if (!isempty(dat))
         N_moltype = maximum(dat[1].moltype)
         D = Array{single_dat,1}(undef,N_moltype)
@@ -27,16 +27,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; N_blocks=10)
             mol_i = get_mol_by_type(mol,i)
 
             # Calculation of Mean Square Displacement
-            msd_t, t = calc_msd(mol_i,info)
-
-            if N_blocks > 0
-                mol_i_split = []
-                starts = floor.(Int64,[range(1,length(mol_i),length=N_blocks+1)...])
-                for i_start = 1:length(starts)-1
-                    push!(mol_i_split, mol_i[starts[i_start]:starts[i_start+1]])
-                end
-                msd_t_split = pmap(x -> (calc_msd(x,info)[1]), mol_i_split)
-            end
+            msd_t, t, msd_t_all = calc_msd(mol_i,info)
 
             # Segmenting the msd and calculation of log-log slope
             kmax_eval = 0.6
@@ -60,21 +51,52 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; N_blocks=10)
             # Calculation of D by determination of slope of msd
             A = hcat(ones(length(what_eval)),t[what_eval])
             beta = A \ msd_t[what_eval]
-            what_eval_split = Int64.(ceil(0.25*(starts[2]-1)):ceil(0.75*(starts[2]-1)))
-            A_split = hcat(ones(length(what_eval_split)),t[what_eval_split])
-            beta_split = pmap(x -> A_split \ x[what_eval_split], msd_t_split)
+
+            if err_mode == "regression"
+                # Claculation of the deviation from the regression
+                std_D = NaN
+                t_val095 = quantile(TDist(length(what_eval)-2))
+                ε = beta[1] .+ beta[2].*t[what_eval] .- msd_t[what_eval]
+                err_D = sqrt(sum(ε.^2) / sum((t[what_eval] .- mean(t[what_eval])).^2) / (length(what_eval)-2))
+                        * t_val095
+            elseif err_mode == "particles"
+                # Block averaging with the particles (M_block: number of particles per block)
+                msd_blocks = []
+                for j = 1:floor(Int64, length(msd_t_all)/M_block)
+                    push!(msd_blocks, mean(msd_t_all[(j-1)*M_block+1:j*M_block]))
+                end
+                beta_all = pmap(x -> A \ x[what_eval], msd_blocks)
+                std_D = std(hcat(beta_all...)'[:,2])
+                err_D = std_D / sqrt(length(beta_all))
+            elseif err_mode == "blocks"
+                # Block averaging (classical, dividing the trajectory into different time intervals)
+                # Split the trajectory
+                mol_i_split = []
+                starts = floor.(Int64,[range(1,length(mol_i),length=N_blocks+1)...])
+                for i_start = 1:length(starts)-1
+                    push!(mol_i_split, mol_i[starts[i_start]:starts[i_start+1]])
+                end
+
+                # Calc the msd of the blocks
+                msd_t_split = pmap(x -> (calc_msd(x,info)[1]), mol_i_split)
+                what_eval_split = Int64.(ceil(0.25*(starts[2]-1)):ceil(0.75*(starts[2]-1)))
+                A_split = hcat(ones(length(what_eval_split)),t[what_eval_split])
+                beta_split = pmap(x -> A_split \ x[what_eval_split], msd_t_split)
+
+                # Calculation of the error
+                D_split = Float64[]
+                for beta_i in beta_split append!(D_split,beta_i[2]) end
+                std_D = std(D_split)
+                err_D = std_D / sqrt(N_block)
+            else
+                std_D = NaN
+                err_D = NaN
+            end
 
             factor_unit = 1e-8
             if (reduced_units) factor_unit = 1 end
 
-            if N_blocks > 0
-                D_split = Float64[]
-                for beta_i in beta_split append!(D_split,beta_i[2]/6*factor_unit) end
-            else
-                D_split = NaN
-            end
-
-            D[i] = single_dat(beta[2]/6*factor_unit,std(D_split),std(D_split)/sqrt(N_blocks))
+            D[i] = single_dat(beta[2]/6*factor_unit, std_D/6*factor_unit, err_D/6*factor_unit)
 
             # Plot MSD of molecule i
             t1 = round(Int64,t[what_eval[1]])
@@ -116,7 +138,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; N_blocks=10)
 end
 
 # Function to calculate mean square displacement
-function calc_msd(dat::Array{Any,1},info)
+@everywhere function calc_msd(dat::Array{Any,1},info)
     n = length(dat[1].molid)    # No. molecules
     N = length(dat)             # No. timesteps
 
@@ -141,7 +163,7 @@ function calc_msd(dat::Array{Any,1},info)
     end
 
     msd_t = zeros(N)
-    # msd_t_all = []
+    msd_t_all = []
 
     for i = 1:n
         r2 = x[i] .^ 2 + y[i] .^ 2 + z[i] .^ 2
@@ -158,9 +180,9 @@ function calc_msd(dat::Array{Any,1},info)
         end
 
         msd_t += msd_i ./n
-        # push!(msd_t_all,msd_i)
+        push!(msd_t_all,msd_i)
     end
     msd_t = abs.(msd_t)
 
-    return msd_t, t #, msd_t_all
+    return msd_t, t, msd_t_all
 end

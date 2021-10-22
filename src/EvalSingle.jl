@@ -67,9 +67,9 @@ function EvalSingle(subfolder,inpar)
     if inpar.do_transport == 1
         # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
         if inpar.mode == "single_run"
-            D = calc_selfdiffusion(info, dump)
+            D = calc_selfdiffusion(info, dump; err_mode = "particles")
         elseif inpar.mode == "tdm"
-            D = calc_selfdiffusion(info, dump, N_blocks = 0)
+            D = calc_selfdiffusion(info, dump)
         end
 
         # Finite size correction (for tdm, the correction is applied after averaging the single runs) [1]
