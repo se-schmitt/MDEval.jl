@@ -23,7 +23,7 @@ if (no_procs > 1) addprocs(no_procs) end
 @everywhere using LsqFit
 @everywhere using LaTeXStrings
 @everywhere using PyCall
-pygui(:qt)
+# pygui(:qt)
 @everywhere using PyPlot
 close("all")
 @everywhere using StatsBase
@@ -57,7 +57,7 @@ mutable struct input_struct
 end
 
 # Structure to store general evaluation and simulation options
-mutable struct info_struct
+@everywhere mutable struct info_struct
     folder::String
     ensemble::String
     n_equ::Int64
