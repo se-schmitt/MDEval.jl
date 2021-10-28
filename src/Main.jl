@@ -36,11 +36,8 @@ function main(args::Array{String,1})
 
                 println("   →    $(Dates.format(now(),fdate)): DONE")
             catch e
-                if e in catched_errors
-                    println("   →    $(Dates.format(now(),fdate)): ERROR ($e)")
-                else
-                    throw(e)
-                end
+                println("   →    $(Dates.format(now(),fdate)): ERROR ($e)")
+                @error "" trace = (e, catch_backtrace())
             end
 
         ## Mode "tdm" ----------------------------------------------------------
