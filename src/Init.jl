@@ -143,8 +143,10 @@ end
 
 mutable struct results_struct_nemd
     T
+    p
     ρ
     x
+    c
     Etot
     Ekin
     Epot

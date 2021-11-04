@@ -73,9 +73,38 @@ function main()
 
         ## Mode "nemd-shear" --------------------------------------------------------
         elseif inpar.mode == "nemd-shear"
-            EvalNEMDShear(folder,inpar)
+            # Get all subfolders
+            subfolder = get_subfolder(folder)
+
+            if isempty(subfolder)
+                subfolder = [folder]
+            end
+
+            # Evaluation of single folder
+            if inpar.do_eval == 1
+                for i = 1:length(subfolder)
+                    print(string("Subfolder ",i," / ",length(subfolder)," → RUNNING ... "))
+            
+                    # Evaluate NEMD data
+                    EvalNEMDShear(subfolder[i],inpar)
+            
+                    println(string("   →    ",Dates.format(now(),fdate),": DONE"))
+                end
+                println(sline)
+            end
+
+            # Evaluation of state
+            if inpar.do_state == 1
+                println("State Evaluation")
+                intro = string(Dates.format(now(),fdate),": RUNNING ... ")
+                println(intro)
+
+                # Do state evaluation
+                EvalStateNEMD(subfolder, inpar)
+
+                println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
+            end    
         end
-        println(sline)
     end
 
     # Output in single file

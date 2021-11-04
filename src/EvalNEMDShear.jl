@@ -47,7 +47,7 @@ function EvalNEMDShear(subfolder,inpar)
     filename2 = "$(info.folder)/in.Bulk_NVT_sllod"
     N_mol = read_inputfile(filename2)
 
-L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
+    L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
     s_rate = 10^12*b/L #10^15 for ReaxFF 10^12 for others
     dat = load_thermo(info; is_nemd=true)
     if (reduced_units)      factor_p = 1
@@ -63,10 +63,11 @@ L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
     title("Fit",fontsize=10)
     legend(loc="upper left")
     tight_layout()
-    savefig(string(info.folder,"vy_plot.pdf"))
+    filename3 = "$(info.folder)/vy_plot.pdf"
+    savefig(filename3)
 
     # Output results
-    res = results_struct_nemd(T, ρ, x, Etot, Ekin, Epot, pyz, η, s_rate, r_squared)
+    res = results_struct_nemd(T, p, ρ, x, c, Etot, Ekin, Epot, pyz, η, s_rate, r_squared)
     OutputResultNEMD(res, info.folder)
 end
 

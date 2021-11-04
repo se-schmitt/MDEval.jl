@@ -48,8 +48,10 @@ function OutputResultNEMD(result::results_struct_nemd, folder::String)
     print(fID,header)
     # Write data
     print_prop(fID, result.T, "T")
+    print_prop(fID, result.p, "p")
     print_prop(fID, result.ρ, "ρ")
     print_prop(fID, result.x, "x")
+    print_prop(fID, result.c, "c")
     print_prop(fID, result.Etot, "Etot")
     print_prop(fID, result.Ekin, "Ekin")
     print_prop(fID, result.Epot, "Epot")
@@ -118,5 +120,9 @@ function print_prop(fID, x, sym)
         for i = 1:length(x)
             print_prop(fID, x[i], string(sym,i))
         end
+    elseif typeof(x) == Float64
+        spacestr = " "^(6-length(sym))
+        @printf(fID,"%s:%s%.8e",sym,spacestr,x)
+        @printf(fID,",\n")
     end
 end
