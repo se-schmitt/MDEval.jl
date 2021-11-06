@@ -51,7 +51,7 @@ Programm evaluates three different simulation types:
 Two options:
 
 - There has to be a file *INPUT.txt*  in the MD_Evaluation folder **or**
-- the path of the file can be passed as argument when running the master function *MD_EVAL_Master.jl* (julia *MD_EVAL_Master.jl* [*name of the input file*]) 
+- the path of the file can be passed as argument when running the master function *MD_EVAL_Master.jl* (julia *MD_EVAL_Master.jl* [*name of the input file*])
 
 **General structure of the input file:**
 
@@ -74,6 +74,7 @@ Two options:
 | **span_corr_fun** | integer (≥ 0)                     | single_run  | timesteps between single correlation functions |
 | **n_blocks**      | integer (≥ 0)                     | single_run  | number of blocks for static properties |
 | **n_every**       | integer (≥ 1)                     | single_run  | skip n_every timesteps when calculating acf (useful for slowly converging states, e.g. ideal gas) |
+| **debug_mode**    | integer [0,1] {*0*}               | single_run  | if debug mode is enables, errors are thrown directly |
 | **acf_calc_mode** | string [*autocov*, *fft*] {single_run → *autocov*, tdm → *fft*} | single_run, tdm  | mode for acf calculation (*autocov*: full acf by Julia *autocov* command (can be slowly for long signals), *fft*: acf calculation by FFT (fast, but inaccurate for long signals)) |
 | **do_structure**  | integer [0,1] {*0*}               | all         | 1 - do structure evaluation, 0 - skip structure evaluation |
 | **n_bin**         | integer (≥ 0) {*100*}             | all         | number of bins for rdf calculation |

@@ -36,8 +36,11 @@ function main(args::Array{String,1})
 
                 println("   →    $(Dates.format(now(),fdate)): DONE")
             catch e
-                println("   →    $(Dates.format(now(),fdate)): ERROR ($e)")
-                @error "" trace = (e, catch_backtrace())
+                if inpar.debug_mode == 0
+                    println("   →    $(Dates.format(now(),fdate)): ERROR ($e)")
+                elseif inpar.debug_mode == 1
+                    rethrow()
+                end
             end
 
         ## Mode "tdm" ----------------------------------------------------------
@@ -114,7 +117,7 @@ function read_input(args::Array{String,1})
     end
 
     # Initialization of input variables
-    inpar = input_struct("",[],"",-1,-1,-1,-1,-1.0,-1,-1,-1,-1,-1,"",-1,-1,-1.0)
+    inpar = input_struct("",[],"",-1,-1,-1,-1,-1.0,-1,-1,-1,-1,-1,-1,"",-1,-1,-1.0)
 
     # Set units
     global reduced_units = false
@@ -164,6 +167,9 @@ function read_input(args::Array{String,1})
             elseif startswith(lowercase(line),"n_every")
                 inpar.n_every = get_val(line,Int64)
 
+            elseif startswith(lowercase(line),"debug_mode")
+                inpar.debug_mode = get_val(line,Int64)
+
             elseif startswith(lowercase(line),"acf_calc_mode")
                 inpar.acf_calc_mode = get_val(line,String)
 
@@ -193,6 +199,7 @@ function read_input(args::Array{String,1})
     if inpar.cutcrit      == -1.0        inpar.cutcrit = 0.4                end
     if inpar.do_transport == -1         inpar.do_transport = 1              end
     if inpar.n_every      == -1         inpar.n_every = 1                   end
+    if inpar.debug_mode   == -1         inpar.debug_mode = 0                end
     if inpar.n_blocks     == -1         inpar.n_blocks = 0                  end
     if inpar.do_structure == -1         inpar.do_structure = 0              end
     if inpar.N_bin        == -1         inpar.N_bin = 100                   end

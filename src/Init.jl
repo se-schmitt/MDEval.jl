@@ -49,6 +49,7 @@ mutable struct input_struct
     span_corr_fun::Int64
     n_blocks::Int64
     n_every::Int64
+    debug_mode::Int64
     acf_calc_mode::String
     do_structure::Int64
     N_bin::Int64
