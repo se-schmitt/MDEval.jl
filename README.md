@@ -15,10 +15,11 @@ Notes:
 
 ## 1. Overview
 
-Programm evaluates three different simulation types:
+Program evaluates four different simulation types:
 - Evaluation of **single run simulations** for transport properties (**single_run**)
 - **Time decomposition method (TDM)** for transport properties (**tdm**)
 - Evaluation of **VLE simulations** (two phase simualtions) (**vle**)
+- Evaluation of **NEMD shear simulations** (**nemd-shear**)
 
 ### Single run simulations
 
@@ -44,6 +45,15 @@ Programm evaluates three different simulation types:
   - ...
 - ...
 
+### NEMD shear simulations
+
+**Required Folder structure:**
+- *STATE_1* [contains all simulations of one state point]
+  - *Sim_S1* [VLE simulation with shear rate S1]
+  - *Sim_S2* [VLE simulation with shear rate S2]
+  - ...
+- ...
+
 ## 2. Input File
 
 **Selecting a input file:**
@@ -61,7 +71,7 @@ Two options:
 
 | Name              | Type {*standard value*}           | Modes           | Description |
 | ----------------- | --------------------------------- | --------------- | ----------- |
-| **mode**          | string [*single_run*, *tdm*, *vle*] | all             | defines the mode of the simulations/evaluation |
+| **mode**          | string [*single_run*, *tdm*, *vle*, *nemd-shear*] | all             | defines the mode of the simulations/evaluation |
 | **folder**        | string                            | all             | path to main folder containing all simulation data (see chapter 1) |
 | **ensemble**      | string [*NVT*, *NVE*, *NpT*]        | single_run, tdm | ensemble to evaluate |
 | **timesteps_equ** | interger (≥ 0)                    | all         | number of timesteps to ignore at the start of each simulation |

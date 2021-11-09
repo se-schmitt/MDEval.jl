@@ -17,6 +17,7 @@ function EvalNEMDShear(subfolder,inpar)
                         dt,                 # info.dt
                         natoms,             # info.natoms
                         molmass,            # info.molmass
+                        inpar.n_blocks,     # info.n_blocks
                         inpar.N_bin,        # info.N_bin
                         inpar.r_cut)        # info.r_cut
 
