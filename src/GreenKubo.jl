@@ -303,10 +303,13 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100
                 push!(vals,calc_average_GK(steps, ave_t_all[:,what], info; do_plt = 0, do_err = 0)[1])
             end
 
+            # Exclude very high values
+            vals = vals[abs.(vals) .< 4*val]
+
             # Calculation of standard deviation and standard error
             μ = mean(vals)
-            std = sqrt(sum((vals.-μ).^2)/N_block)
-            err = std./sqrt(N_block)
+            std = sqrt(sum((vals.-μ).^2)/length(vals))
+            err = std./sqrt(length(vals))
         end
     else
         std = NaN
