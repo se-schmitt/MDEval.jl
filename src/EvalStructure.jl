@@ -161,8 +161,8 @@ function read_rdf(filepaths,info)
     dat_rdf = []
     ts_add = 0
     for f in filepaths
-        dat_rdf = read_profile1D(f,dat_rdf,ts_add)
-        ts_add = dat_rdf.timestep
+        dat_rdf = read_profile1D(f,dat_rdf,ts_add)[1]
+        ts_add = dat_rdf.timestep[end]
     end
 
     # Calculation of average
