@@ -336,9 +336,9 @@ function bootstrapping(mat, t, set)
 
     # Remove outliers
     k = 3
-    what_NaN = abs.(vals) .> k*median(vals)
+    what_NaN = abs.(vals) .> k*median(vals[(!).(isnan.(vals))])
     vals[what_NaN] = NaN .* ones(sum(what_NaN))
-    what_NaN = abs.(vals) .< median(vals)/k
+    what_NaN = abs.(vals) .< median(vals[(!).(isnan.(vals))])/k
     vals[what_NaN] = NaN .* ones(sum(what_NaN))
 
     # # Calculate error from distribution of TDM values
@@ -397,7 +397,7 @@ function eliminate_outlier_curves(mat::Array{Float64,2},set::set_TDM,fID)
     # Calculation of means
     means = mean(mat[1:Int(round(fraction*nrow)),:],dims=1)
     # Calculation of median of means
-    m = median(means)
+    m = median(means[(!).(isnan.(means))])
 
     # Reduction of matrix
     index = (abs.(means) .< (factor*m))[:]
