@@ -111,11 +111,45 @@ function main(args::Array{String,1})
                 println(intro)
 
                 # Do state evaluation
-                EvalStateNEMD(subfolder, inpar)
+                EvalStateNEMDShear(subfolder, inpar)
 
                 println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
             end
-        end
+    
+        ## Mode "nemd-heat" --------------------------------------------------------
+        elseif inpar.mode == "nemd-heat"
+            # Get all subfolders
+            subfolder = get_subfolder(folder)
+
+            if isempty(subfolder)
+                subfolder = [folder]
+            end
+
+            # Evaluation of single folder
+            if inpar.do_eval == 1
+                for i = 1:length(subfolder)
+                    print(string("Subfolder ",i," / ",length(subfolder)," → RUNNING ... "))
+
+                    # Evaluate NEMD data
+                    EvalNEMDHeat(subfolder[i],inpar)
+
+                    println(string("   →    ",Dates.format(now(),fdate),": DONE"))
+                end
+                println(sline)
+            end
+
+            ## Evaluation of state
+            #if inpar.do_state == 1
+            #    println("State Evaluation")
+            #    intro = string(Dates.format(now(),fdate),": RUNNING ... ")
+            #    println(intro)
+            #
+            #    # Do state evaluation
+            #    EvalStateNEMDHeat(subfolder, inpar)
+            #
+            #    println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
+            #end
+        end        
     end
 
     # Output in single file

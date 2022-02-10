@@ -15,6 +15,7 @@ using Distributions
 using NLsolve
 using Printf
 using Statistics
+using CurveFit
 
 if (nprocs() > 1) rmprocs(workers()) end
 if (no_procs > 1) addprocs(no_procs) end
@@ -82,6 +83,8 @@ mutable struct thermo_dat
     Ekin::Array{Float64,1}
     Epot::Array{Float64,1}
     pyz::Array{Float64,1}
+    Qhot::Array{Float64,1}
+    Qcold::Array{Float64,1}
 end
 
 # Data structure to store pressure tensor (pressure.dat)
@@ -148,7 +151,7 @@ mutable struct results_struct
     λ
 end
 
-mutable struct results_struct_nemd
+mutable struct results_struct_nemd_shear
     T
     p
     ρ
@@ -161,6 +164,17 @@ mutable struct results_struct_nemd
     η
     s_rate
     r_squared
+end
+
+mutable struct results_struct_nemd_heat
+    T
+    p
+    ρ
+    c
+    Etot
+    Ekin
+    Epot
+    λ
 end
 
 # Data strucutre to store TDM settings

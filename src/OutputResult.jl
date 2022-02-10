@@ -35,7 +35,7 @@ function OutputResult(result::results_struct, folder::String)
     close(fID)
 end
 
-function OutputResultNEMD(result::results_struct_nemd, folder::String)
+function OutputResultNEMDShear(result::results_struct_nemd_shear, folder::String)
     # Create Filepath
     path = string(folder,"/result.dat")
 
@@ -59,6 +59,29 @@ function OutputResultNEMD(result::results_struct_nemd, folder::String)
     print_prop(fID, result.η, "η")
     print_prop(fID, result.s_rate, "s_rate")
     print_prop(fID, result.r_squared, "R2")
+    close(fID)
+end
+
+function OutputResultNEMDHeat(result::results_struct_nemd_heat, folder::String)
+    # Create Filepath
+    path = string(folder,"/result.dat")
+
+    # Write to file
+    fID = open(path,"w")
+    line1 = string("# Created by MD - Bulk Evaluation, Folder: ", folder)
+    line2 = "# Format: val (std dev., std err.); [T]=K, [p]=MPa, [ρ]=g/ml, [E]=eV, [λ]=W/m*K"
+    if (reduced_units) line2 = "# Format: val (std dev., std err.); reduced units" end
+    header = string(line1,"\n",line2,"\n")
+    print(fID,header)
+    # Write data
+    print_prop(fID, result.T, "T")
+    print_prop(fID, result.p, "p")
+    print_prop(fID, result.ρ, "ρ")
+    print_prop(fID, result.c, "c")
+    print_prop(fID, result.Etot, "Etot")
+    print_prop(fID, result.Ekin, "Ekin")
+    print_prop(fID, result.Epot, "Epot")
+    print_prop(fID, result.λ, "λ")
     close(fID)
 end
 
