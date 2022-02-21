@@ -22,7 +22,7 @@ function EvalNEMDShear(subfolder,inpar)
                         inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
-    T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info; is_nemd="shear")
+    T, p, ρ, Etot, Ekin, Epot, c, pyz = ave_thermo(info; is_nemd=true)
 
     # Load data
     filename = "$(info.folder)/vy_profile.dat"
@@ -50,7 +50,7 @@ function EvalNEMDShear(subfolder,inpar)
 
     L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
     s_rate = 10^12*b/L #10^15 for ReaxFF 10^12 for others
-    dat = load_thermo(info; is_nemd="shear")
+    dat = load_thermo(info; is_nemd=true)
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
 
@@ -68,8 +68,8 @@ function EvalNEMDShear(subfolder,inpar)
     savefig(filename3)
 
     # Output results
-    res = results_struct_nemd_shear(T, p, ρ, x, c, Etot, Ekin, Epot, pyz, η, s_rate, r_squared)
-    OutputResultNEMDShear(res, info.folder)
+    res = results_struct_nemd(T, p, ρ, x, c, Etot, Ekin, Epot, pyz, η, s_rate, r_squared)
+    OutputResultNEMD(res, info.folder)
 end
 
 

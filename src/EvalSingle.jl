@@ -26,7 +26,7 @@ function EvalSingle(subfolder,inpar)
                         inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
-    T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info,is_nemd="no")
+    T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info)
 
     # Calculate box length L_box
     if (reduced_units)
@@ -108,9 +108,9 @@ function EvalSingle(subfolder,inpar)
 end
 
 ## Function to Average Static Thermodynamic Properties -------------------------
-function ave_thermo(info::info_struct; is_nemd::String)
+function ave_thermo(info::info_struct; is_nemd=false)
     # Loading Thermo File
-    dat = load_thermo(info; is_nemd)
+    dat = load_thermo(info; is_nemd=is_nemd)
 
     what = dat.step .>= info.n_equ
 
@@ -127,7 +127,7 @@ function ave_thermo(info::info_struct; is_nemd::String)
     elseif !(reduced_units) factor_p = 0.1 end
     p_std_err = block_average(dat.p[what],N_blocks=info.n_blocks)
     p = single_dat(mean(dat.p[what].*factor_p), p_std_err[1].*factor_p, p_std_err[2].*factor_p )
-    if is_nemd == "shear"
+    if is_nemd
         pyz  = single_dat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
     else
         pyz = Float64[]

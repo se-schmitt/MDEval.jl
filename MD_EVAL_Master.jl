@@ -27,7 +27,7 @@ include("src/StokesEinstein.jl")
 include("src/TransportProperties.jl")
 include("src/EvalStructure.jl")
 include("src/EvalNEMDShear.jl")
-include("src/EvalStateNEMDShear.jl")
-include("src/EvalNEMDHeat.jl")
+include("src/EvalStateNEMD.jl")
+
 # --- Start Program ---
 main(ARGS)
