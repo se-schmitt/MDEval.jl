@@ -59,9 +59,16 @@ function EvalSingle(subfolder,inpar)
 
     # Loading Dump File
     dumpexists = false
-    if inpar.do_transport == 1 || inpar.do_structure == 1
+    if !(isempty(readdir(info.folder)[startswith.(readdir(info.folder),"rdf.$(info.ensemble)")]))
+        rdfexists = true
+    else
+        rdfexists = false
+    end
+    if (inpar.do_transport == 1) || ((inpar.do_structure == 1) && !(rdfexists))
         dump = load_dump(info)
         dumpexists = true
+    else
+        dump = []
     end
 
     if inpar.do_transport == 1
