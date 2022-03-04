@@ -50,7 +50,7 @@ function EvalNEMDShear(subfolder,inpar)
 
     L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
     s_rate = 10^12*b/L #10^15 for ReaxFF 10^12 for others
-    dat = load_thermo(info; is_nemd="shear")
+    dat = load_thermo(info, is_nemd="shear")
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
 

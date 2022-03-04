@@ -15,7 +15,6 @@ using Distributions
 using NLsolve
 using Printf
 using Statistics
-using CurveFit
 
 if (nprocs() > 1) rmprocs(workers()) end
 if (no_procs > 1) addprocs(no_procs) end

@@ -33,7 +33,7 @@ function load_info(folder)
 end
 
 # Loading Thermo File
-function load_thermo(info::info_struct; is_nemd::String)
+function load_thermo(info::info_struct, is_nemd::String)
     thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
@@ -74,9 +74,9 @@ end
 
 function load_thermo_file(file::String, info::info_struct, is_nemd::String)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
-    
+
     if is_nemd == "no"
-        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot" 
+        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
             error("Format of File \"thermo.dat\" not right")
         end
         # Read data
@@ -88,7 +88,7 @@ function load_thermo_file(file::String, info::info_struct, is_nemd::String)
         return step, time, T, p, ρ, Etot, Ekin, Epot
 
     elseif is_nemd == "shear"
-        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot v_pyz v_eta" 
+        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot v_pyz v_eta"
             error("Format of File \"thermo.dat\" not right")
         end
         # Read data
@@ -101,7 +101,7 @@ function load_thermo_file(file::String, info::info_struct, is_nemd::String)
         return step, time, T, p, ρ, Etot, Ekin, Epot, pyz
 
     elseif is_nemd == "heat"
-        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot f_hot_rescale f_cold_rescale" 
+        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot f_hot_rescale f_cold_rescale"
             error("Format of File \"thermo.dat\" not right")
         end
         # Read data

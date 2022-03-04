@@ -8,7 +8,7 @@
 
 # EvalNEMDHeat
 function EvalNEMDHeat(subfolder, inpar)
-    
+
     moltype, dt, natoms, molmass = load_info(subfolder)
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
@@ -23,17 +23,17 @@ function EvalNEMDHeat(subfolder, inpar)
                         inpar.r_cut)        # info.r_cut
 
     # Average thermodynamic properties
-    T, p, ρ, Etot, Ekin, Epot, c, _ = ave_thermo(info, is_nemd="heat")
-    
+    T, p, ρ, Etot, Ekin, Epot, c, _ = ave_thermo(info; is_nemd="heat")
+
     # Evaluate temperature profile
     nbins, dims = add_info_NEMDheat(info)
     bstps, bins = load_profile(info, nbins)
-    
+
     mbins = []
     for j = 1:length(bins)
         append!(mbins, mean(bins[j]))
     end
-    
+
     plot_profile(info, mbins)
     plot_bins(info, bstps, bins)
 
@@ -46,7 +46,9 @@ function EvalNEMDHeat(subfolder, inpar)
     for j = 1:length(dQhot)
         append!(dQ, (dQhot[j] + dQcold[j]) /2)
     end
-    _, fit_dQ = linear_fit(dat.t, dQ)
+
+    # Linear regression to a linear funtion
+    fit_dQ = ()[ones(length(dat.t)) dat.t] \ dQ)[2]
 
     plot_Q(info, dat.t, dQhot, dQcold, dQ, fit_dQ)
 
@@ -79,9 +81,9 @@ function add_info_NEMDheat(info)
         zlen = parse(Float64,lines[7][pos7[end]+1:end])
         pos8 = findfirst(": ",lines[8])
         nbins = parse(Float64,lines[8][pos8[end]+1:end])
-        
+
     else error("File \"",file,"\" is empty") end
-    
+
     dims = [xlen, ylen, zlen]
     return nbins, dims
 end
@@ -99,7 +101,7 @@ function load_profile(info, nbins)
             if startswith(lines[i],"  $(j) ")
                 if j == 1
                     append!(bstps, parse(Float64, split(lines[i-1]," ")[1]))
-                end    
+                end
                 append!(bins[j], parse(Float64, split(lines[i]," ")[6]))
             end
         end
@@ -110,10 +112,10 @@ end
 
 # Plot temperature profile of simulation box
 function plot_profile(info, mbins)
-    
+
     figure()
     title("Mean temperature profile of simulation box")
-    
+
     xlabel("Bin")
     if reduced_units
         ylabel(L"T^*")
