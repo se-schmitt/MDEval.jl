@@ -25,10 +25,12 @@ function EvalNEMDShear(subfolder,inpar)
     T, p, ρ, Etot, Ekin, Epot, c, pyz = ave_thermo(info; is_nemd=true)
 
     # Load data
-    filename = "$(info.folder)/vy_profile.dat"
     ts_add = 0
     data = []
-    data, no_chunks, n_steps = read_profile1D(filename,data,ts_add)
+    for f in list[startswith.(list,"vy_profile")]
+        data, no_chunks, n_steps = read_profile1D("$(info.folder)/$f",prof,ts_add)
+        ts_add = prof.timestep[end]
+    end
     what = data.timestep .>= info.n_equ
     vy_mean = return_vy_mean(data,what,n_steps,no_chunks)
     x = vy_mean[:,2]
@@ -50,7 +52,7 @@ function EvalNEMDShear(subfolder,inpar)
 
     L = ((N_mol*info.molmass*1e24)/(ρ.val*6.02214076e23))^(1/3)
     s_rate = 10^12*b/L #10^15 for ReaxFF 10^12 for others
-    dat = load_thermo(info; is_nemd=true)
+    dat = load_thermo(info, is_nemd="shear")
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
 

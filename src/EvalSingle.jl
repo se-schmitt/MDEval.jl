@@ -26,7 +26,7 @@ function EvalSingle(subfolder,inpar)
                         inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
-    T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info)
+    T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info; is_nemd="no")
 
     # Calculate box length L_box
     if (reduced_units)
@@ -115,9 +115,9 @@ function EvalSingle(subfolder,inpar)
 end
 
 ## Function to Average Static Thermodynamic Properties -------------------------
-function ave_thermo(info::info_struct; is_nemd=false)
+function ave_thermo(info::info_struct; is_nemd="no")
     # Loading Thermo File
-    dat = load_thermo(info; is_nemd=is_nemd)
+    dat = load_thermo(info, is_nemd=is_nemd)
 
     what = dat.step .>= info.n_equ
 

@@ -33,8 +33,8 @@ function load_info(folder)
 end
 
 # Loading Thermo File
-function load_thermo(info::info_struct; is_nemd=false)
-    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+function load_thermo(info::info_struct; is_nemd::String="no")
+    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
     if length(files) > 9
@@ -69,23 +69,35 @@ end
 
 function load_thermo_file(file::String, info::info_struct)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
-    if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
-        error("Format of File \"thermo.dat\" not right")
-    end
-    # Read data
-    dat = readdlm(file, skipstart=2)
-    step = dat[:,1];    time = step*info.dt
-    T    = dat[:,2];    p    = dat[:,3]
-    ρ    = dat[:,4];    Etot = dat[:,5]
-    Ekin = dat[:,6];    Epot = dat[:,7]
-    return step, time, T, p, ρ, Etot, Ekin, Epot
-end
 
-function load_thermo_file_NEMD(file::String, info::info_struct)
-    fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
-    if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
+    if is_nemd == "no"
+        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
+            error("Format of File \"thermo.dat\" not right")
+        end
+        # Read data
+        dat = readdlm(file, skipstart=2)
+        step = dat[:,1];    time = step*info.dt
+        T    = dat[:,2];    p    = dat[:,3]
+        ρ    = dat[:,4];    Etot = dat[:,5]
+        Ekin = dat[:,6];    Epot = dat[:,7]
+        return step, time, T, p, ρ, Etot, Ekin, Epot
+
+    elseif is_nemd == "shear"
         if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot v_pyz v_eta"
-        error("Format of File \"thermo.dat\" not right")
+            error("Format of File \"thermo.dat\" not right")
+        end
+        # Read data
+        dat = readdlm(file, skipstart=2)
+        step = dat[:,1];    time = step*info.dt
+        T    = dat[:,2];    p    = dat[:,3]
+        ρ    = dat[:,4];    Etot = dat[:,5]
+        Ekin = dat[:,6];    Epot = dat[:,7]
+        pyz  = dat[:,8]
+        return step, time, T, p, ρ, Etot, Ekin, Epot, pyz
+
+    elseif is_nemd == "heat"
+        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot f_hot f_cold"
+            error("Format of File \"thermo.dat\" not right")
         end
     end
     # Read data
@@ -390,6 +402,8 @@ function read_profile1D(filename,data,ts_add)
             type = "vle"
         elseif line3 == "# Chunk Coord1 Ncount vy"
             type = "shear"
+        elseif line3 == "# Chunk Coord1 Ncount temp"
+            type = "heat"
         end
     elseif line2 == "# TimeStep Number-of-rows"
         if startswith(line3,"# Row c_myRDF[1] c_myRDF[2] c_myRDF[3]")
@@ -408,13 +422,15 @@ function read_profile1D(filename,data,ts_add)
     lines_per_ts = (no_chunks+1)
     n_steps = Int64(length(txt)/lines_per_ts)
 
-    if (typeof(data) != profile_data_vle) || (typeof(data) != profile_data_shear)
+    if (typeof(data) != profile_data_vle) || (typeof(data) != profile_data_shear) || (typeof(data) != profile_data_heat) || (typeof(data) != profile_data_rdf)
         # Initialization of profile_data strucutre
         init = Array{Float64,2}(undef,0,no_chunks)
         if type == "vle"
             data = profile_data_vle(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
         elseif type == "shear"
-            data = profile_data_shear(Float64[],init,init,init,init,Float64[])
+            data = profile_data_shear(Float64[],init,init,init,init)
+        elseif type == "heat"
+            data = profile_data_heat(Float64[],init,init,init,init)
         elseif type == "rdf"
             data = profile_data_rdf(Float64[],init,init,repeat([init],N_rdf),repeat([init],N_rdf))
         end
@@ -449,7 +465,10 @@ function read_profile1D(filename,data,ts_add)
             data.x = vcat(data.x,body[:,2]')
             data.Ncount = vcat(data.Ncount,body[:,3]')
             data.vy = vcat(data.vy,body[:,4]')
-            data.x_id = [0]
+        elseif type == "heat"
+            data.x = vcat(data.x,body[:,2]')
+            data.Ncount = vcat(data.Ncount,body[:,3]')
+            data.T = vcat(data.T,body[:,4]')
         elseif type == "rdf"
             data.r = vcat(data.r,body[:,2]')
             for i in 1:N_rdf

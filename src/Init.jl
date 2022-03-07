@@ -28,7 +28,6 @@ if (no_procs > 1) addprocs(no_procs) end
 close("all")
 @everywhere using StatsBase
 
-
 # Physical Constants
 global kB = 1.380649e-23        # J/K
 global NA = 6.02214076e23       # 1/mol
@@ -215,9 +214,15 @@ mutable struct profile_data_shear
     x::Array{Float64,2}
     Ncount::Array{Float64,2}
     vy::Array{Float64,2}
-    x_id::Array{Float64,1}
-    #σyz::Array{Float64,2}
-    # to be continued
+end
+
+# Data structure to save profile information of heat simulations
+mutable struct profile_data_heat
+    timestep::Array{Float64,1}
+    id_chunk::Array{Float64,2}
+    x::Array{Float64,2}
+    Ncount::Array{Float64,2}
+    T::Array{Float64,2}
 end
 
 # Data structure to save profile information of rdf
