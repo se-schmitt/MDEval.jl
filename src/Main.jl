@@ -115,41 +115,16 @@ function main(args::Array{String,1})
 
                 println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
             end
-    
+
         ## Mode "nemd-heat" --------------------------------------------------------
         elseif inpar.mode == "nemd-heat"
-            # Get all subfolders
-            subfolder = get_subfolder(folder)
+            print("$(Dates.format(now(),fdate)): RUNNING ... ")
 
-            if isempty(subfolder)
-                subfolder = [folder]
-            end
+            EvalNEMDHeat(folder,inpar)
 
-            # Evaluation of single folder
-            if inpar.do_eval == 1
-                for i = 1:length(subfolder)
-                    print(string("Subfolder ",i," / ",length(subfolder)," → RUNNING ... "))
-
-                    # Evaluate NEMD data
-                    EvalNEMDHeat(subfolder[i],inpar)
-
-                    println(string("   →    ",Dates.format(now(),fdate),": DONE"))
-                end
-                println(sline)
-            end
-
-            ## Evaluation of state
-            #if inpar.do_state == 1
-            #    println("State Evaluation")
-            #    intro = string(Dates.format(now(),fdate),": RUNNING ... ")
-            #    println(intro)
-            #
-            #    # Do state evaluation
-            #    EvalStateNEMDHeat(subfolder, inpar)
-            #
-            #    println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
-            #end
-        end        
+            println("   →    $(Dates.format(now(),fdate)): DONE")
+            println(sline)
+        end
     end
 
     # Output in single file
@@ -269,6 +244,9 @@ function read_input(args::Array{String,1})
         if inpar.mode == "single_run"   inpar.acf_calc_mode = "autocov" 	end
         if inpar.mode == "tdm"          inpar.acf_calc_mode = "fft"         end
     end
+    if inpar.mode == "nemd-heat"
+        inpar.ensemble = "NVE"
+    end
 
     # Check input structure
     # Mode "single_run"
@@ -283,6 +261,7 @@ function read_input(args::Array{String,1})
         inpar.do_state == -1 || inpar.n_boot == -1) && inpar.mode == "tdm"
         error("Parameters missing for mode \"tdm\"!")
     end
+
 
     return inpar
 end
