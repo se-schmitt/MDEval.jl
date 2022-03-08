@@ -153,7 +153,7 @@ function read_input(args::Array{String,1})
     end
 
     # Initialization of input variables
-    inpar = input_struct("",[],"",-1,-1,-1,-1,-1.0,-1,-1,-1,-1,-1,-1,"",-1,-1,-1.0)
+    inpar = input_struct("",[],"",-1,-1,-1,-1,-1.0,-1,-1,-1,-1,-1,-1,"",-1,-1,-1.0,-1.0)
 
     # Set units
     global reduced_units = false
@@ -225,6 +225,8 @@ function read_input(args::Array{String,1})
                 elseif what_units == "reduced"
                     reduced_units = true
                 end
+            elseif startswith(lowercase(line),"k_l_thermo")
+                inpar.k_L_thermo = get_val(line,Float64)
             end
         else
             println(line)
@@ -246,6 +248,10 @@ function read_input(args::Array{String,1})
     end
     if inpar.mode == "nemd-heat"
         inpar.ensemble = "NVE"
+        if inpar.k_L_thermo  == -1.0
+            inpar.k_L_thermo = 0.2
+            @warn("k_L_thermo set to 0.2 by default!")
+        end
     end
 
     # Check input structure
