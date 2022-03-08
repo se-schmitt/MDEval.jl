@@ -246,7 +246,7 @@ function load_result_NEMD(file)
     fID = open(file,"r")
     lines = readlines(fID);
     close(fID)
-    res = results_struct_nemd([],[],[],single_dat[],[],[],[],[],[],[],single_dat[],[])
+    res = results_struct_nemd([],[],[],[],[],[],[],[],[],[],[],[])
 
     for i = 1:length(lines)
         pos_colon = findfirst(isequal(':'),lines[i])
@@ -276,25 +276,19 @@ function load_result_NEMD(file)
                     std = parse(Float64,strip(lines[i][pos_open+1:pos_comma-1]))
                     err = parse(Float64,strip(lines[i][pos_comma+1:pos_close-1]))
                 end
-                if (name == "T")    res.T = single_dat(val,std,err) end
-                if (name == "p")    res.p = single_dat(val,std,err) end
-                if (name == "ρ")    res.ρ = single_dat(val,std,err) end
+                if (name == "T")        res.T = single_dat(val,std,err) end
+                if (name == "p")        res.p = single_dat(val,std,err) end
+                if (name == "ρ")        res.ρ = single_dat(val,std,err) end
                 if (name == string("x",num))
-                                    res.x = vcat(res.x, single_dat(val,std,err))
-                                    if length(res.x) != num @warn("res.x doesn't fit num!") end
+                                        res.x = vcat(res.x, single_dat(val,std,err))
+                                        if length(res.x) != num @warn("res.x doesn't fit num!") end
                 end
-                if (name == "Etot") res.Etot = single_dat(val,std,err) end
-                if (name == "Ekin") res.Ekin = single_dat(val,std,err) end
-                if (name == "Epot") res.Epot = single_dat(val,std,err) end
-                if (name == "c")    res.c = single_dat(val,std,err) end
-                if (name == "η")    res.η = single_dat(val,std,err) end
-                if (name == "η_")   res.η_V = single_dat(val,std,err) end
-                if (name == string("D",num))
-                                    res.D = vcat(res.D, single_dat(val,std,err))
-                                    if length(res.D) != num @warn("res.D doesn't fit num!") end
-                end
-                if (name == "λ")    res.λ = single_dat(val,std,err) end
-                if (name == "s_rate")    res.s_rate = single_dat(val,std,err) end
+                if (name == "Etot")     res.Etot = single_dat(val,std,err) end
+                if (name == "Ekin")     res.Ekin = single_dat(val,std,err) end
+                if (name == "Epot")     res.Epot = single_dat(val,std,err) end
+                if (name == "η")        res.η = single_dat(val,std,err) end
+                if (name == "s_rate")   res.s_rate = single_dat(val,std,err) end
+                if (name == "λ")        res.λ = single_dat(val,std,err) end
             end
         end
     end

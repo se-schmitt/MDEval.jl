@@ -73,8 +73,9 @@ function EvalNEMDHeat(subfolder, inpar)
 
     λ = dQ_fit / A / dTdx
 
-    res = results_struct_nemd_heat(T, p, ρ, c, Etot, Ekin, Epot, λ)
-    OutputResultNEMDHeat(res,info.folder)
+    res = results_struct_nemd(T, p, ρ, [1.0], Etot, Ekin, Epot, [], [], [], [], λ)
+    OutputResultNEMD(res,info.folder)
+    @exfiltrate
 
     # Figures ------------------------------------------------------------------
     # Figure of temperature profile

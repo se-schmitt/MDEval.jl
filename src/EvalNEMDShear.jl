@@ -70,7 +70,7 @@ function EvalNEMDShear(subfolder,inpar)
     savefig(filename3)
 
     # Output results
-    res = results_struct_nemd(T, p, ρ, x, c, Etot, Ekin, Epot, pyz, η, s_rate, r_squared)
+    res = results_struct_nemd(T, p, ρ, x, Etot, Ekin, Epot, pyz, η, s_rate, r_squared, [])
     OutputResultNEMD(res, info.folder)
 end
 

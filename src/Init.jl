@@ -81,6 +81,8 @@ mutable struct thermo_dat
     Ekin::Array{Float64,1}
     Epot::Array{Float64,1}
     pyz::Array{Float64,1}
+    Qhot::Array{Float64,1}
+    Qcold::Array{Float64,1}
 end
 
 # Data structure to store pressure tensor (pressure.dat)
@@ -152,7 +154,6 @@ mutable struct results_struct_nemd
     p
     ρ
     x
-    c
     Etot
     Ekin
     Epot
@@ -160,6 +161,7 @@ mutable struct results_struct_nemd
     η
     s_rate
     r_squared
+    λ
 end
 
 # Data strucutre to store TDM settings

@@ -43,10 +43,12 @@ function load_thermo(info::info_struct; is_nemd::String="no")
     stepADD=0
     timeADD=0
     for file in files
-        if !is_nemd
-            step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info)
-        elseif is_nemd
-            step, time, T, p, ρ, Etot, Ekin, Epot, pyz = load_thermo_file_NEMD(file,info)
+        if is_nemd == "no"
+            step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info,is_nemd)
+        elseif is_nemd == "shear"
+            step, time, T, p, ρ, Etot, Ekin, Epot, pyz = load_thermo_file(file,info,is_nemd)
+        elseif is_nemd == "heat"
+            step, time, T, p, ρ, Etot, Ekin, Epot, Qhot, Qcold = load_thermo_file(file,info,is_nemd)
         end
         thermodat.step = vcat(thermodat.step,step.+stepADD)
         thermodat.t = vcat(thermodat.t,time.+timeADD)
@@ -56,18 +58,21 @@ function load_thermo(info::info_struct; is_nemd::String="no")
         thermodat.Etot = vcat(thermodat.Etot,Etot)
         thermodat.Ekin = vcat(thermodat.Ekin,Ekin)
         thermodat.Epot = vcat(thermodat.Epot,Epot)
-        if is_nemd
+        if is_nemd == "shear"
             thermodat.pyz = vcat(thermodat.pyz,pyz)
+        elseif is_nemd == "heat"
+            thermodat.Qhot = vcat(thermodat.Qhot,Qhot)
+            thermodat.Qcold = vcat(thermodat.Qcold,Qcold)
         end
         stepADD = thermodat.step[end]
         timeADD = thermodat.t[end]
     end
-
+    
     if isempty(thermodat.step) error("No thermo data loaded!") end
     return thermodat
 end
 
-function load_thermo_file(file::String, info::info_struct)
+function load_thermo_file(file::String, info::info_struct, is_nemd::String)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
 
     if is_nemd == "no"

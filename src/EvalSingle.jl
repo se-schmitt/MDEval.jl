@@ -134,7 +134,7 @@ function ave_thermo(info::info_struct; is_nemd="no")
     elseif !(reduced_units) factor_p = 0.1 end
     p_std_err = block_average(dat.p[what],N_blocks=info.n_blocks)
     p = single_dat(mean(dat.p[what].*factor_p), p_std_err[1].*factor_p, p_std_err[2].*factor_p )
-    if is_nemd
+    if is_nemd == "shear"
         pyz  = single_dat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
     else
         pyz = Float64[]
