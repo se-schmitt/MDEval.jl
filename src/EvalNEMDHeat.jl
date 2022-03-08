@@ -75,7 +75,6 @@ function EvalNEMDHeat(subfolder, inpar)
 
     res = results_struct_nemd(T, p, ρ, [1.0], Etot, Ekin, Epot, [], [], [], [], λ)
     OutputResultNEMD(res,info.folder)
-    @exfiltrate
 
     # Figures ------------------------------------------------------------------
     # Figure of temperature profile
