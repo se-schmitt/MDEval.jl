@@ -8,28 +8,33 @@
 
 # Functions to load different files
 # Loading Info File
-function load_info(folder)
+function load_info(folder; is_nemd="no")
     # Get filename
     list = readdir(folder)
     filename = list[occursin.("info.",list)][end]
     file = string(folder,"/",filename)
 
-    # Read file info.dat
-    if isfile(file)
-        fID = open(file,"r");   lines = readlines(fID);     close(fID)
+    if is_nemd == "no"
+        # Read file info.dat
+        if isfile(file)
+            fID = open(file,"r");   lines = readlines(fID);     close(fID)
 
-        # Extract information
-        pos1 = findfirst(": ",lines[1])
-        moltype = lines[1][pos1[end]+1:end]
-        pos2 = findfirst(": ",lines[2])
-        dt = parse(Float64,lines[2][pos2[end]+1:end])
-        pos3 = findfirst(": ",lines[3])
-        natoms = parse(Int64,lines[3][pos3[end]+1:end])
-        pos4 = findfirst(": ",lines[4])
-        molmass = parse(Float64,lines[4][pos4[end]+1:end])
-    else error("File \"",file,"\" is empty") end
+            # Extract information
+            pos1 = findfirst(": ",lines[1])
+            moltype = lines[1][pos1[end]+1:end]
+            pos2 = findfirst(": ",lines[2])
+            dt = parse(Float64,lines[2][pos2[end]+1:end])
+            pos3 = findfirst(": ",lines[3])
+            natoms = parse(Int64,lines[3][pos3[end]+1:end])
+            pos4 = findfirst(": ",lines[4])
+            molmass = parse(Float64,lines[4][pos4[end]+1:end])
 
-    return moltype, dt, natoms, molmass
+            return moltype, dt, natoms, molmass
+
+        else error("File \"",file,"\" is empty") end
+    elseif is_nemd == "shear"
+    elseif is_nemd == "heat"
+    end
 end
 
 # Loading Thermo File
@@ -67,7 +72,7 @@ function load_thermo(info::info_struct; is_nemd::String="no")
         stepADD = thermodat.step[end]
         timeADD = thermodat.t[end]
     end
-    
+
     if isempty(thermodat.step) error("No thermo data loaded!") end
     return thermodat
 end
@@ -496,11 +501,11 @@ function read_inputfile(filename)
     #line3 = readline(fID)
     #type = ""
     #if line2 == "variable        N           equal"
-txts=readlines(fID)
-tst=length(txts)
-close(fID)
-fID = open(filename,"r")
-local N_mol, n
+    txts=readlines(fID)
+    tst=length(txts)
+    close(fID)
+    fID = open(filename,"r")
+    local N_mol, n
     for i in 1:tst
         txt=readline(fID)
         string_0 = replace(txt," " => "" )
