@@ -246,7 +246,7 @@ function load_result_NEMD(file)
     fID = open(file,"r")
     lines = readlines(fID);
     close(fID)
-    res = results_struct_nemd([],[],[],[],[],[],[],[],[],[],[],[])
+    res = results_struct_nemd([],[],[],[],[],[],[],[],[],[])
 
     for i = 1:length(lines)
         pos_colon = findfirst(isequal(':'),lines[i])

@@ -54,6 +54,7 @@ mutable struct input_struct
     do_structure::Int64
     N_bin::Int64
     r_cut::Float64
+    k_L_thermo::Float64
 end
 
 # Structure to store general evaluation and simulation options
@@ -157,10 +158,8 @@ mutable struct results_struct_nemd
     Etot
     Ekin
     Epot
-    pyz
     η
     s_rate
-    r_squared
     λ
 end
 

@@ -121,11 +121,6 @@ function ave_thermo(info::info_struct; is_nemd="no")
 
     what = dat.step .>= info.n_equ
 
-    if info.ensemble == "NVE"
-        A = [ones(size(dat.t)) dat.t]
-        beta = A\dat.Etot;
-        println(info.folder," | ave Etot: ",beta[1]," | slope E_tot: ",beta[2])
-    end
     # Temperature
     T_std_err = block_average(dat.T[what],N_blocks=info.n_blocks)
     T = single_dat(mean(dat.T[what]), T_std_err[1], T_std_err[2])

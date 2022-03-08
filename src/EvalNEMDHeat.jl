@@ -50,8 +50,6 @@ function EvalNEMDHeat(subfolder, inpar)
     dQ_fit = (repeat([ones(length(dat.t)) dat.t],2,1) \ [dQhot;dQcold])[2]
 
     # Calculate thermal conductivity -------------------------------------------
-    k_L_thermo = 0.25
-
     # Read info file
     Lx,Ly,Lz = add_info_NEMDheat(info)
     A = Ly*Lz
@@ -60,8 +58,8 @@ function EvalNEMDHeat(subfolder, inpar)
         xbins = xbins.*Lx
     end
 
-    buffer = 0.05*Lx
-    L_thermo = k_L_thermo*Lx
+    buffer = 0.02*Lx
+    L_thermo = inpar.k_L_thermo*Lx
     what_zone1 = (xbins .> (L_thermo/2 + buffer))        .& (xbins .< (Lx/2 - L_thermo/2 - buffer))
     what_zone2 = (xbins .> (Lx/2 + L_thermo/2 + buffer)) .& (xbins .< (Lx - L_thermo/2 - buffer))
 
@@ -73,19 +71,19 @@ function EvalNEMDHeat(subfolder, inpar)
 
     λ = dQ_fit / A / dTdx
 
-    res = results_struct_nemd(T, p, ρ, [1.0], Etot, Ekin, Epot, [], [], [], [], λ)
+    res = results_struct_nemd(T, p, ρ, [1.0], Etot, Ekin, Epot, [], [], λ)
     OutputResultNEMD(res,info.folder)
 
     # Figures ------------------------------------------------------------------
     # Figure of temperature profile
     figure()
     title("Mean temperature profile of simulation box")
-    xlabel("Bin")
-    if reduced_units        ylabel(L"T^*")
-    else                    ylabel(string(L"T"," / K"))    end
+    if reduced_units    xlabel(L"x^*");                 ylabel(L"T^*")
+    else                xlabel(string(L"x"," / Å"));    ylabel(string(L"T"," / K"))    end
     errorbar(xbins, Tbins, yerr=Tbins_std, fmt="bo-", capsize=2)
     plot(xbins[what_zone1],fit_zone1[1].+xbins[what_zone1].*fit_zone1[2],"k-")
     plot(xbins[what_zone2],fit_zone2[1].+xbins[what_zone2].*fit_zone2[2],"k-")
+    tight_layout()
     savefig(string(info.folder, "/T_profile.pdf"))
 
     # Figure of heats
@@ -96,7 +94,7 @@ function EvalNEMDHeat(subfolder, inpar)
     plot(dat.t, dQhot, label="dQ_hot")
     plot(dat.t, dQcold, label="dQ_cold")
     plot(dat.t, dat.t.*dQ_fit, label="Fit")
-    legend()
+    legend();   tight_layout()
     savefig(string(info.folder, "/Q_profile.pdf"))
 end
 
