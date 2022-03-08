@@ -99,15 +99,15 @@ function load_thermo_file(file::String, info::info_struct)
         if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot f_hot f_cold"
             error("Format of File \"thermo.dat\" not right")
         end
+        # Read data
+        dat = readdlm(file, skipstart=2)
+        step = dat[:,1];    time = step*info.dt
+        T    = dat[:,2];    p    = dat[:,3]
+        ρ    = dat[:,4];    Etot = dat[:,5]
+        Ekin = dat[:,6];    Epot = dat[:,7]
+        Qhot = dat[:,8];    Qcold= dat[:,9]
+        return step, time, T, p, ρ, Etot, Ekin, Epot, Qhot, Qcold
     end
-    # Read data
-    dat = readdlm(file, skipstart=2)
-    step = dat[:,1];    time = step*info.dt
-    T    = dat[:,2];    p    = dat[:,3]
-    ρ    = dat[:,4];    Etot = dat[:,5]
-    Ekin = dat[:,6];    Epot = dat[:,7]
-    pyz  = dat[:,8]
-    return step, time, T, p, ρ, Etot, Ekin, Epot, pyz
 end
 
 # Loading Pressure File

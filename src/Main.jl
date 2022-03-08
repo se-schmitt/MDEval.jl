@@ -115,6 +115,15 @@ function main(args::Array{String,1})
 
                 println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
             end
+
+        ## Mode "nemd-heat" --------------------------------------------------------
+        elseif inpar.mode == "nemd-heat"
+            print("$(Dates.format(now(),fdate)): RUNNING ... ")
+
+            EvalNEMDHeat(folder,inpar)
+
+            println("   →    $(Dates.format(now(),fdate)): DONE")
+            println(sline)
         end
     end
 
@@ -235,9 +244,6 @@ function read_input(args::Array{String,1})
         if inpar.mode == "single_run"   inpar.acf_calc_mode = "autocov" 	end
         if inpar.mode == "tdm"          inpar.acf_calc_mode = "fft"         end
     end
-    if inpar.mode == "nemd-heat"
-        inpar.ensemble = "NVE"
-    end
 
     # Check input structure
     # Mode "single_run"
@@ -252,7 +258,6 @@ function read_input(args::Array{String,1})
         inpar.do_state == -1 || inpar.n_boot == -1) && inpar.mode == "tdm"
         error("Parameters missing for mode \"tdm\"!")
     end
-
 
     return inpar
 end
