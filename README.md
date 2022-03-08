@@ -142,3 +142,11 @@ N_boot        =   100
 | viscosity                  | *η*    | Pa*s    |
 | self-diffusion coefficient | *D*    | m²/s    |
 | thermal conductivity       | *λ*    | W/(m*K) |
+
+## Issues
+
+- [ ] $x$  in *EvalNEMDHeat* bereitstellen
+
+- [ ] *EvalNEDMShear* konsistent machen, u.a.
+  
+  - [ ]  *r_squared* wirklich notwendig? Was ist das?
