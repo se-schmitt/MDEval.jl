@@ -77,7 +77,7 @@ function EvalNEMDHeat(subfolder, inpar)
     # Figures ------------------------------------------------------------------
     # Figure of temperature profile
     figure()
-    title("Mean temperature profile of simulation box")
+    title("Temperature profile of simulation box")
     if reduced_units    xlabel(L"x^*");                 ylabel(L"T^*")
     else                xlabel(string(L"x"," / Å"));    ylabel(string(L"T"," / K"))    end
     errorbar(xbins, Tbins, yerr=Tbins_std, fmt="bo-", capsize=2)

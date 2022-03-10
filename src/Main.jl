@@ -249,7 +249,7 @@ function read_input(args::Array{String,1})
     if inpar.mode == "nemd-heat"
         inpar.ensemble = "NVE"
         if inpar.k_L_thermo  == -1.0
-            inpar.k_L_thermo = 0.2
+            inpar.k_L_thermo = 0.1
             @warn("k_L_thermo set to 0.2 by default!")
         end
     end
