@@ -69,7 +69,7 @@ Two options:
 
 | Name              | Type {*standard value*}                                         | Modes                | Description                                                                                                                                                                       |
 | ----------------- | --------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **mode**          | string [*single_run*, *tdm*, *vle*, *nemd-shear*]               | all                  | defines the mode of the simulations/evaluation                                                                                                                                    |
+| **mode**          | string [*single_run*, *tdm*, *vle*, *nemd-shear*, *nemd-heat*]  | all                  | defines the mode of the simulations/evaluation                                                                                                                                    |
 | **folder**        | string                                                          | all                  | path to main folder containing all simulation data (see chapter 1)                                                                                                                |
 | **ensemble**      | string [*NVT*, *NVE*, *NpT*]                                    | single_run, tdm      | ensemble to evaluate                                                                                                                                                              |
 | **timesteps_equ** | interger (≥ 0)                                                  | single_run, tdm, vle | number of timesteps to ignore at the start of each simulation                                                                                                                     |
@@ -88,7 +88,7 @@ Two options:
 | **n_bin**         | integer (≥ 0) {*100*}                                           | all                  | number of bins for rdf calculation                                                                                                                                                |
 | **r_cut**         | float (unit: Å) {*10 Å*}                                        | all                  | cut-off radius for rdf calculation                                                                                                                                                |
 | **units**         | string [*real*, *reduced*] {*real*}                             | all                  | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters)                                                                                                    |
-| **k_L_thermo**    | float ($0\leq k \leq 0.5$) {0.25}                               | nemd-heat            | reduced length of thermostats ($L_x^*=1$)                                                                                                                                         |
+| **k_L_thermo**    | float ($0\leq k \leq 0.5$) {0.1}                                | nemd-heat            | reduced length of thermostats ($L_x^*=1$)                                                                                                                                         |
 
 Example *single*:
 

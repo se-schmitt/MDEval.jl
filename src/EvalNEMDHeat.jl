@@ -40,19 +40,15 @@ function EvalNEMDHeat(subfolder, inpar)
     Tbins = dropdims(mean(prof.T,dims=1),dims=1)
     Tbins_std = dropdims(std(prof.T,dims=1),dims=1)
 
+    # Read info file
+    Lx,Ly,Lz = load_info(info.folder; is_nemd="heat")
+    A = Ly*Lz
+
     # Evaluate heat profile
     dat = load_thermo(info, is_nemd="heat")
 
     dQhot = abs.(dat.Qhot .- dat.Qhot[1])
     dQcold = abs.(dat.Qcold .- dat.Qcold[1])
-
-    # Linear regression to a linear funtion
-    dQ_fit = (repeat([ones(length(dat.t)) dat.t],2,1) \ [dQhot;dQcold])[2]
-
-    # Calculate thermal conductivity -------------------------------------------
-    # Read info file
-    Lx,Ly,Lz = add_info_NEMDheat(info)
-    A = Ly*Lz
 
     if (minimum(xbins) > 0.0) && (maximum(xbins) < 1.0)
         xbins = xbins.*Lx
@@ -63,13 +59,19 @@ function EvalNEMDHeat(subfolder, inpar)
     what_zone1 = (xbins .> (L_thermo/2 + buffer))        .& (xbins .< (Lx/2 - L_thermo/2 - buffer))
     what_zone2 = (xbins .> (Lx/2 + L_thermo/2 + buffer)) .& (xbins .< (Lx - L_thermo/2 - buffer))
 
-    fit_zone1 = [ones(sum(what_zone1)) xbins[what_zone1]] \ Tbins[what_zone1]
-    dTdx1 = abs(fit_zone1[2])
-    fit_zone2 = [ones(sum(what_zone2)) xbins[what_zone2]] \ Tbins[what_zone2]
-    dTdx2 = abs(fit_zone2[2])
-    dTdx = (dTdx1 + dTdx2)/2
+    # Calculate thermal conductivity -------------------------------------------
+    λval, dQ_fit, fit_zone1, fit_zone2 = calc_lambda_NEMD(dat.t, dQhot, dQcold, xbins, Tbins, what_zone1, what_zone2, A)
 
-    λ = dQ_fit / A / dTdx
+    # Block averaging ----------------------------------------------------------
+    λvec = Array{Float64,1}(undef,info.n_blocks)
+    sz_dat = floor(Int64,length(dat.t)/info.n_blocks)
+    sz_prof = floor(Int64,size(prof.T,1)/info.n_blocks)
+    for i = 1:info.n_blocks
+        what_i_dat = ((i-1)*sz_dat+1):(i*sz_dat)
+        what_i_prof = ((i-1)*sz_prof+1):(i*sz_prof)
+        λvec[i], _ , _ , _ = calc_lambda_NEMD(dat.t[what_i_dat], dQhot[what_i_dat], dQcold[what_i_dat], xbins, dropdims(mean(prof.T[what_i_prof,:],dims=1),dims=1), what_zone1, what_zone2, A)
+    end
+    λ = single_dat(λval,std(λvec),std(λvec)/sqrt(info.n_blocks))
 
     res = results_struct_nemd(T, p, ρ, [1.0], Etot, Ekin, Epot, [], [], λ)
     OutputResultNEMD(res,info.folder)
@@ -80,9 +82,10 @@ function EvalNEMDHeat(subfolder, inpar)
     title("Temperature profile of simulation box")
     if reduced_units    xlabel(L"x^*");                 ylabel(L"T^*")
     else                xlabel(string(L"x"," / Å"));    ylabel(string(L"T"," / K"))    end
-    errorbar(xbins, Tbins, yerr=Tbins_std, fmt="bo-", capsize=2)
-    plot(xbins[what_zone1],fit_zone1[1].+xbins[what_zone1].*fit_zone1[2],"k-")
-    plot(xbins[what_zone2],fit_zone2[1].+xbins[what_zone2].*fit_zone2[2],"k-")
+    what_not_zero = Tbins .> 0.0
+    errorbar(xbins[what_not_zero], Tbins[what_not_zero], yerr=Tbins_std[what_not_zero], fmt="bo-", capsize=2, zorder=1)
+    plot(xbins[what_zone1],fit_zone1[1].+xbins[what_zone1].*fit_zone1[2],"k-", zorder=2)
+    plot(xbins[what_zone2],fit_zone2[1].+xbins[what_zone2].*fit_zone2[2],"k-", zorder=3)
     tight_layout()
     savefig(string(info.folder, "/T_profile.pdf"))
 
@@ -94,34 +97,23 @@ function EvalNEMDHeat(subfolder, inpar)
     plot(dat.t, dQhot, label="dQ_hot")
     plot(dat.t, dQcold, label="dQ_cold")
     plot(dat.t, dat.t.*dQ_fit, label="Fit")
-    legend();   tight_layout()
+    legend(loc="upper left");   tight_layout()
     savefig(string(info.folder, "/Q_profile.pdf"))
 end
 
 ## Subfunctions ----------------------------------------------------------------
-# Load additional info
-function add_info_NEMDheat(info)
+function calc_lambda_NEMD(t, dQhot, dQcold, xbins, Tbins, what_zone1, what_zone2, A)
+    # Linear fit of heat
+    dQ_fit = (repeat([ones(length(t)) t],2,1) \ [dQhot;dQcold])[2]
 
-    # Get filename
-    list = readdir(info.folder)
-    fname = list[occursin.("info.", list)][end]
-    file = string(info.folder,"/", fname)
+    # Linear fit to temperature profile
+    fit_zone1 = [ones(sum(what_zone1)) xbins[what_zone1]] \ Tbins[what_zone1]
+    dTdx1 = abs(fit_zone1[2])
+    fit_zone2 = [ones(sum(what_zone2)) xbins[what_zone2]] \ Tbins[what_zone2]
+    dTdx2 = abs(fit_zone2[2])
+    dTdx = (dTdx1 + dTdx2)/2
 
-    # Read file info.dat
-    if isfile(file)
-        fID = open(file,"r");   lines = readlines(fID);     close(fID)
+    λ = dQ_fit / A / dTdx / 2
 
-        # Extract information
-        pos5 = findfirst(": ",lines[5])
-        Lx = parse(Float64,lines[5][pos5[end]+1:end])
-        pos6 = findfirst(": ",lines[6])
-        Ly = parse(Float64,lines[6][pos6[end]+1:end])
-        pos7 = findfirst(": ",lines[7])
-        Lz = parse(Float64,lines[7][pos7[end]+1:end])
-        pos8 = findfirst(": ",lines[8])
-        nbins = parse(Float64,lines[8][pos8[end]+1:end])
-
-    else error("File \"",file,"\" is empty") end
-
-    return Lx, Ly, Lz
+    return λ, dQ_fit, fit_zone1, fit_zone2
 end

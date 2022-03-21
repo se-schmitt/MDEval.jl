@@ -34,6 +34,23 @@ function load_info(folder; is_nemd="no")
         else error("File \"",file,"\" is empty") end
     elseif is_nemd == "shear"
     elseif is_nemd == "heat"
+        # Read file info.dat
+        if isfile(file)
+            fID = open(file,"r");   lines = readlines(fID);     close(fID)
+
+            # Extract information
+            pos5 = findfirst(": ",lines[5])
+            Lx = parse(Float64,lines[5][pos5[end]+1:end])
+            pos6 = findfirst(": ",lines[6])
+            Ly = parse(Float64,lines[6][pos6[end]+1:end])
+            pos7 = findfirst(": ",lines[7])
+            Lz = parse(Float64,lines[7][pos7[end]+1:end])
+            pos8 = findfirst(": ",lines[8])
+            nbins = parse(Float64,lines[8][pos8[end]+1:end])
+
+            return Lx, Ly, Lz
+
+        else error("File \"",file,"\" is empty") end
     end
 end
 

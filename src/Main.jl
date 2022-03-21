@@ -250,7 +250,10 @@ function read_input(args::Array{String,1})
         inpar.ensemble = "NVE"
         if inpar.k_L_thermo  == -1.0
             inpar.k_L_thermo = 0.1
-            @warn("k_L_thermo set to 0.2 by default!")
+            @warn("k_L_thermo set to 0.1 by default!")
+        end
+        if inpar.n_blocks == 0
+            inpar.n_blocks = 20
         end
     end
 
