@@ -125,6 +125,8 @@ function main(args::Array{String,1})
             println("   →    $(Dates.format(now(),fdate)): DONE")
             println(sline)
         end
+
+        close("all")
     end
 
     # Output in single file
