@@ -25,7 +25,8 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
 
         for i = 1:N_moltype
             # Get all molecules of type 'moltype'
-            mol_i = get_mol_by_type(mol,i)
+            # mol_i = get_mol_by_type(mol,i)
+            mol_i = mol
 
             # Calculation of Mean Square Displacement
             msd_t, t, msd_t_all = calc_msd(mol_i,info)
