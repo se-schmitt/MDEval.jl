@@ -11,11 +11,12 @@
 # Evaluate Atoms Positions to calculate Self Diffusion Coefficient
 function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, N_blocks = 10, err_mode="")
     if (!isempty(dat))
-        N_moltype = maximum(dat[1].moltype)
+        N_moltype = 1
         D = Array{single_dat,1}(undef,N_moltype)
 
         # Convert atom to molecule coordinates
-        mol = atom2mol(dat)
+        # mol = atom2mol(dat)
+        mol = dat
 
         # Initialize figure and msd_t_mols variable
         colors = ["b","g","r","c","m","y"]

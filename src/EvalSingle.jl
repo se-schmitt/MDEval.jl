@@ -11,7 +11,11 @@
 function EvalSingle(subfolder,inpar)
 
     # Loading Info File
-    moltype, dt, natoms, molmass = load_info(subfolder)
+    # moltype, dt, natoms, molmass = load_info(subfolder)
+    moltype = "LJ_reduced"
+    dt = 0.001
+    natoms = 5000
+    molmass = 1
 
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
@@ -31,7 +35,9 @@ function EvalSingle(subfolder,inpar)
     # Calculate box length L_box
     if (reduced_units)
         mass_total = natoms*molmass                         # mass_total = natoms*molmass/NA
-        L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
+        # L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
+        _ , _ , V, _ , _ , _ , _ , _ , _ , _ , _ = load_pressure_file("$(info.folder)/PressureTensor.Vipr", info, 0, 1)
+        L_box = V[1]^(1/3)
     else
         mass_total = natoms*molmass/NA                      # mass_total = natoms*molmass/NA
         L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
@@ -40,14 +46,15 @@ function EvalSingle(subfolder,inpar)
     if inpar.do_transport == 1
         # Evaluate Pressure Data to Calculate Viscosities
         if inpar.mode == "single_run"
-            η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+            η, η_V, T, ρ = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
         elseif inpar.mode == "tdm"
             η, η_V = calc_viscosities(info, "tdm"; mode_acf=inpar.acf_calc_mode)
         end
 
         # Evaluate Heat Flux Data to Calculate Thermal Conducitvity
         if inpar.mode == "single_run"
-            λ = calc_thermalconductivity(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+            # λ = calc_thermalconductivity(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+            λ = NaN
         elseif inpar.mode == "tdm"
             λ = calc_thermalconductivity(info, "tdm"; mode_acf=inpar.acf_calc_mode)
         end
@@ -122,8 +129,9 @@ function ave_thermo(info::info_struct; is_nemd="no")
     what = dat.step .>= info.n_equ
 
     # Temperature
-    T_std_err = block_average(dat.T[what],N_blocks=info.n_blocks)
-    T = single_dat(mean(dat.T[what]), T_std_err[1], T_std_err[2])
+    # T_std_err = block_average(dat.T[what],N_blocks=info.n_blocks)
+    # T = single_dat(mean(dat.T[what]), T_std_err[1], T_std_err[2])
+    T = []
     # Pressure
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
@@ -135,19 +143,23 @@ function ave_thermo(info::info_struct; is_nemd="no")
         pyz = Float64[]
     end
     # Density
-    ρ_std_err = block_average(dat.ρ[what],N_blocks=info.n_blocks)
-    ρ = single_dat(mean(dat.ρ[what]), ρ_std_err[1], ρ_std_err[2])
+    # ρ_std_err = block_average(dat.ρ[what],N_blocks=info.n_blocks)
+    # ρ = single_dat(mean(dat.ρ[what]), ρ_std_err[1], ρ_std_err[2])
+    ρ = []
     # Energies
-    Etot_std_err = block_average(dat.Etot[what],N_blocks=info.n_blocks)
-    Etot = single_dat(mean(dat.Etot[what]), Etot_std_err[1], Etot_std_err[2])
-    Ekin_std_err = block_average(dat.Ekin[what],N_blocks=info.n_blocks)
-    Ekin = single_dat(mean(dat.Ekin[what]), Ekin_std_err[1], Ekin_std_err[2])
+    # Etot_std_err = block_average(dat.Etot[what],N_blocks=info.n_blocks)
+    # Etot = single_dat(mean(dat.Etot[what]), Etot_std_err[1], Etot_std_err[2])
+    Etot = []
+    # Ekin_std_err = block_average(dat.Ekin[what],N_blocks=info.n_blocks)
+    # Ekin = single_dat(mean(dat.Ekin[what]), Ekin_std_err[1], Ekin_std_err[2])
+    Ekin = []
     Epot_std_err = block_average(dat.Epot[what],N_blocks=info.n_blocks)
     Epot = single_dat(mean(dat.Epot[what]), Epot_std_err[1], Epot_std_err[2])
     # Heat capacity
     if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
     elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
-    c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ T.val^2 * factor_c, NaN, NaN)
+    # c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ T.val^2 * factor_c, NaN, NaN)
+    c = []
 
     return T, p, ρ, Etot, Ekin, Epot, c, pyz
 end
@@ -253,9 +265,9 @@ function get_mol_by_type(mol,type)
         imol = mol[i]
         imol_type = dump_dat(imol.step,imol.t,imol.bounds,imol.id,imol.type,imol.molid,imol.moltype,imol.mass,imol.x,imol.y,imol.z)
         what = imol.moltype .== type
-        imol_type.molid = imol.molid[what]
+        imol_type.molid = ones(Int64,length(imol_type.x))[what]
         imol_type.moltype = imol.moltype[what]
-        imol_type.mass = imol.mass[what]
+        imol_type.mass = ones(Int64,length(imol_type.x))[what]
         imol_type.x = imol.x[what]
         imol_type.y = imol.y[what]
         imol_type.z = imol.z[what]

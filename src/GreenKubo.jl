@@ -24,6 +24,13 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         # Unit conversion and GK factor
         metal2Pas = 1e-32
         factor = metal2Pas .* mean(dat.V[what]) ./ (kB .* mean(dat.T[what]))
+
+        # Calculation of T and ρ
+        T_std_err = block_average(dat.T[what],N_blocks=info.n_blocks)
+        T = single_dat(mean(dat.T[what]), T_std_err[1], T_std_err[2])
+        ρ_std_err = block_average(info.natoms ./ dat.V[what],N_blocks=info.n_blocks)
+        ρ = single_dat(mean(info.natoms ./ dat.V[what]), ρ_std_err[1], ρ_std_err[2])
+
         if (reduced_units) factor = mean(dat.V[what]) ./ mean(dat.T[what]) end
 
         # Define start and end steps of individual correlation functions
@@ -121,7 +128,7 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         η_V = single_dat(NaN,NaN,NaN)
     end
 
-    return η, η_V
+    return η, η_V, T, ρ
 end
 
 ## Thermal conducitvity --------------------------------------------------------

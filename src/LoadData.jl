@@ -58,10 +58,10 @@ end
 function load_thermo(info::info_struct; is_nemd::String="no")
     thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
-    files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
-    if length(files) > 9
-        files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
-    end
+    files = string.(info.folder,"/",["LJTrans_out.res"])
+    # if length(files) > 9
+    #     files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
+    # end
     stepADD=0
     timeADD=0
     for file in files
@@ -95,18 +95,18 @@ function load_thermo(info::info_struct; is_nemd::String="no")
 end
 
 function load_thermo_file(file::String, info::info_struct, is_nemd::String)
-    fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
+    fID = open(file,"r"); readline(fID); readline(fID); readline(fID); line4 = readline(fID); close(fID)
 
     if is_nemd == "no"
-        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
-            error("Format of File \"thermo.dat\" not right")
+        if line4 != "#step	t		U_pot	U_pot_avg		p	p_avg		beta_trans	beta_rot		c_v		N"
+            error("Format of File \"LJTrans_out.res\" not right")
         end
         # Read data
-        dat = readdlm(file, skipstart=2)
-        step = dat[:,1];    time = step*info.dt
-        T    = dat[:,2];    p    = dat[:,3]
-        ρ    = dat[:,4];    Etot = dat[:,5]
-        Ekin = dat[:,6];    Epot = dat[:,7]
+        dat = readdlm(file, skipstart=4)
+        step = Int64.(dat[1:end-1,1]);  time = Float64.(dat[1:end-1,2])
+        T    = Float64[];               p    = Float64.(dat[1:end-1,5])
+        ρ    = Float64[];               Etot = Float64[]
+        Ekin = Float64[];               Epot = Float64.(dat[1:end-1,3])
         return step, time, T, p, ρ, Etot, Ekin, Epot
 
     elseif is_nemd == "shear"
@@ -141,10 +141,10 @@ end
 function load_pressure(info, nEvery)
     pdat = pressure_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
-    files = string.(info.folder,"/",list[occursin.(string("pressure.",info.ensemble,"."),list)])
-    if length(files) > 9
-        files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
-    end
+    files = string.(info.folder,"/",["PressureTensor.Vipr"])
+    # if length(files) > 9
+    #     files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
+    # end
     let stepADD=0,timeADD=0, skip=0
         for file in files
             step, time, V, T, p, pxx, pyy, pzz, pxy, pxz, pyz = load_pressure_file(file, info, skip, nEvery)
@@ -172,21 +172,28 @@ function load_pressure(info, nEvery)
 end
 
 function load_pressure_file(file, info, skip, nEvery)
-    fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
-    if line2 != "# TimeStep v_V v_T c_thermo_press c_thermo_press[1] c_thermo_press[2] c_thermo_press[3] c_thermo_press[4] c_thermo_press[5] c_thermo_press[6]"
-        error("Format of File \"pressure.dat\" not right")
+    lines = readlines(file)
+    if lines[12] != "# old prefix string (get time step here)	globalT	p_xx^[1]	p_yy^[1]	p_zz^[1]	p_xx^[2]	p_yy^[2]	p_zz^[2]	p_xy^[2]	p_xz^[2]	p_yz^[2]"
+        error("Format of File \"PressureTensor.Vipr\" not right")
     end
+    Lxyz = parse.(Float64,split(lines[5]))
+    V = Lxyz[1]*Lxyz[2]*Lxyz[3]
     # Read data
-    dat = readdlm(file, skipstart=(2+skip))
+    dat = readdlm(file, skipstart=(13+skip))
     what = skip*nEvery+1-skip:nEvery:size(dat,1)
     if mod(size(dat,1)-1+skip,nEvery) != 0
         error("n_every must be a divisor of $(size(dat,1)-1+skip)!")
     end
-    step = dat[what,1];    time = step*info.dt
-    V    = dat[what,2];    T    = dat[what,3];    p    = dat[what,4]
-    pxx  = dat[what,5];    pyy  = dat[what,6];    pzz  = dat[what,7]
-    pxy  = dat[what,8];    pxz  = dat[what,9];    pyz  = dat[what,10]
+    step = str2timestep.(dat[what,1]);      step = step .- step[1]
+    time = step*info.dt
+    V    = V.*ones(length(step));    T    = dat[what,2];    p    = Float64[]
+    pxx  = dat[what,6];    pyy  = dat[what,7];    pzz  = dat[what,8]
+    pxy  = dat[what,9];    pxz  = dat[what,10];    pyz  = dat[what,11]
     return step, time, V, T, p, pxx, pyy, pzz, pxy, pxz, pyz
+end
+
+function str2timestep(in)
+    out = parse(Int64,split(in,"_")[2])
 end
 
 # Loading Dump File
@@ -196,117 +203,29 @@ function load_dump(info)
 
     # Get list of all atoms_position files
     list = sort(readdir(info.folder))
-    files = string.(info.folder,"/",list[occursin.(string("atoms_position.",info.ensemble,"."),list)])
-    if length(files) > 9
-        files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
-    end
+    files = string.(info.folder,"/",list[startswith.(list,"LJTrans_xyz_-")])
+    ts_file = get_timestep_from_file.(files).*5000
+    sort_id = sortperm(ts_file)
+    files = files[sort_id]
+    ts_file = ts_file[sort_id]
 
     # Read dump file timestep by timestep
-    let stepADD=0, timeADD=0, skip=0
+    let stepADD=0, timeADD=0, skip=0, i = 0
         for file in files
-            fID = open(file,"r")
-            while !eof(fID)
-                # Reading timestep and calculating time
-                if (readline(fID) == "ITEM: TIMESTEP")
-                    step = parse(Int64,readline(fID))
-                    t = step*info.dt
-                else error("Dump file format wrong") end
-                # Reading number of atoms
-                if (readline(fID) == "ITEM: NUMBER OF ATOMS")
-                    natoms = parse(Int16,readline(fID))
-                else error("Dump file format wrong") end
-                # Reading boundary coords
-                if (readline(fID) == "ITEM: BOX BOUNDS pp pp pp")
-                    bounds = zeros(3,2)
-                    bounds[1,:] = parse.(Float64,split(readline(fID)))
-                    bounds[2,:] = parse.(Float64,split(readline(fID)))
-                    bounds[3,:] = parse.(Float64,split(readline(fID)))
-                else error("Dump file format wrong") end
-                # Reading positions of atoms
-                lineITEM = readline(fID)
-                id = Int64.(zeros(natoms))
-                molid = Int64.(zeros(natoms))
-                type = Int64.(zeros(natoms))
-                x = zeros(natoms)
-                y = zeros(natoms)
-                z = zeros(natoms)
-                if (lineITEM == "ITEM: ATOMS id mol xu yu zu ")
-                    mass = []
-                    for i = 1:natoms
-                        line_float = parse.(Float64,split(readline(fID)))
-                        id[i] = Int64(line_float[1])
-                        molid[i] = Int64(line_float[2])
-                        x[i] = line_float[3]
-                        y[i] = line_float[4]
-                        z[i] = line_float[5]
-                    end
-                elseif (lineITEM == "ITEM: ATOMS id mol mass xu yu zu ")
-                    mass = zeros(natoms)
-                    for i = 1:natoms
-                        line_float = parse.(Float64,split(readline(fID)))
-                        id[i] = Int64(line_float[1])
-                        molid[i] = Int64(line_float[2])
-                        mass[i] = line_float[3]
-                        x[i] = line_float[4]
-                        y[i] = line_float[5]
-                        z[i] = line_float[6]
-                    end
-                elseif (lineITEM == "ITEM: ATOMS id mass xu yu zu ")
-                    mass = zeros(natoms)
-                    for i = 1:natoms
-                        line_float = parse.(Float64,split(readline(fID)))
-                        id[i] = Int64(line_float[1])
-                        molid[i] = id[i]
-                        mass[i] = line_float[2]
-                        x[i] = line_float[3]
-                        y[i] = line_float[4]
-                        z[i] = line_float[5]
-                    end
-                elseif (lineITEM == "ITEM: ATOMS id mol type mass xu yu zu ")
-                    mass = zeros(natoms)
-                    for i = 1:natoms
-                        line_float = parse.(Float64,split(readline(fID)))
-                        id[i] = Int64(line_float[1])
-                        molid[i] = Int64(line_float[2])
-                        type[i] = Int64(line_float[3])
-                        mass[i] = line_float[4]
-                        x[i] = line_float[5]
-                        y[i] = line_float[6]
-                        z[i] = line_float[7]
-                    end
-                else error("Dump file format wrong") end
-
-                if !(step==0 && skip==1)
-                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, type, molid, Int64[], mass, x, y, z))
+            i += 1
+            fID = open(file,"r");   readline(fID);  line2 = readline(fID); close(fID)
+            if line2 == "comment line"
+                dat  = readdlm(file, skipstart=2)
+                if !(ts_file[i]==0 && skip==1)
+                    posdat = vcat(posdat,dump_dat(ts_file[i], ts_file[i]*info.dt, [0.0 1.0;0.0 1.0;0.0 1.0], [1:info.natoms;], ones(Int64,info.natoms), ones(Int64,info.natoms), ones(Int64,info.natoms), ones(info.natoms), dat[:,2], dat[:,3], dat[:,4]))
                 end
+            else
+                error("Wrong file format for ls1!")
             end
             skip = 1
             stepADD = posdat[end].step
             timeADD = posdat[end].t
         end
-    end
-
-    if !(isempty(posdat))
-        # Caluclation of moltypes (just for first timestep)
-        Nmol = length(unique(posdat[1].molid))
-        moltype = zeros(Int64,Nmol)
-        types_mol = []
-
-        # Loop over all molecules
-        i = 0
-        for molid in sort(unique(posdat[1].molid))
-            i += 1
-            what = posdat[1].molid .== molid
-            types = sort(posdat[1].type[what])
-
-            if types in types_mol
-                moltype[i] = findfirst(types_mol .== [types])
-            else
-                moltype[i] = maximum(moltype)+1
-                append!(types_mol,[types])
-            end
-        end
-        posdat[1].moltype = moltype
     end
 
     # Sort data such that ID of atoms are sorted
@@ -322,6 +241,10 @@ function load_dump(info)
     end
 
     return posdat
+end
+
+function get_timestep_from_file(filename)
+    ts = parse(Int64,split(filename,"xyz")[2][3:end-1])
 end
 
 # Loading Heat Flux File
