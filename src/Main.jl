@@ -15,6 +15,8 @@ function main(args::Array{String,1})
     println(sline)
     println("Number of processors: $no_procs")
     println(sline)
+    @warn("ls1 branch!")
+    println(sline)
 
     # Read input parameters
     inpar = read_input(args)
