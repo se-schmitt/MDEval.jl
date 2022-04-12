@@ -217,7 +217,7 @@ function load_dump(info)
             if line2 == "comment line"
                 dat  = readdlm(file, skipstart=2)
                 if !(ts_file[i]==0 && skip==1)
-                    posdat = vcat(posdat,dump_dat(ts_file[i], ts_file[i]*info.dt, [0.0 1.0;0.0 1.0;0.0 1.0], [1:info.natoms;], ones(Int64,info.natoms), [1:info.natoms;], ones(Int64,info.natoms), ones(info.natoms), dat[:,2], dat[:,3], dat[:,4]))
+                    posdat = vcat(posdat,dump_dat(ts_file[i], ts_file[i]*info.dt, [0.0 1.0;0.0 1.0;0.0 1.0], dat[:,1], ones(Int64,info.natoms), [1:info.natoms;], ones(Int64,info.natoms), ones(info.natoms), dat[:,2], dat[:,3], dat[:,4]))
                 end
             else
                 error("Wrong file format for ls1!")
