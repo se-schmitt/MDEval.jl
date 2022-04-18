@@ -40,6 +40,9 @@ function EvalSingle(subfolder,inpar)
     end
 
     if inpar.do_transport == 1
+
+        msd1, msd2 = load_gro_file("C:/Users/kn9-f/md-evaluation/T1.56rho0.546s0.1/MSD.xvg",info)
+        @infiltrate
         # Evaluate Pressure Data to Calculate Viscosities
         if inpar.mode == "single_run"
             η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
@@ -81,7 +84,6 @@ function EvalSingle(subfolder,inpar)
         elseif inpar.mode == "tdm"
             D = calc_selfdiffusion(info, dump)
         end
-@infiltrate
         # Finite size correction (for tdm, the correction is applied after averaging the single runs) [1]
         if inpar.mode == "single_run"
             ξ = 2.837298
@@ -90,7 +92,6 @@ function EvalSingle(subfolder,inpar)
             else
                 Dcorr = kB*T.val*ξ/(6*π*η.val*L_box)
             end
-            @infiltrate
             for i = 1:length(D)
                 D[i].val = D[i].val + Dcorr
             end

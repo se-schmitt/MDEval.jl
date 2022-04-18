@@ -555,3 +555,22 @@ function read_inputfile(filename)
     end
     return N_mol
 end
+
+function load_gro_file(file::String, info::info_struct)
+    @infiltrate
+    if file == "C:/Users/kn9-f/md-evaluation/T1.56rho0.546s0.1/MSD.xvg" # !! "MSD.xvg"
+    msd = String[]
+    fID = open(file,"r"); readline(fID); readline(fID); line3 = readline(fID); close(fID)
+    if line3 != "#                        :-) GROMACS - gmx msd, 2022 (-:"
+        error("Format of File \"MSD.xvg\" not right")
+    end
+    for line in eachline(file)
+        if startswith(line,"@ s0 legend")
+            msd = line
+        end
+    end
+    msd1 = parse(Float64,SubString(msd,(findfirst("=",msd))[1]+2,(findfirst("(",msd))[1]-2))
+    msd2 = parse(Float64,SubString(msd,(findfirst("-",msd))[1]+2,(findfirst(")",msd))[1]-1))
+    return msd1, msd2
+    end
+end
