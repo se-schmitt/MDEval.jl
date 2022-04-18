@@ -27,7 +27,7 @@ if (no_procs > 1) addprocs(no_procs) end
 @everywhere using PyPlot
 close("all")
 @everywhere using StatsBase
-
+@everywhere using Infiltrator
 # Physical Constants
 global kB = 1.380649e-23        # J/K
 global NA = 6.02214076e23       # 1/mol
@@ -99,6 +99,22 @@ mutable struct pressure_dat
     pxy::Array{Float64,1}
     pxz::Array{Float64,1}
     pyz::Array{Float64,1}
+end
+
+# Data structure to store pressure tensor from gromacs sim (density.xvg)
+mutable struct pressure_gro
+    t::Array{Float64,1}
+    Epot::Array{Float64,1}
+    Ekin::Array{Float64,1}
+    Etot::Array{Float64,1}
+    T::Array{Float64,1}
+    p::Array{Float64,1}
+    pxx::Array{Float64,1}
+    pxy::Array{Float64,1}
+    pxz::Array{Float64,1}
+    pyy::Array{Float64,1}
+    pyz::Array{Float64,1}
+    pzz::Array{Float64,1}
 end
 
 # Data structure to store atoms positions

@@ -1,2 +1,11 @@
 run.bat
 INPUT*
+T1.56rho0.1075s0.1/
+T1.56rho0.8384s0.1/
+T1.56rho0.546s0.1/
+T0.5rho0.9s0.1/
+Sim_025/
+*.xvg
+*.m
+*.xlsx
+*.pdf

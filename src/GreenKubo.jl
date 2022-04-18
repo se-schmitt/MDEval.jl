@@ -13,32 +13,42 @@
 
 ## Viscosity -------------------------------------------------------------------
 # Calculation of viscosity from pressure tensor
-function calc_viscosities(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
+function calc_viscosities(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1, L_box::Float64)
     # Loading Pressure File
     dat = load_pressure(info, nEvery)
     if (nEvery > 1) print("\n"); @warn("Only every $(nEvery). step of pressure tensor used for ACF calculation.") end
-
-    if (dat isa pressure_dat)
-        what = (dat.step .>= info.n_equ)
-
+    skip = info.n_equ .* info.dt
+    if (dat isa pressure_gro)
+        what = (dat.t .>= skip)
+        V = L_box .^3
         # Unit conversion and GK factor
-        metal2Pas = 1e-32
-        factor = metal2Pas .* mean(dat.V[what]) ./ (kB .* mean(dat.T[what]))
-        if (reduced_units) factor = mean(dat.V[what]) ./ mean(dat.T[what]) end
+        #metal2Pas = 1e-32
+        #factor = metal2Pas .* mean(dat.V[what]) ./ (kB .* mean(dat.T[what]))
+        if (reduced_units) factor = V ./ (mean(dat.T[what])) end
+        #if (reduced_units) factor = (L_box .^3) ./ (kB .* mean(dat.T[what])) end
 
         # Define start and end steps of individual correlation functions
         pos_step_start = []
         pos_step_end = []
         if mode == "single"
-            for i_step in info.n_equ:SpanCorrFun:(maximum(dat.step) - CorrLength)
-                append!(pos_step_start, findfirst(dat.step .>= i_step))
-                append!(pos_step_end,   findfirst(dat.step .>= i_step+CorrLength))
+            for i_step in (info.n_equ .* info.dt) : (SpanCorrFun .* info.dt) : (maximum(dat.t) - CorrLength .* info.dt)
+                append!(pos_step_start, findfirst(dat.t .>= i_step))
+                append!(pos_step_end,   findfirst(dat.t .>= i_step+ (CorrLength.* info.dt) -1))
             end
         elseif mode == "tdm"
             append!(pos_step_start,findfirst(what))
             append!(pos_step_end,length(dat.step))
         end
-
+        testt = dat.t
+        testtemp = dat.T
+        testp = dat.p
+        testpxx = dat.pxx
+        testpxy = dat.pxy
+        testpxz = dat.pxz
+        testpyy = dat.pyy
+        testpyz = dat.pyz
+        testpzz = dat.pzz
+        @infiltrate
         # Allocate arrays
         η_t_all =     NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
         η_V_t_all =   NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
@@ -64,6 +74,7 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
             # -> method adopted from PyLat code (1)
             acf_η_tmp = (acf_P[1] .+ acf_P[2] .+ acf_P[3])./6 .+
                         (acf_P[4] .+ acf_P[5] .+ acf_P[6])./24
+
             acf_η_all[:,i] = acf_η_tmp
             η_t_all[:,i] = cumtrapz(dat.t[what_pos],acf_η_tmp).*factor
 
@@ -91,12 +102,12 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         end
 
         # Shear viscosity
-        val, std, err = calc_average_GK(dat.step[what_pos1], η_t_all, info; do_err=calc_error, sym="η", name="viscosity", unit="Pa*s")
-        plot_acf(dat.step[what_pos1],acf_η_all, info; sym="J_{η}^{(acf)}", name="viscosity", unit="Pa^2")
+        val, std, err = calc_average_GK(dat.t[what_pos1], η_t_all, info; do_err=calc_error, sym="η", name="viscosity", unit="Pa*s")
+        plot_acf(dat.t[what_pos1],acf_η_all, info; sym="J_{η}^{(acf)}", name="viscosity", unit="Pa^2")
         η = single_dat(val, std, err)
 
         # Bulk viscosity
-        val, std, err = calc_average_GK(dat.step[what_pos1], η_V_t_all, info; do_plt=0, do_err=0)
+        val, std, err = calc_average_GK(dat.t[what_pos1], η_V_t_all, info; do_plt=0, do_err=0)
         η_V = single_dat(val, std, err)
 
         # Write data to file
@@ -120,7 +131,6 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         η = single_dat(NaN,NaN,NaN)
         η_V = single_dat(NaN,NaN,NaN)
     end
-
     return η, η_V
 end
 
@@ -246,10 +256,11 @@ end
 end
 
 # Function to calculate averge from GK integral
-function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100, sym="", name="", unit="")
+function calc_average_GK(t, ave_t_all, info; do_plt=1, do_err=1, N_block=5, sym="", name="", unit="")
     ## Average value calculation
     # Running integral average
     ave_t = mean(ave_t_all,dims=2)[:]
+    steps = t ./ info.dt
 
     ## Fitting procedure following (2) Eq. 10
     # Function to fit following Ref. (3)
@@ -270,8 +281,8 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100
         k += 1
         fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
         converged = fit_ave.converged
-    end
 
+    end
     if fit_ave.converged
         val = fit_ave.param[1]
     else
@@ -344,12 +355,12 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100
 end
 
 # Function to calculate error bars from all GK integrals
-function plot_acf(steps,acf_all, info; sym="", name="", unit="")
+function plot_acf(t,acf_all, info; sym="", name="", unit="")
     # Reduce data if big dataset
     teve = ceil(Int64,size(acf_all,1)/10000)
 
     # Calculate average of acf
-    t = steps.*info.dt
+    #t = steps.*info.dt
     ave_acf = mean(acf_all,dims=2)
     min_acf = minimum(acf_all,dims=2)[:]
     max_acf = maximum(acf_all,dims=2)[:]

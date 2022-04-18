@@ -95,8 +95,10 @@ function load_thermo(info::info_struct; is_nemd::String="no")
 end
 
 function load_thermo_file(file::String, info::info_struct, is_nemd::String)
+    if is_nemd == "gro"
+    else
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
-
+    end
     if is_nemd == "no"
         if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot"
             error("Format of File \"thermo.dat\" not right")
@@ -139,32 +141,35 @@ end
 
 # Loading Pressure File
 function load_pressure(info, nEvery)
-    pdat = pressure_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+    pdat = pressure_gro(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("pressure.",info.ensemble,"."),list)])
     if length(files) > 9
         files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
     end
+    #file = string.(info.folder,"/","density.xvg")
+    #file = "C:/Users/kn9-f/md-evaluation/T0.5rho0.9s0.1/density.xvg"
+    file = "C:/Users/kn9-f/md-evaluation/T1.56rho0.546s0.1/density.xvg"
+    #file = "C:/Users/kn9-f/md-evaluation/T1.56rho0.1075s0.1/density.xvg"
     let stepADD=0,timeADD=0, skip=0
-        for file in files
-            step, time, V, T, p, pxx, pyy, pzz, pxy, pxz, pyz = load_pressure_file(file, info, skip, nEvery)
-            pdat.step = vcat(pdat.step,step.+stepADD)
+            time, Epot, Ekin, Etot, T, p, pxx, pxy, pxz, pyy, pyz, pzz = load_pressure_file(file, info, skip, nEvery)
             pdat.t = vcat(pdat.t,time.+timeADD)
-            pdat.V = vcat(pdat.V,V)
+            pdat.Epot = vcat(pdat.Epot,Epot)
+            pdat.Ekin = vcat(pdat.Ekin,Ekin)
+            pdat.Etot = vcat(pdat.Etot,Etot)
             pdat.T = vcat(pdat.T,T)
             pdat.p = vcat(pdat.p,p)
             pdat.pxx = vcat(pdat.pxx,pxx)
-            pdat.pyy = vcat(pdat.pyy,pyy)
-            pdat.pzz = vcat(pdat.pzz,pzz)
             pdat.pxy = vcat(pdat.pxy,pxy)
             pdat.pxz = vcat(pdat.pxz,pxz)
+            pdat.pyy = vcat(pdat.pyy,pyy)
             pdat.pyz = vcat(pdat.pyz,pyz)
-            stepADD = pdat.step[end]
-            timeADD = pdat.t[end]
+            pdat.pzz = vcat(pdat.pzz,pzz)
+            #stepADD = pdat.step[end]
+            #timeADD = pdat.t[end]
             if (skip == 0) skip = 1 end
-        end
     end
-    if isempty(pdat.step)
+    if isempty(pdat.t)
         pdat = []
         @warn("No pressure data loaded!")
     end
@@ -172,21 +177,35 @@ function load_pressure(info, nEvery)
 end
 
 function load_pressure_file(file, info, skip, nEvery)
-    fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
-    if line2 != "# TimeStep v_V v_T c_thermo_press c_thermo_press[1] c_thermo_press[2] c_thermo_press[3] c_thermo_press[4] c_thermo_press[5] c_thermo_press[6]"
-        error("Format of File \"pressure.dat\" not right")
+    fID = open(file,"r"); line=readline(fID); skip_gro=1; end_gro=1;
+    while end_gro == 1
+        if startswith(line, "#")
+            line = readline(fID);
+            skip_gro = skip_gro + 1;
+        elseif startswith(line, "@")
+            line = readline(fID);
+            skip_gro = skip_gro + 1;
+        else
+            end_gro = 0;
+            skip_gro = skip_gro - 1;
+        end
     end
+    close(fID)
     # Read data
-    dat = readdlm(file, skipstart=(2+skip))
+    dat = readdlm(file, skipstart=(skip_gro+skip))
     what = skip*nEvery+1-skip:nEvery:size(dat,1)
     if mod(size(dat,1)-1+skip,nEvery) != 0
         error("n_every must be a divisor of $(size(dat,1)-1+skip)!")
     end
-    step = dat[what,1];    time = step*info.dt
-    V    = dat[what,2];    T    = dat[what,3];    p    = dat[what,4]
-    pxx  = dat[what,5];    pyy  = dat[what,6];    pzz  = dat[what,7]
-    pxy  = dat[what,8];    pxz  = dat[what,9];    pyz  = dat[what,10]
-    return step, time, V, T, p, pxx, pyy, pzz, pxy, pxz, pyz
+    fac_gro_p = 1 ./ 16.60544783
+    #fac_gro_p = 1
+    time = dat[what,1];
+    Epot = dat[what,2];    Ekin = dat[what,3];    Etot = dat[what,4]
+    T    = dat[what,6] ./120.27236;
+    p    = dat[what,7] .* fac_gro_p;    pxx  = dat[what,8] .* fac_gro_p;    pxy  = dat[what,9] .* fac_gro_p
+    pxz  = dat[what,10] .* fac_gro_p;   pyy  = dat[what,11] .* fac_gro_p;   pyz  = dat[what,12] .* fac_gro_p
+    pzz  = dat[what,13] .* fac_gro_p
+    return time, Epot, Ekin, Etot, T, p, pxx, pxy, pxz, pyy, pyz, pzz
 end
 
 # Loading Dump File

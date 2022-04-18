@@ -26,8 +26,10 @@ function EvalSingle(subfolder,inpar)
                         inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
+    if inpar.mode != "single_gro"
     T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info; is_nemd="no")
-
+    end
+    if inpar.mode == "single_gro" ρ = single_dat(0.546, 0, 0) end
     # Calculate box length L_box
     if (reduced_units)
         mass_total = natoms*molmass                         # mass_total = natoms*molmass/NA
@@ -41,6 +43,8 @@ function EvalSingle(subfolder,inpar)
         # Evaluate Pressure Data to Calculate Viscosities
         if inpar.mode == "single_run"
             η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
+        elseif inpar.mode == "single_gro"
+            η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every, L_box)
         elseif inpar.mode == "tdm"
             η, η_V = calc_viscosities(info, "tdm"; mode_acf=inpar.acf_calc_mode)
         end
@@ -56,7 +60,6 @@ function EvalSingle(subfolder,inpar)
         η_V = NaN
         λ = NaN
     end
-
     # Loading Dump File
     dumpexists = false
     if !(isempty(readdir(info.folder)[startswith.(readdir(info.folder),"rdf.$(info.ensemble)")]))
@@ -71,14 +74,14 @@ function EvalSingle(subfolder,inpar)
         dump = []
     end
 
-    if inpar.do_transport == 1
+    if (inpar.do_transport == 1) && (inpar.mode != "single_gro")
         # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
         if inpar.mode == "single_run"
             D = calc_selfdiffusion(info, dump; err_mode = "particles")
         elseif inpar.mode == "tdm"
             D = calc_selfdiffusion(info, dump)
         end
-
+@infiltrate
         # Finite size correction (for tdm, the correction is applied after averaging the single runs) [1]
         if inpar.mode == "single_run"
             ξ = 2.837298
@@ -87,6 +90,7 @@ function EvalSingle(subfolder,inpar)
             else
                 Dcorr = kB*T.val*ξ/(6*π*η.val*L_box)
             end
+            @infiltrate
             for i = 1:length(D)
                 D[i].val = D[i].val + Dcorr
             end
@@ -96,7 +100,7 @@ function EvalSingle(subfolder,inpar)
     end
 
     # Get mole fractions from dump data (first timestep)
-    if dumpexists
+    if dumpexists && (inpar.mode != "single_gro")
         x = get_mole_fraction(info,dump[1])
     else
         x = NaN
@@ -110,6 +114,7 @@ function EvalSingle(subfolder,inpar)
     close("all")
 
     # Output Results
+    @infiltrate
     res = results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ)
     OutputResult(res, info.folder)
 end

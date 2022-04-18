@@ -115,7 +115,23 @@ function main(args::Array{String,1})
 
                 println(string(intro,"   →    ",Dates.format(now(),fdate),": DONE"))
             end
+            ## Mode "single_gro" --------------------------------------------------------
+        elseif inpar.mode == "single_gro"
+            print("$(Dates.format(now(),fdate)): RUNNING ... ")
 
+            catched_errors = []
+            # Evaluate Data
+            try
+                EvalSingle(folder,inpar)
+
+                println("   →    $(Dates.format(now(),fdate)): DONE")
+            catch e
+                if inpar.debug_mode == 0
+                    println("   →    $(Dates.format(now(),fdate)): ERROR ($e)")
+                elseif inpar.debug_mode == 1
+                    rethrow()
+                end
+            end
         ## Mode "nemd-heat" --------------------------------------------------------
         elseif inpar.mode == "nemd-heat"
             print("$(Dates.format(now(),fdate)): RUNNING ... ")
@@ -149,7 +165,7 @@ end
 function read_input(args::Array{String,1})
     # Filename
     if isempty(args)
-        file = "./INPUT.txt"
+        file = "C:/Users/kn9-f/md-evaluation/INPUT.txt"
     else
         file = replace(args[1],"\\" => "/")
     end
@@ -161,7 +177,6 @@ function read_input(args::Array{String,1})
     global reduced_units = false
 
     println("↓ INPUT FILE ↓")
-
     inputfile = readlines(file)
     for line in inputfile
         if !startswith(line,'#')
@@ -247,6 +262,7 @@ function read_input(args::Array{String,1})
     if isempty(inpar.acf_calc_mode)
         if inpar.mode == "single_run"   inpar.acf_calc_mode = "autocov" 	end
         if inpar.mode == "tdm"          inpar.acf_calc_mode = "fft"         end
+        if inpar.mode == "single_gro"   inpar.acf_calc_mode = "autocov" 	end
     end
     if inpar.mode == "nemd-heat"
         inpar.ensemble = "NVE"

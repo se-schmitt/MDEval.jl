@@ -11,7 +11,7 @@
 if length(ARGS) >= 2
     no_procs = parse(Int64,ARGS[2])
 else
-    no_procs = 1
+    no_procs = 2
 end
 
 # --- Define Functions and Structures ---
