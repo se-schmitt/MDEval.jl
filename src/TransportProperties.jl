@@ -301,7 +301,7 @@ end
         savefig(string(outfolder,set.name,"_std.pdf"))
 
         if (val < 0)
-            error("Negative value for ",set.name,"!")
+            @warn("Negative value for $(set.name)!")
         elseif isnan(val)
             error("NaN value for ",set.name," (-> fit did not converge)!")
         end
