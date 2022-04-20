@@ -197,7 +197,7 @@ function str2timestep(in)
 end
 
 # Loading Dump File
-function load_dump(info)
+function load_dump(info, L_box)
     # Initialization of posdat
     posdat = []
 
@@ -239,6 +239,10 @@ function load_dump(info)
         end
         posdat[i] = p
     end
+
+    posdat = unwrap(posdat,L_box)
+
+    @exfiltrate
 
     return posdat
 end
@@ -458,4 +462,44 @@ function read_inputfile(filename)
         end
     end
     return N_mol
+end
+
+function unwrap(dat,L)
+    factor = 0.5
+    xmat = Float64.(hcat(getfield.(dat,:x)...)')
+    ymat = Float64.(hcat(getfield.(dat,:y)...)')
+    zmat = Float64.(hcat(getfield.(dat,:z)...)')
+    N_ts, N_p = size(xmat)
+
+    for id = 1:N_p
+        for ts = 2:N_ts
+            dx = xmat[ts,id] - xmat[ts-1,id]
+            if dx < -L*factor
+                xmat[ts:end,id] = xmat[ts:end,id] .+ L
+            elseif dx > L*factor
+                xmat[ts:end,id] = xmat[ts:end,id] .- L
+            end
+            dy = ymat[ts,id] - ymat[ts-1,id]
+            if dy < -L*factor
+                ymat[ts:end,id] = ymat[ts:end,id] .+ L
+            elseif dy > L*factor
+                ymat[ts:end,id] = ymat[ts:end,id] .- L
+            end
+            dz = zmat[ts,id] - zmat[ts-1,id]
+            if dz < -L*factor
+                zmat[ts:end,id] = zmat[ts:end,id] .+ L
+            elseif dz > L*factor
+                zmat[ts:end,id] = zmat[ts:end,id] .- L
+            end
+        end
+    end
+
+    # Reassambling of dat
+    for i = 1:length(dat)
+        dat[i].x = xmat[i,:]
+        dat[i].y = ymat[i,:]
+        dat[i].z = zmat[i,:]
+    end
+
+    return dat
 end

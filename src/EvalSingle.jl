@@ -72,7 +72,7 @@ function EvalSingle(subfolder,inpar)
         rdfexists = false
     end
     if (inpar.do_transport == 1) || ((inpar.do_structure == 1) && !(rdfexists))
-        dump = load_dump(info)
+        dump = load_dump(info, L_box)
         dumpexists = true
     else
         dump = []
