@@ -1,0 +1,16 @@
+# Mode
+mode          =   single_gro
+
+# Folder
+folder        =   C:\Users\kn9-f\md-evaluation\T1.56rho0.546s0.1
+
+# Ensemble and equilibration
+ensemble      =   NVT
+timesteps_EQU =   0
+
+# Settings for acf
+corr_length   =   100000
+span_corr_fun =   2000
+
+debug_mode	  =   1
+units	      =   reduced
