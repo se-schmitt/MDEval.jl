@@ -242,8 +242,6 @@ function load_dump(info, L_box)
 
     posdat = unwrap(posdat,L_box)
 
-    @exfiltrate
-
     return posdat
 end
 
