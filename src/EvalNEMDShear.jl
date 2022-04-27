@@ -22,9 +22,10 @@ function EvalNEMDShear(subfolder,inpar)
                         inpar.r_cut)        # info.r_cut
 
     # Average Thermodynamic Properties
-    T, p, ρ, Etot, Ekin, Epot, c, pyz = ave_thermo(info; is_nemd=true)
+    T, p, ρ, Etot, Ekin, Epot, c, pyz = ave_thermo(info; is_nemd="shear")
 
     # Load profile data
+    list = readdir(info.folder)
     ts_add = 0
     prof = []
     for f in list[startswith.(list,"vy_profile")]
@@ -34,20 +35,21 @@ function EvalNEMDShear(subfolder,inpar)
 
     # Load thero data
     dat = load_thermo(info, is_nemd="shear")
-    if (reduced_units)      factor_p = 1
-    elseif !(reduced_units) factor_p = 0.1 end
+    if (reduced_units)      factor_p = 1; factor_t = 1
+    elseif !(reduced_units) factor_p = 1e5; factor_t = 10^12 end
 
     # Calculate velocity gradient
     xbins = mean(prof.x,dims=1)[:]
     vybins = mean(prof.vy,dims=1)[:]
     vybins_std = std(prof.vy,dims=1)[:]
-    dvdx = ([ones(length(xbins),1) xbins] \ vybins)[2]
+    dvdx = ([ones(length(xbins[2:end-1]),1) xbins[2:end-1]] \ vybins[2:end-1])[2]
+    yinterc = ([ones(length(xbins[2:end-1]),1) xbins[2:end-1]] \ vybins[2:end-1])[1]
 
-    # L = ...                                   →   JENS (aus info Datei)
-    s_rate = 10^12*dvdx/L                   #   →   JENS (Einheiten überprüfen (sollte 1/s sein, [dvdx]=Å/s, [L]=Å) und reduzierte Einheiten hinzufügen)
+    Lx, Ly, Lz = load_info(info.folder; is_nemd="shear")
+    s_rate = factor_t*dvdx/Lz
 
     # Calculation of viscosity and its uncertainties
-    η_vec = -(dat.pyz.*factor_p)*1e6/s_rate
+    η_vec = -dat.pyz.*factor_p/s_rate
     η_ave = mean(η_vec)
     η_std, η_err = block_average(η_vec; M_block=100)
 
@@ -62,9 +64,11 @@ function EvalNEMDShear(subfolder,inpar)
     # Figure of velocity profile
     figure()
     title("Mean velocity profile of simulation box")
-    if reduced_units    xlabel(L"x^*");                 ylabel(L"v_y^*")
-    else                xlabel(string(L"x"," / Å"));    ylabel(string(L"v_y"," / Å/ps"))    end
+    if reduced_units    xlabel(L"z^* / L_z^*");                 ylabel(L"v_y^*")
+    else                xlabel(string(L"z / L_z"," / Å"));    ylabel(string(L"v_y"," / Å/ps"))    end
     errorbar(xbins, vybins, yerr=vybins_std, fmt="bo-", capsize=2)
+    plot(xbins[2:end-1], xbins[2:end-1].*dvdx.+yinterc, color="red", label="Fit")
+    legend(loc="upper left")
     tight_layout()
-    savefig("$(info.folder)/vy_profile.pdf")
+    savefig("$(info.folder)/fit_vy_profile.pdf")
 end
