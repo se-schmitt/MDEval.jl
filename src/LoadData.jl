@@ -204,6 +204,9 @@ function load_dump(info, L_box)
     # Get list of all atoms_position files
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[startswith.(list,"LJTrans_xyz_-")])
+    if isempty(files)
+        files = string.(info.folder,"/",list[startswith.(list,"LJTrans_xyz-")])
+    end
     ts_file = get_timestep_from_file.(files).*5000
     sort_id = sortperm(ts_file)
     files = files[sort_id]
@@ -241,7 +244,6 @@ function load_dump(info, L_box)
     end
 
     posdat = unwrap(posdat,L_box)
-
     return posdat
 end
 
