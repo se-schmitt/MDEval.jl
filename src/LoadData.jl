@@ -48,7 +48,7 @@ function load_info(folder; is_nemd="no")
             Lz = parse(Float64,lines[7][pos7[end]+1:end])
 
             return Lx, Ly, Lz
-        
+
         else error("File \"",file,"\" is empty") end
     elseif is_nemd == "heat"
         # Read file info.dat
@@ -230,7 +230,7 @@ function load_dump(info)
                 else error("Dump file format wrong") end
                 # Reading number of atoms
                 if (readline(fID) == "ITEM: NUMBER OF ATOMS")
-                    natoms = parse(Int16,readline(fID))
+                    natoms = parse(Int64,readline(fID))
                 else error("Dump file format wrong") end
                 # Reading boundary coords
                 if (readline(fID) == "ITEM: BOX BOUNDS pp pp pp")
