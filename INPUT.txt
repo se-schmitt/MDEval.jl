@@ -2,7 +2,7 @@
 mode          =   single_gro
 
 # Folder
-folder        =   C:\Users\kn9-f\md-evaluation\T1.56rho0.546s0.1
+folder        =   C:/Users/kn9-f/md-evaluation/Gromacs_Eval/T*
 
 # Ensemble and equilibration
 ensemble      =   NVT

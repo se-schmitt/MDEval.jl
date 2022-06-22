@@ -7,7 +7,7 @@
 # ------------------------------------------------------------------------------
 
 # Function to ouput results of a single simulation / state point
-function OutputResult(result::results_struct, folder::String)
+function OutputResult(result::results_struct, results::results_struct_nemd, folder::String)
     # Create Filepath
     path = string(folder,"/result.dat")
 
@@ -28,10 +28,22 @@ function OutputResult(result::results_struct, folder::String)
     print_prop(fID, result.Ekin, "Ekin")
     print_prop(fID, result.Epot, "Epot")
     print_prop(fID, result.c, "c")
-    print_prop(fID, result.η, "η")
-    print_prop(fID, result.η_V, "η_V")
+    print_prop(fID, result.η, "η_GK")
+    print_prop(fID, result.η_V, "η_Ei")
     print_prop(fID, result.D, "D")
     print_prop(fID, result.λ, "λ")
+
+    line3 = "# Results from NEMD shear simulation"
+    spacer = string("\n", line3, "\n", line2, "\n")
+    print(fID,spacer)
+    print_prop(fID, results.T, "T")
+    print_prop(fID, results.p, "p")
+    print_prop(fID, results.Etot, "Etot")
+    print_prop(fID, results.Ekin, "Ekin")
+    print_prop(fID, results.Epot, "Epot")
+    print_prop(fID, results.η, "η_NEMD")
+    print_prop(fID, results.s_rate, "s_rate")
+
     close(fID)
 end
 

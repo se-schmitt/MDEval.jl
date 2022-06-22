@@ -27,9 +27,17 @@ function EvalSingle(subfolder,inpar)
 
     # Average Thermodynamic Properties
     if inpar.mode != "single_gro"
-    T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info; is_nemd="no")
+        T, p, ρ, Etot, Ekin, Epot, c = ave_thermo(info; is_nemd="no")
     end
-    if inpar.mode == "single_gro" ρ = single_dat(0.546, 0, 0) end
+    substring = info.folder
+    a=findlast("rho",substring)
+    b=findlast("s",substring)
+    a=a[end]
+    b=b[end]
+    rho=parse(Float64, substring[a+1:end])
+    #rho=parse(Float64, substring[a+1:b-1]) #for folder structure with s
+
+    if inpar.mode == "single_gro" ρ = single_dat(rho, 0, 0) end
     # Calculate box length L_box
     if (reduced_units)
         mass_total = natoms*molmass                         # mass_total = natoms*molmass/NA
@@ -41,13 +49,13 @@ function EvalSingle(subfolder,inpar)
 
     if inpar.do_transport == 1
 
-        msd1, msd2 = load_gro_file("C:/Users/kn9-f/md-evaluation/T1.56rho0.546s0.1/MSD.xvg",info)
-        @infiltrate
         # Evaluate Pressure Data to Calculate Viscosities
         if inpar.mode == "single_run"
             η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
         elseif inpar.mode == "single_gro"
-            η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every, L_box)
+            T, p, Etot, Epot, Ekin, η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every, L_box)
+            msd1, msd2 = load_gro_file("MSD.xvg",info)
+            #msd1 is D in Gromacs units (*1e-5 cm^2/s) and msd2 its +- value
         elseif inpar.mode == "tdm"
             η, η_V = calc_viscosities(info, "tdm"; mode_acf=inpar.acf_calc_mode)
         end
@@ -96,6 +104,14 @@ function EvalSingle(subfolder,inpar)
                 D[i].val = D[i].val + Dcorr
             end
         end
+    elseif (inpar.do_transport == 1) && (inpar.mode == "single_gro")
+        if (reduced_units) # define other cases for non reduced_units
+            D_gro2RU = 1e-3 #value given in 1e-5 cm^2/s -> D_gro2RU(m^2/s) is 1e-6
+            #therefore: 1e-5*1e-4/1e-6=1e-3
+        end
+        D = single_dat(msd1*D_gro2RU, msd2*D_gro2RU, 0)
+        c = (NaN, NaN, NaN)
+        λ = (NaN, NaN, NaN)
     else
         D = NaN
     end
@@ -113,11 +129,28 @@ function EvalSingle(subfolder,inpar)
     end
 
     close("all")
+    time, vis0, s_rate = load_nemd_file(info::info_struct)
+    η_NEMD_t = 1 ./ vis0 ./ 0.00000166054192515
+
+    η_NEMD_std_err = block_average(η_NEMD_t[3:end],N_blocks=info.n_blocks)
+    η_NEMD = single_dat(mean(η_NEMD_t[3:end]), η_NEMD_std_err[1], η_NEMD_std_err[2])
+
+    # Shear viscosity from Einstein-eval from Gromacs
+    if inpar.mode == "single_gro"
+        t, η_t_all = load_etta_files(info)
+        η_t_all = η_t_all ./ 0.00000166054192515
+        val, std, err = calc_average_GK(t, η_t_all, info; do_err=1, sym="η", name="viscosity_EI", unit="Pa*s")
+        #plot_acf(dat.t[what_pos1],acf_η_all, info; sym="J_{η}^{(acf)}", name="viscosity_EI", unit="Pa^2")
+        η_Ei = single_dat(val, std, err)
+        x = 1
+    end
+
 
     # Output Results
-    @infiltrate
-    res = results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ)
-    OutputResult(res, info.folder)
+
+    res = results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_Ei, D, λ)
+    res_nemd = results_struct_nemd(NaN, NaN, ρ, NaN, NaN, NaN, NaN, η_NEMD, s_rate, NaN)
+    OutputResult(res, res_nemd, info.folder)
 end
 
 ## Function to Average Static Thermodynamic Properties -------------------------

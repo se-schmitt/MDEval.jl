@@ -147,9 +147,9 @@ function load_pressure(info, nEvery)
     if length(files) > 9
         files = files[sortperm(parse.(Int64,getindex.(split.(files,"."),2)))]
     end
-    #file = string.(info.folder,"/","density.xvg")
+    file = string.(info.folder,"/","density.xvg")
     #file = "C:/Users/kn9-f/md-evaluation/T0.5rho0.9s0.1/density.xvg"
-    file = "C:/Users/kn9-f/md-evaluation/T1.56rho0.546s0.1/density.xvg"
+    #file = "C:/Users/kn9-f/md-evaluation/T1.56rho0.546s0.1/density.xvg"
     #file = "C:/Users/kn9-f/md-evaluation/T1.56rho0.1075s0.1/density.xvg"
     let stepADD=0,timeADD=0, skip=0
             time, Epot, Ekin, Etot, T, p, pxx, pxy, pxz, pyy, pyz, pzz = load_pressure_file(file, info, skip, nEvery)
@@ -557,8 +557,8 @@ function read_inputfile(filename)
 end
 
 function load_gro_file(file::String, info::info_struct)
-    @infiltrate
-    if file == "C:/Users/kn9-f/md-evaluation/T1.56rho0.546s0.1/MSD.xvg" # !! "MSD.xvg"
+    if file == "MSD.xvg" # !! "MSD.xvg"
+    file = string(info.folder,"/",file)
     msd = String[]
     fID = open(file,"r"); readline(fID); readline(fID); line3 = readline(fID); close(fID)
     if line3 != "#                        :-) GROMACS - gmx msd, 2022 (-:"
@@ -573,4 +573,88 @@ function load_gro_file(file::String, info::info_struct)
     msd2 = parse(Float64,SubString(msd,(findfirst("-",msd))[1]+2,(findfirst(")",msd))[1]-1))
     return msd1, msd2
     end
+end
+
+function load_nemd_file(info::info_struct)
+    list = sort(readdir(info.folder))
+    nemd_string = "density_nemd_"
+    files = string.(info.folder,"/",list[occursin.(string("density_nemd_"),list)])
+    s_rates = zeros(length(files))
+    for i = 1:length(files)
+        substring = files[i]
+        a=findlast(nemd_string,substring)
+        b=findlast(".xvg",substring)
+        a=a[end]
+        b=b[1]
+        s_rates[i]=parse(Float64, substring[a+1:b-1])
+    end
+    s_rate = maximum(s_rates)
+    filename = string(nemd_string,s_rate,".xvg")
+
+    file = string(info.folder,"/",filename)
+    fID = open(file,"r"); line=readline(fID); skip_gro=1; end_gro=1;
+    while end_gro == 1
+        if startswith(line, "#")
+            line = readline(fID);
+            skip_gro = skip_gro + 1;
+        elseif startswith(line, "@")
+            line = readline(fID);
+            skip_gro = skip_gro + 1;
+        else
+            end_gro = 0;
+            skip_gro = skip_gro - 1;
+        end
+    end
+    close(fID)
+
+    # Read data
+    dat = readdlm(file, skipstart=skip_gro)
+    what = 1:1:size(dat,1)
+
+    time = dat[what,1];
+    vis0 = dat[what,2];
+    return time, vis0, s_rate
+end
+
+function load_etta_files(info::info_struct)
+    #load gromacs files for Einstein viscosity calc.
+    list = sort(readdir(info.folder))
+    etta_string = "evisco"
+    files = string.(info.folder,"/",list[occursin.(string("evisco"),list)])
+    counter = 1
+    let η_t_all=0.0, t=0.0, counter = 1
+    for i=1:length(files)
+        file=files[i]
+        #file = string(info.folder,"/",filename)
+        fID = open(file,"r"); line=readline(fID); skip_gro=1; end_gro=1;
+        while end_gro == 1
+            if startswith(line, "#")
+                line = readline(fID);
+                skip_gro = skip_gro + 1;
+            elseif startswith(line, "@")
+                line = readline(fID);
+                skip_gro = skip_gro + 1;
+            else
+                end_gro = 0;
+                skip_gro = skip_gro - 1;
+            end
+        end
+        close(fID)
+
+    # Read data
+    dat = readdlm(file, skipstart=skip_gro)
+    η_t_app = dat[1:end,2:end]
+    if counter == 1
+        t=dat[1:end,1]
+        η_t_all = η_t_app
+        counter = 0
+    else
+        η_t_all = hcat(η_t_all,η_t_app)
+    end
+    end
+    return t, η_t_all
+    end
+
+    @infiltrate
+    return t, η_t_all
 end

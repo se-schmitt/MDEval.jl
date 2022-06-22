@@ -39,6 +39,7 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
             append!(pos_step_start,findfirst(what))
             append!(pos_step_end,length(dat.step))
         end
+        #just remove these testX -> just for infiltrate
         testt = dat.t
         testtemp = dat.T
         testp = dat.p
@@ -48,7 +49,29 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         testpyy = dat.pyy
         testpyz = dat.pyz
         testpzz = dat.pzz
-        @infiltrate
+
+        # Temperature
+        T_std_err = block_average(dat.T[what],N_blocks=info.n_blocks)
+        T = single_dat(mean(dat.T[what]), T_std_err[1], T_std_err[2])
+        # Pressure
+        p_std_err = block_average(dat.p[what],N_blocks=info.n_blocks)
+        p = single_dat(mean(dat.p[what]), p_std_err[1], p_std_err[2])
+        ##next 5 lines for shear viscosity from NEMD -> different in gromacs!
+        #if is_nemd == "shear"
+        #    pyz  = single_dat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
+        #else
+        #    pyz = Float64[]
+        #end
+        # Density -> ignore it since NVT with fixed density anyways
+        #ρ_std_err = block_average(dat.ρ[what],N_blocks=info.n_blocks)
+        #ρ = single_dat(mean(dat.ρ[what]), ρ_std_err[1], ρ_std_err[2])
+        # Energies
+        Etot_std_err = block_average(dat.Etot[what],N_blocks=info.n_blocks)
+        Etot = single_dat(mean(dat.Etot[what]), Etot_std_err[1], Etot_std_err[2])
+        Ekin_std_err = block_average(dat.Ekin[what],N_blocks=info.n_blocks)
+        Ekin = single_dat(mean(dat.Ekin[what]), Ekin_std_err[1], Ekin_std_err[2])
+        Epot_std_err = block_average(dat.Epot[what],N_blocks=info.n_blocks)
+        Epot = single_dat(mean(dat.Epot[what]), Epot_std_err[1], Epot_std_err[2])
         # Allocate arrays
         η_t_all =     NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
         η_V_t_all =   NaN .* ones(pos_step_end[1] .- pos_step_start[1]+1, length(pos_step_start))
@@ -131,7 +154,7 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         η = single_dat(NaN,NaN,NaN)
         η_V = single_dat(NaN,NaN,NaN)
     end
-    return η, η_V
+    return T, p, Etot, Epot, Ekin, η, η_V
 end
 
 ## Thermal conducitvity --------------------------------------------------------
@@ -261,7 +284,6 @@ function calc_average_GK(t, ave_t_all, info; do_plt=1, do_err=1, N_block=5, sym=
     # Running integral average
     ave_t = mean(ave_t_all,dims=2)[:]
     steps = t ./ info.dt
-
     ## Fitting procedure following (2) Eq. 10
     # Function to fit following Ref. (3)
     @. fun_ave(x, p) = p[1] .* ( ((p[2].*p[3].*(1 .-exp(-x./p[3])) .+
@@ -350,7 +372,6 @@ function calc_average_GK(t, ave_t_all, info; do_plt=1, do_err=1, N_block=5, sym=
 
         close("all")
     end
-
     return val, std, err
 end
 
