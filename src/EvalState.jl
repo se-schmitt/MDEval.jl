@@ -67,7 +67,9 @@ function StaticProperties(subf)
         pmat[i] = res.p.val
         ρmat[i] = res.ρ.val
         if (i == 1) x = res.x end
-        cmat[i] = res.c.val
+        if typeof(res.c) == single_dat
+            cmat[i] = res.c.val
+        end
     end
 
     # Save in structure
