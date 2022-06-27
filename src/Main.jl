@@ -165,7 +165,7 @@ end
 function read_input(args::Array{String,1})
     # Filename
     if isempty(args)
-        file = "C:/Users/kn9-f/md-evaluation/INPUT.txt"
+        file = "C:/Users/fleckenstein/Git_Desktop/md-evaluation/INPUT.txt"
     else
         file = replace(args[1],"\\" => "/")
     end

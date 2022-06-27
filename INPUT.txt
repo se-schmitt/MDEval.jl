@@ -2,15 +2,15 @@
 mode          =   single_gro
 
 # Folder
-folder        =   C:/Users/kn9-f/md-evaluation/Gromacs_Eval/T*
+folder        =   C:/Users/fleckenstein/Seafile/My_Library/2_LJ_Transport_Simulations/Gromacs_Eval_T1/T*
 
 # Ensemble and equilibration
 ensemble      =   NVT
 timesteps_EQU =   0
 
 # Settings for acf
-corr_length   =   100000
-span_corr_fun =   2000
+corr_length   =   100000 # should be overwritten by hardcoded part inside EvalSingle.jl
+span_corr_fun =   2000 # should be overwritten by hardcoded part inside EvalSingle.j
 
 debug_mode	  =   1
 units	      =   reduced

@@ -11,8 +11,12 @@
 function EvalSingle(subfolder,inpar)
 
     # Loading Info File
-    moltype, dt, natoms, molmass = load_info(subfolder)
-
+    if inpar.mode != "single_gro"
+        moltype, dt, natoms, molmass = load_info(subfolder)
+    else
+        mainfolder=subfolder[1:(findlast("/",subfolder))[1]]
+        moltype, dt, natoms, molmass = load_info(mainfolder)
+    end
     # Initialization of info structure
     info = info_struct( subfolder,          # info.folder
                         inpar.ensemble,     # info.ensemble
@@ -53,6 +57,21 @@ function EvalSingle(subfolder,inpar)
         if inpar.mode == "single_run"
             η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
         elseif inpar.mode == "single_gro"
+            # hardcode corr parameters for GK eval
+            if rho > 0.2
+                inpar.corr_length = 10000
+                inpar.span_corr_fun = 200
+                inpar.n_every = 1 #5
+            elseif (rho <= 0.2) && (rho > 0.1)
+                inpar.corr_length = 50000
+                inpar.span_corr_fun = 1000
+                inpar.n_every = 2 #10
+            elseif (rho <= 0.1)
+                inpar.corr_length = 200000
+                inpar.span_corr_fun = 4000
+                inpar.n_every = 4 #20
+            end
+
             T, p, Etot, Epot, Ekin, η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every, L_box)
             msd1, msd2 = load_gro_file("MSD.xvg",info)
             #msd1 is D in Gromacs units (*1e-5 cm^2/s) and msd2 its +- value

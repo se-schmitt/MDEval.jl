@@ -31,9 +31,9 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         pos_step_start = []
         pos_step_end = []
         if mode == "single"
-            for i_step in (info.n_equ .* info.dt) : (SpanCorrFun .* info.dt) : (maximum(dat.t) - CorrLength .* info.dt)
+            for i_step in (info.n_equ .* info.dt) : (SpanCorrFun .* info.dt) : (maximum(dat.t) - CorrLength .* info.dt - 0.005)
                 append!(pos_step_start, findfirst(dat.t .>= i_step))
-                append!(pos_step_end,   findfirst(dat.t .>= i_step+ (CorrLength.* info.dt) -1))
+                append!(pos_step_end,   findfirst(dat.t .>= i_step+ (CorrLength.* info.dt)))
             end
         elseif mode == "tdm"
             append!(pos_step_start,findfirst(what))
