@@ -66,9 +66,23 @@ function EvalNEMDShear(subfolder,inpar)
     title("Mean velocity profile of simulation box")
     if reduced_units    xlabel(L"z^* / L_z^*");                 ylabel(L"v_y^*")
     else                xlabel(string(L"z / L_z"," / Å"));    ylabel(string(L"v_y"," / Å/ps"))    end
-    errorbar(xbins, vybins, yerr=vybins_std, fmt="bo-", capsize=2)
+    errorbar(xbins, vybins, yerr=vybins_std, fmt="bo", capsize=2, mfc="none")
     plot(xbins[2:end-1], xbins[2:end-1].*dvdx.+yinterc, color="red", label="Fit")
     legend(loc="upper left")
     tight_layout()
-    savefig("$(info.folder)/fit_vy_profile.pdf")
+    savefig("$(info.folder)/fig_vy_profile.pdf")
+
+    # Dependency of the velocity gradient on time
+    figure()
+    no_mean = 5
+    w_sz = 20
+    plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(mean(prof.vy[:,1:no_mean],dims=2)[:],w_sz), "-b", label="\$0.0 \\leq z/L_{\\rm z} \\leq $(round(xbins[no_mean],digits=4))\$")
+    plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(mean(prof.vy[:,end-no_mean+1:end],dims=2)[:],w_sz), "-r", label="\$$(round(xbins[end-no_mean+1],digits=4)) \\leq z/L_{\\rm z} \\leq 1.0\$")
+    if reduced_units    xlabel("\$t^*\$");              ylabel("\$v_{\\rm y}^*\$")
+    else                xlabel("\$t~/~{\\rm ps}\$");    ylabel("\$v_{\\rm y}~/~{\\rm Å~ps^{-1}}\$")    end
+    legend()
+    tight_layout()
+    savefig("$(info.folder)/fig_time_dependence_vy.pdf")
+
+    close("all")
 end
