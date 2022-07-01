@@ -25,216 +25,118 @@ function EvalStateNEMD(subfolder::Array{String,1}, inpar::input_struct)
     folder = subfolder[1][1:pos]
 
     # Get static properties
-    T, p, ρ = StaticProperties(subfolder)
+    T, p, ρ, x = StaticProperties(subfolder)
 
     # Get NEMD results of single simulations
-    η_all, s_rate_all = collectNEMD(subfolder)
+    η_all, s_rate_all, T_all, p_all, ρ_all = collectNEMD(subfolder)
+    η = getfield.(η_all,:val)
+    s_rate = getfield.(s_rate_all,:val)
 
-    # Fit η_all
-    η_val = valArray(η_all)
-    s_rate_val = valArray(s_rate_all)
-    s_rate_Carreau, η_Carreau, p_Carreau = FitCarreau(η_val,s_rate_val)
-    s_rate_Eyring, η_Eyring, p_Eyring = FitEyring(η_val,s_rate_val)
+    # Define functions#
+    fun_Carreau(x,p) = p[1] .* (1 .+ (x ./ p[2]).^2).^((p[3].-1)./2)    # p[1]: η_N, p[2]: s_rate_0, p[3]: n
+    fun_Carreau_log(x,p) = log.(fun_Carreau(x,p))
+    fun_Eyring(x,p) = p[2] ./ x .* asinh.(p[1] .* x ./ p[2])            # p[1]: η_N, p[2]: σ_E
+    fun_Eyring_log(x,p) = log.(fun_Eyring(x,p))
 
-    # s_rate-η plot
+    s_rate_v = 10 .^ [LinRange(log10(minimum(s_rate)),log10(maximum(s_rate)),100);]
+
+    # Fit Carreau
+    fit_Carreau = curve_fit(fun_Carreau_log, s_rate, log.(η), [η[findmin(s_rate)[2]], median(s_rate),0.5], x_tol=1e-20, g_tol=1e-20)
+    SSE_Carreau = sum( (log.(η) .- fun_Carreau_log(s_rate,fit_Carreau.param)).^2 )
+
+    # Fit Eyring
+    fit_Eyring = curve_fit(fun_Eyring, s_rate, η, [η[findmin(s_rate)[2]], median(s_rate.*η)], x_tol=1e-20, g_tol=1e-20)
+    SSE_Eyring = sum( (log.(η) .- fun_Eyring_log(s_rate,fit_Eyring.param)).^2 )
+
+    # Figure γ-η
     figure()
+    errorbar(s_rate, η, fmt="ok", mfc=:white, yerr=getfield.(η_all,:std), label="simulations", ecolor="k", elinewidth = 1, capsize = 2)
+    plot(s_rate_v, fun_Carreau(s_rate_v,fit_Carreau.param), "b--", label="Carreau fit")
+    plot(s_rate_v, fun_Eyring(s_rate_v,fit_Eyring.param), "r:", label="Eyring fit")
     if !(reduced_units)
-        ttxt = string("Viscosity ", L"η", " at ", L"T", " = ", round(T.val, digits=2), " K, ", L"p", " = ", round(p.val, digits=1), " MPa, ", L"ρ", " = ", round(ρ.val,digits=5), " g/ml")
+        title("Viscosity \$\\eta(\\dot{\\gamma})\$ (\$T = $(round(T.val, digits=2)){\\rm~K}\$, \$\\rho = $(round(ρ.val,digits=5)){\\rm~g~ml^{-1}}\$)")
+        xlabel("\$\\dot{\\gamma}{\\rm~/~s^{-1}}\$")
+        ylabel("\$\\eta{\\rm~/~Pa~s}\$")
     elseif reduced_units
-        ttxt = string("Viscosity ", L"η", " at ", L"T", " = ", round(T.val, digits=2), ", ", L"p", " = ", round(p.val, digits=1), ", ", L"ρ", " = ", round(ρ.val,digits=5))
+        title("Viscosity \$η^{*}(\\dot{\\gamma}^{*})\$ (\$T^{*} = $(round(T.val, digits=2))\$, \$\\rho^{*} = $(round(ρ.val,digits=5))\$")
+        xlabel("\$\\dot{\\gamma}^{*}\$")
+        ylabel("\$\\eta^{*}\$")
     end
-    title(ttxt)
-
-    # Single simulation data
-    loglog(s_rate_all[1].val, η_all[1].val, c = :blue, marker = "o", label = "Single simulaion")
-    errorbar(s_rate_all[1].val, η_all[1].val, η_all[1].std, c = :black, elinewidth = 0.5, capsize = 1)
-    for i = 2:length(η_all)
-        loglog(s_rate_all[i].val, η_all[i].val, c = :blue, marker = "o")
-        errorbar(s_rate_all[i].val, η_all[i].val, η_all[i].std, c = :black, elinewidth = 0.5, capsize = 1)
-    end
-
-    # Fit
-    plot(s_rate_Carreau, η_Carreau, c = :orange, linestyle = "solid", label = "Carreau")
-    plot(s_rate_Eyring, η_Eyring, c =:green, linestyle = "dashdot", label = "Eyring")
-
-    if !(reduced_units)
-        xlabel(string(L"γ"," / 1/s"))
-        ylabel(string(L"η"," / Pa·s"))
-    elseif reduced_units
-        xlabel(L"γ")
-        ylabel(L"η")
-    end
-    tick_params(axis="both",which="both",direction="in")
-    legend()
-    tight_layout()
-
-    savefig(string(folder,"/viscosity.pdf"))
+    xscale("log");  yscale("log")
+    tick_params(which="both", right=true, top=true ,direction="in")
+    legend();       tight_layout()
+    savefig(string(folder,"/fig_shearrate_viscosity.pdf"))
     close()
-    Fit_file(folder, p_Carreau, p_Eyring)
+
+    # Choose the fit with the lower SSE
+    if SSE_Carreau < SSE_Eyring
+        best_fit = "Carreau"
+        η_N = single_dat(fit_Carreau.param[1], stderror(fit_Carreau)[1], margin_error(fit_Carreau,0.05)[1])
+    else
+        best_fit = "Eyring"
+        η_N = single_dat(fit_Eyring.param[1], stderror(fit_Eyring)[1], margin_error(fit_Eyring,0.05)[1])
+    end
+    note_bestfit = " (Newtonian viscosity calculated by the $best_fit model)"
+
+    # Create result
+    res = results_struct_nemd(T, p, ρ, x, [], [], [], η_N, [], [])
+    OutputResultNEMD(res, folder; note=note_bestfit)
+
+    create_parameterfile_shear(folder, fit_Carreau.param, fit_Eyring.param)
+
+    fID = open("$folder/sim_dat.csv","w")
+    println(fID,"T,p,rho,eta,s_rate")
+    writedlm(fID,[getfield.(T_all,:val) getfield.(p_all,:val) getfield.(ρ_all,:val) η s_rate],",")
+    close(fID)
 end
 
-
-# Subfunctions
+## Subfunctions ----------------------------------------------------------------
 # Collect NEMD properties from single simulations
 function collectNEMD(subf)
     n = length(subf)
+    T_all = Array{single_dat,1}(undef,n)
+    p_all = Array{single_dat,1}(undef,n)
+    ρ_all = Array{single_dat,1}(undef,n)
     η_all = Array{single_dat,1}(undef,n)
     s_rate_all = Array{single_dat,1}(undef,n)
 
     for i = 1:n
         res = load_result_NEMD(string(subf[i],"/result.dat"))
+        T_all[i] = res.T
+        p_all[i] = res.p
+        ρ_all[i] = res.ρ
         η_all[i] = res.η
         s_rate_all[i] = res.s_rate
     end
 
-    return η_all, s_rate_all
+    return η_all, s_rate_all, T_all, p_all, ρ_all
 end
 
-
-# Fit Carreau model
-function FitCarreau(η_val, s_rate_val)
-    # Function to fit η_all (p[1]: η_N, p[2]: s_rate_0, p[3]: n)
-    @. fun_Carreau(x,p) = p[1]*(1+(x/p[2])^2)^((p[3]-1)/2)
-
-    # Sort s_rate and belonging η
-    η_in = copy(η_val)
-    s_rate_in = copy(s_rate_val)
-    s_rate_sort, η_sort = valSort(s_rate_in, η_in)
-
-    # Fit η_all
-    # Find p[2]_0 (p[2]: s_rate_0)
-    idx1 = 1
-    for j = 2:length(η_sort)-2
-        if η_sort[j] <= 0.95 * η_sort[1] && η_sort[j+1] <= 0.95 * η_sort[1] && η_sort[j+2] <= 0.95 * η_sort[1]
-            idx1 = j
-            break
-        end
-    end
-
-    # Create Fits for different p[3]_0 (p[3]: n)
-    p3_0_Carreau = [0.9,0.85,0.8,0.75,0.7,0.65,0.6,0.55,0.5,0.45]
-    fit_η = Array{Vector{Float64}}(undef, length(p3_0_Carreau))
-    η_Carreau = Array{Vector{Float64}}(undef, length(p3_0_Carreau))
-    s_rate_Carreau = LinRange(minimum(s_rate_val), maximum(s_rate_val), 1000)
-    for j = 1:length(p3_0_Carreau)
-        fit_η[j] = curve_fit(fun_Carreau, s_rate_val, η_val, [η_sort[1], s_rate_sort[idx1], p3_0_Carreau[j]]).param
-        η_Carreau[j] = fun_Carreau(s_rate_Carreau, fit_η[j])
-    end
-
-    # Calculate Error of Fits
-    err_η = zeros(length(p3_0_Carreau))
-    for j = 1:length(p3_0_Carreau)
-        for k = idx1:length(s_rate_sort)
-            idx2 = findmin(abs.(s_rate_Carreau.-s_rate_sort[k]))[2]
-            err_η[j] = err_η[j] + abs(η_sort[k]-η_Carreau[j][idx2])
-        end
-    end
-
-    # Choose Fit with lowest Error
-    idx3 = findmin(err_η)[2]
-    η_N_Carreau = fit_η[idx3][1]
-    s_rate_0 = fit_η[idx3][2]
-    n = fit_η[idx3][3]
-    η_Carreau = fun_Carreau(s_rate_Carreau, fit_η[idx3])
-
-    return s_rate_Carreau, η_Carreau, [η_N_Carreau, s_rate_0, n]
-end
-
-
-# Fit Eyring model
-function FitEyring(η_val,s_rate_val)
-    # Function to fit η_all (p[1]: η_N, p[2]: σ_E)
-    @. fun_Eyring(x,p) = p[2]/x*asinh(p[1]*x/p[2])
-
-    # Sort s_rate and belonging η
-    η_in = copy(η_val)
-    s_rate_in = copy(s_rate_val)
-    s_rate_sort, η_sort = valSort(s_rate_in, η_in)
-
-    # Find s_rate_0
-    idx1 = 1
-    for j = 2:length(η_sort)-2
-        if η_sort[j] <= 0.95 * η_sort[1] && η_sort[j+1] <= 0.95 * η_sort[1] && η_sort[j+2] <= 0.95 * η_sort[1]
-            idx1 = j
-            break
-        end
-    end
-
-    # Create Fits for different p[2]_0 (p[2]: σ_E)
-    p2_0_Eyring = [5e9,1e9,7.5e8,5e8,2.5e8,1e8,5e7,1e7]
-    fit_η = Array{Vector{Float64}}(undef, length(p2_0_Eyring))
-    η_Eyring = Array{Vector{Float64}}(undef, length(p2_0_Eyring))
-    s_rate_Eyring = LinRange(minimum(s_rate_val), maximum(s_rate_val), 1000)
-    for j = 1:length(p2_0_Eyring)
-        fit_η[j] = curve_fit(fun_Eyring, s_rate_val, η_val, [η_sort[1], p2_0_Eyring[j]]).param
-        η_Eyring[j] = fun_Eyring(s_rate_Eyring, fit_η[j])
-    end
-
-    # Calculate Error of Fits
-    err_η = zeros(length(p2_0_Eyring))
-    for j = 1:length(p2_0_Eyring)
-        for k = idx1:length(s_rate_sort)
-            idx2 = findmin(abs.(s_rate_Eyring.-s_rate_sort[k]))[2]
-            err_η[j] = err_η[j] + abs(η_sort[k]-η_Eyring[j][idx2])
-        end
-    end
-
-    # Choose Fit with lowest Error
-    idx3 = findmin(err_η)[2]
-    η_N_Eyring = fit_η[idx3][1]
-    σ_E = fit_η[idx3][2]
-    η_Eyring = fun_Eyring(s_rate_Eyring, fit_η[idx3])
-
-    return s_rate_Eyring, η_Eyring, [η_N_Eyring, σ_E]
-end
-
-
-# single_dat.val to valArray
-function valArray(x)
-    x_val = []
-    for i = 1:length(x)
-        append!(x_val,x[i].val)
-    end
-    return x_val
-end
-
-
-# Sort valArray
-function valSort(x_in,y_in)
-
-    x_sort = []
-    y_sort = []
-    for i = 1:length(x_in)
-        idx = findmin(x_in)[2]
-        append!(x_sort,x_in[idx])
-        append!(y_sort,y_in[idx])
-        deleteat!(x_in,idx)
-        deleteat!(y_in,idx)
-    end
-    return x_sort, y_sort
-end
-
-# Create Fit file
-function Fit_file(folder, p_Carreau, p_Eyring)
+# Create fit parameter file
+function create_parameterfile_shear(folder, p_Carreau, p_Eyring)
 
     # Create Filepath
-    path = string(folder,"/viscosity_fit.dat")
+    path = string(folder,"/fit_parameters.dat")
 
     # Write to file
     fID = open(path,"w")
-    line1 = string("# Created by MD - Bulk Evaluation, Folder: ", folder)
-    line2 = "# Format: val; [T]=K, [p]=MPa, [ρ]=g/ml, [η]=Pa*s, [s_rate]=1/s"
-    if (reduced_units) line2 = "# Format: val; reduced units" end
-    header = string(line1,"\n",line2,"\n")
+    line1 = "# Created by MD - Bulk Evaluation, folder: $folder, time: $(Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))"
+    line2 = "# Parameters of fit for Carreau and Eyring model"
+    if !(reduced_units)
+        line3 = "# units: [η_N] = Pa*s, [γ_0] = 1/s, [n] = 1, [σ_E] = Pa"
+    else
+        line3 = "# units: reduced"
+    end
+    header = string(line1,"\n",line2,"\n",line3,"\n")
     print(fID,header)
 
     # Write data
-    line3 = "\n# Carreau model\n"
+    line3 = "# ---------- Carreau model ---------- \n"
     print(fID,line3)
     print_prop(fID, p_Carreau[1], "η_N")
     print_prop(fID, p_Carreau[2], "γ_0")
     print_prop(fID, p_Carreau[3], "n")
-    line4 = "\n# Eyring model\n"
+    line4 = "# ---------- Eyring model ---------- \n"
     print(fID,line4)
     print_prop(fID, p_Eyring[1], "η_N")
     print_prop(fID, p_Eyring[2], "σ_E")

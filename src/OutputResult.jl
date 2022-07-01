@@ -13,7 +13,7 @@ function OutputResult(result::results_struct, folder::String)
 
     # Write to file
     fID = open(path,"w")
-    line1 = string("# Created by MD - Bulk Evaluation, Folder: ", folder)
+    line1 = "# Created by MD - Bulk Evaluation, folder: $folder, time: $(Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))"
     line2 = "# Format: val (std dev., std err.); [T]=K, [p]=MPa, [ρ]=g/ml, [E]=eV, [η]=Pa*s, [D]=m^2/s, [λ]=W/(m*K)"
     if (reduced_units) line2 = "# Format: val (std dev., std err.); reduced units" end
     header = string(line1,"\n",line2,"\n")
@@ -35,16 +35,16 @@ function OutputResult(result::results_struct, folder::String)
     close(fID)
 end
 
-function OutputResultNEMD(result::results_struct_nemd, folder::String)
+function OutputResultNEMD(result::results_struct_nemd, folder::String; note="")
     # Create Filepath
     path = string(folder,"/result.dat")
 
     # Write to file
     fID = open(path,"w")
-    line1 = string("# Created by MD - Bulk Evaluation, Folder: ", folder)
+    line1 = "# Created by MD - Bulk Evaluation, folder: $folder, time: $(Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))"
     line2 = "# Format: val (std dev., std err.); [T]=K, [p]=MPa, [ρ]=g/ml, [E]=eV, [η]=Pa*s, [s_rate]=1/s"
     if (reduced_units) line2 = "# Format: val (std dev., std err.); reduced units" end
-    header = string(line1,"\n",line2,"\n")
+    header = string(line1,"\n",line2,note,"\n")
     print(fID,header)
     # Write data
     print_prop(fID, result.T, "T")
@@ -67,7 +67,7 @@ function OutputResult_VLE(dat::thermo_vle_dat, folder::String)
 
     # Write to file
     fID = open(path,"w")
-    line1 = string("# Created by MD - Bulk Evaluation, Folder: ", folder)
+    line1 = "# Created by MD - Bulk Evaluation, folder: $folder, time: $(Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))"
     line2 = "# Format: val (std dev., std err.); [T]=K, [p]=MPa, [ρ]=g/ml, [E]=eV"
     if (reduced_units) line2 = "# Format: val (std dev., std err.); reduced units" end
     header = string(line1,"\n",line2,"\n")
