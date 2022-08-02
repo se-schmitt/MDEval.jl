@@ -466,7 +466,7 @@ function read_profile1D(filename,data,ts_add)
     lines_per_ts = (no_chunks+1)
     n_steps = Int64(length(txt)/lines_per_ts)
 
-    if (typeof(data) != profile_data_vle) || (typeof(data) != profile_data_shear) || (typeof(data) != profile_data_heat) || (typeof(data) != profile_data_rdf)
+    if typeof(data) == Vector{Any}
         # Initialization of profile_data strucutre
         init = Array{Float64,2}(undef,0,no_chunks)
         if type == "vle"

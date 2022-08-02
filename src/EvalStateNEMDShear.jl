@@ -50,7 +50,7 @@ function EvalStateNEMD(subfolder::Array{String,1}, inpar::input_struct)
 
     # Figure γ-η
     figure()
-    errorbar(s_rate, η, fmt="ok", mfc=:white, yerr=getfield.(η_all,:std), label="simulations", ecolor="k", elinewidth = 1, capsize = 2)
+    errorbar(s_rate, η, fmt="ok", mfc=:white, yerr=getfield.(η_all,:err), label="simulations", ecolor="k", elinewidth = 1, capsize = 2)
     plot(s_rate_v, fun_Carreau(s_rate_v,fit_Carreau.param), "b--", label="Carreau fit")
     plot(s_rate_v, fun_Eyring(s_rate_v,fit_Eyring.param), "r:", label="Eyring fit")
     if !(reduced_units)

@@ -73,8 +73,8 @@ Two options:
 | **folder**        | string                                                          | all                  | path to main folder containing all simulation data (see chapter 1)                                                                                                                |
 | **ensemble**      | string [*NVT*, *NVE*, *NpT*]                                    | single_run, tdm      | ensemble to evaluate                                                                                                                                                              |
 | **timesteps_equ** | interger (≥ 0)                                                  | single_run, tdm, vle | number of timesteps to ignore at the start of each simulation                                                                                                                     |
-| **do_single**     | integer [0,1]                                                   | tdm                  | 1 - evaluate single folders, 0 - single folders already evaluated                                                                                                                 |
-| **do_state**      | integer [0,1]                                                   | tdm                  | 1 - evaluate complete thermodynamic state (main folder)                                                                                                                           |
+| **do_single**     | integer [0,1]                                                   | tdm, nemd-shear      | 1 - evaluate single folders, 0 - single folders already evaluated                                                                                                                 |
+| **do_state**      | integer [0,1]                                                   | tdm, nemd-shear      | 1 - evaluate complete thermodynamic state (main folder)                                                                                                                           |
 | **n_boot**        | integer (≥ 0)                                                   | tdm                  | number of bootstrapping repetitions                                                                                                                                               |
 | **cutcrit**       | float (≥ 0) {*0.4*}                                             | tdm                  | cut criteria for tdm method                                                                                                                                                       |
 | **do_transport**  | integer [0,1]                                                   | single_run           | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties                                                                                            |
@@ -147,6 +147,7 @@ N_boot        =   100
 ## Issues
 
 - [ ] NEMD parts  
-  - [ ] provide $x$ (mole fraction) 
-  - [ ] improve error calculation 
+  - [ ] provide $x$ (mole fraction)
+  - [ ] improve error calculation
 - [ ] info File: reading the file should not depend on line numbers
+- [ ] remove ensemble from filenames that do not need it (e.g. nemd-shear)

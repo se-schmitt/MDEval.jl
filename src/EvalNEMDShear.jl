@@ -33,7 +33,7 @@ function EvalNEMDShear(subfolder,inpar)
         ts_add = prof.timestep[end]
     end
 
-    # Load thero data
+    # Load thermo data
     dat = load_thermo(info, is_nemd="shear")
     if (reduced_units)      factor_p = 1; factor_t = 1
     elseif !(reduced_units) factor_p = 1e5; factor_t = 10^12 end
@@ -51,7 +51,7 @@ function EvalNEMDShear(subfolder,inpar)
     # Calculation of viscosity and its uncertainties
     η_vec = -dat.pyz.*factor_p/s_rate
     η_ave = mean(η_vec)
-    η_std, η_err = block_average(η_vec; M_block=100)
+    η_std, η_err = block_average(η_vec; N_blocks=100)
 
     # Save viscosity
     η = single_dat(η_ave, η_std, η_err)
