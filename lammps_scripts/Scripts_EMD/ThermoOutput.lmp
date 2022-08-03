@@ -1,0 +1,56 @@
+# Script to write out data for subsequent calculation of transport coefficients
+
+# ----------  General ----------
+variable 		dt equal dt
+variable        N_atoms equal atoms
+variable 		V equal vol
+variable 		T equal temp
+variable		p equal press
+variable		rho equal density
+variable 		Etot equal etotal
+variable 		Ekin equal ke
+variable 		Epot equal pe
+variable        header string "MolType: ${MolData}; TimeStep: ${dt}; No. Atoms: ${N_atoms};"
+
+# Print Simulation info to file -> info.dat
+print			"MolType: ${MolData}" file info.${ensemble}.${norun}.dat
+print			"TimeStep: ${dt}" append info.${ensemble}.${norun}.dat
+print			"No. Atoms: ${N_atoms}" append info.${ensemble}.${norun}.dat
+print			"Average Molar Mass: ${M_molar}" append info.${ensemble}.${norun}.dat
+
+# ---------- Thermodynamics Output to Calculate Averages ----------
+# -> output: thermo.dat
+# Averaging Setup
+variable		nfre_stat equal 20
+fix				thermo_ave all ave/time 1 1 ${nfre_stat} &
+					v_T v_p v_rho v_Etot v_Ekin v_Epot &
+					file thermo.${ensemble}.${norun}.dat
+
+# ---------- Pressure Tensor to Calculate Viscosity ----------
+# -> output: pressure.dat
+variable    	nfre_dyn equal 4
+fix				press_tens all ave/time 1 1 ${nfre_dyn} &
+					v_V v_T c_thermo_press &
+					c_thermo_press[1] c_thermo_press[2] c_thermo_press[3] &
+					c_thermo_press[4] c_thermo_press[5] c_thermo_press[6] &
+					file pressure.${ensemble}.${norun}.dat
+
+# ---------- Atoms Positions to Calculate Mean Square Displacement ----------
+# INPUT
+variable    	ndump equal 10000
+dump			atomspos all custom ${ndump} atoms_position.${ensemble}.${norun}.dump id mol type mass xu yu zu
+
+# ---------- Heat Flux Vector for Thermal Conductivity Calculation ----------
+# -> output: heat_flux.dat
+compute			myKE all ke/atom
+compute			myPE all pe/atom
+# compute			myStress all stress/atom NULL virial
+compute			myStress all centroid/stress/atom NULL virial
+compute			j all heat/flux myKE myPE myStress
+fix				heat_flux all ave/time 1 1 ${nfre_dyn} &
+					v_V v_T c_j[1] c_j[2] c_j[3] &
+					file heat_flux.${ensemble}.${norun}.dat
+
+# ---------- RDF ----------
+compute         myRDF all rdf 100 1 1 2 2 1 2
+fix             myRDF all ave/time 100 10 ${ndump} c_myRDF[*] file rdf.dat mode vector

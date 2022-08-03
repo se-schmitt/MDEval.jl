@@ -1,0 +1,51 @@
+# Script to write out data for subsequent calculation of transport coefficients
+
+# ----------  General ----------
+variable 		dt equal dt
+variable        N_atoms equal atoms
+variable 		V equal vol
+compute         T_deform all temp/deform
+thermo_modify   temp T_deform
+variable 		T equal c_T_deform
+compute         p_deform all pressure T_deform
+thermo_modify   press p_deform
+variable		p equal c_p_deform
+variable		p equal press
+variable		pxy equal c_p_deform[4]
+variable		pxz equal c_p_deform[5]
+variable		pyz equal c_p_deform[6]
+variable		rho equal density
+variable 		Etot equal etotal
+variable 		Ekin equal ke
+variable 		Epot equal pe
+variable        eta equal -c_p_deform[6]*1e5/v_s_rate
+variable        header string "MolType: ${MolData}; TimeStep: ${dt}; No. Atoms: ${N_atoms};"
+
+# Print Simulation info to file -> info.dat
+print			"MolType: ${MolData}" file info.${ensemble}.${norun}.dat
+print			"TimeStep: ${dt}" append info.${ensemble}.${norun}.dat
+print			"No. Atoms: ${N_atoms}" append info.${ensemble}.${norun}.dat
+print			"Average Molar Mass: ${M_molar}" append info.${ensemble}.${norun}.dat
+print     		"xLength: $(lx)" append info.${ensemble}.${norun}.dat
+print     		"yLength: $(ly)" append info.${ensemble}.${norun}.dat
+print     		"zLength: $(lz)" append info.${ensemble}.${norun}.dat
+
+# ---------- Thermodynamics Output to Calculate Averages ----------
+# -> output: thermo.dat
+# Averaging Setup
+variable		nfre equal 1000
+fix				thermo_ave all ave/time 1 ${nfre} ${nfre} &
+					v_T v_p v_rho v_Etot v_Ekin v_Epot v_pyz v_eta &
+					file thermo.${ensemble}.${norun}.dat
+
+# ---------- Velocities along z axis ----------
+# -> output: vy_profile.dat
+variable        dz equal 1/${n_bins}
+variable		nfre_pro equal 1000
+compute         layers all chunk/atom bin/1d z center ${dz} units reduced
+fix		        profile all ave/chunk 1 ${nfre_pro} ${nfre_pro} layers vy file vy_profile.${norun}.dat
+
+# # ---------- Atoms Positions to Calculate Mean Square Displacement ----------
+# # -> output: atoms_position.dump
+# variable    	ndump equal 1000
+# dump			atomspos all custom ${ndump} atoms_position.${ensemble}.${norun}.dump id mol mass x y z type

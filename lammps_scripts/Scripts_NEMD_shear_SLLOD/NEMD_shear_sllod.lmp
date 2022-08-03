@@ -1,0 +1,113 @@
+echo            both
+
+#----------------------------------------------#
+#-------------- NEMD shear SLLOD --------------#
+#----------------------------------------------#
+
+# ---------- INPUT ----------
+# Molecule data
+variable        MolData     string "LJ.reduced"
+variable        N           equal 5000                  # Nr. of molecules
+# Read data
+variable        i_ReadData  equal 0                     # 0 - create atoms, 1,2,3,... - read data file
+variable        file        string "NEMD_shear"         # Data file to read (just file ending)
+# State point
+variable        tmp         equal 2                     # Temperature [K]
+variable        rho_in      equal 0.6                   # Density [g/ml] (if 0, density remains as in input -> just possible for i_ReadData > 0)
+# Strain rate
+variable        s_rate      equal 0.1                  # Strain rate [1/ps] (s_rate in [ps] = 1e12*s_rate in [s])
+# Numerics
+variable        dt          equal 0.001
+variable        n_run       equal 5e6                   # NVT run
+variable        n_equ       equal 1e6                   # Timesteps before production run
+variable        n_equ_vol   equal 1e5                   # Timesteps to increase density before equilibration run (NVT) -> recommended: 50 ps
+variable        c_Tdamp     equal 100                   # Suggested by lammps: 100
+variable        k_elongate  equal 2                     # Elongate box at constante volume such that x=2y=2z results after elongation
+variable        n_bins      equal 40                    # Number of bins including hot and cold region
+# Ensemble string
+variable        ensemble    string "NVT"
+
+# ---------- Simulation setup ---------
+variable        norun       equal ${i_ReadData}+1
+
+# Set simulation conditions
+units           lj
+atom_style      full
+
+dimension       3
+atom_modify     map array
+boundary        p p p
+neighbor        2 multi
+neigh_modify    every 2 delay 2 check yes
+
+# Set timestep
+timestep        ${dt}
+
+# Start density and density factor
+variable        rho_start equal ${rho_in}/50
+variable 		factor_L equal "(density / v_rho_in)^(1/3)"
+
+# Molecule and force field file
+include         ${MolData}.inMolData
+
+change_box      all triclinic
+
+# Check if rho_in fits to i_ReadData
+if "${rho_in} == 0 && ${i_ReadData} == 0" then "quit"
+
+# Set velocity atoms defined by temperature
+if "${i_ReadData} == 0" then    "velocity all create ${tmp} $$"
+
+# ---------- Minimize Eenergy ---------
+if "${i_ReadData} == 0" then    "minimize   0.001 1.0e-4 1000 10000"
+
+# -------------- MD NVT ---------------
+# NpT/NVT Setup
+variable        Tdamp equal ${c_Tdamp}*dt
+
+# Log File
+thermo          1000
+thermo_style    custom step atoms vol temp press density etotal pe ke lx ly lz xy xz yz
+
+# Shake Fix
+if "${do_shake} == 1" then      "fix        shk all shake 1e-5 100 10000 b 2"
+
+# --- Reduce Volume NVT ---
+# Ensemble Setup
+fix             NVT all nvt temp ${tmp} ${tmp} ${Tdamp}
+
+# NVT to reduce volume to target density
+fix             def all deform 1 x scale ${factor_L} y scale ${factor_L} z scale ${factor_L} remap x
+if "${i_ReadData} == 0" then    "run             ${n_equ_vol}"
+unfix           def
+
+change_box      all x scale ${factor_L} y scale ${factor_L} z scale ${factor_L} remap
+
+# --- Elongate Box NVT ---
+fix             def all deform 1 x volume y volume z scale $(v_k_elongate^(2/3)) remap x
+if "${i_ReadData} == 0" then    "run             ${n_equ_vol}"
+unfix           def
+
+unfix           NVT
+
+# ------- MD NVE SLLOD -------
+fix             NVT_sllod all nvt/sllod temp ${tmp} ${tmp} ${Tdamp}
+fix             shear all deform 1 yz erate ${s_rate} remap v
+
+# --- Actual (NEMD) Equilibration ---
+run             ${n_equ}
+
+# --- Actual Run ---
+reset_timestep  0
+
+include         ThermoOutput_shear.lmp
+
+run             ${n_run}
+
+if "${do_shake} == 1" then      "unfix      shk"
+unfix           NVT_sllod
+
+# Write Data File
+write_data      data.${norun}.Bulk_NVT nocoeff nofix
+
+shell           mv log.lammps log.${norun}.Bulk_NVT

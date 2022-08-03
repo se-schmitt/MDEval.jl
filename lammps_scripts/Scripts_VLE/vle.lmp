@@ -1,0 +1,222 @@
+echo            both
+
+#----------------------------------------------#
+#-------------- BULK SIMULATION ---------------#
+#----------------------------------------------#
+
+# ---------- INPUT ----------
+# Molecule data
+variable        MolData     string "Methane.TraPPE-UA"	
+variable        N           equal 1000                  # Nr. of molecules
+# Read data
+variable        i_ReadData  equal 0                     # 0 - create atoms, 1,2,3,... - read data file
+variable        file        string "2Phase_VLE"         # Data file to read (just file ending)
+# State point
+variable        tmp         equal 110                   # Temperature [K]
+variable        rho_c       equal 0.162                 # Critical density (if not available -> estimate)
+variable        k_rho_start equal 3                     # Determines density for liquid state for equilibration (rho_liq = k_rho_start*rho_c)
+variable        k_elongate  equal 2                     # Determines box elongation before minimization
+# Numerics
+variable        dt          equal 0.0005
+variable        n_run       equal 1e5                   # NVT run
+variable        n_equ_T     equal 1e5                   # Equilibration with growing temperature (2 phases)
+variable        n_equ_2pha  equal 1e5                   # Equilibration run (2 phases)
+variable        n_equ_vol   equal 5e4
+variable        c_Tdamp     equal 100                   # Suggested by lammps: 100
+# Output
+variable        nbin        equal 100                   # Number of bins for density profile
+variable		neve_prof   equal 10
+variable		nrep_prof   equal 50
+variable		nfre_prof   equal 500
+# ---------------------------
+
+# ---------- Simulation setup ---------
+variable        norun       equal ${i_ReadData}+1
+variable        is_vle      equal 1
+
+# Set simulation conditions
+units           metal
+atom_style      full
+
+dimension       3
+atom_modify     map array
+boundary        p p p
+neighbor        2 multi
+neigh_modify    every 1 delay 0 check yes
+
+# Set timestep
+timestep        ${dt}
+
+# Define lower start density
+variable        rho_in equal ${rho_c}*${k_rho_start}
+variable        rho_start equal ${rho_in}/50
+
+include         ${MolData}.inMolData
+
+# Set density by setting box length
+variable 		factor_L equal "(density / v_rho_in)^(1/3)"
+if "${rho_in} == 0 && ${i_ReadData} == 0" then "quit"
+
+# Set velocity atoms defined by temperature
+variable        tmp_start equal 10
+if "${i_ReadData} == 0" then &
+    "velocity   all create ${tmp_start} 443"
+
+# Set walls
+variable        xxlo equal xlo
+variable        xxhi equal xhi
+fix             wall all wall/harmonic xlo v_xxlo 50.0 0.0 ${d_insert} xhi v_xxhi 50.0 0.0 ${d_insert} pbc yes units box
+
+# ---------- Minimize Eenergy ---------
+if "${i_ReadData} == 0" then &
+    "minimize   0.001 1.0e-4 1000 10000"
+
+# -------------- MD NVT ---------------
+# NpT/NVT Setup
+variable        Tdamp equal ${c_Tdamp}*dt
+
+fix             NVT all nvt temp ${tmp_start} ${tmp_start} ${Tdamp}
+
+# Log File
+thermo          1000
+thermo_style    custom step atoms vol temp press pxx pyy pzz density etotal pe ke
+
+# Shake Fix
+if "${do_shake} == 1" then &
+    "fix        shk all shake 1e-5 100 10000 b 2"
+
+# NVT to reduce volume to target density
+fix             def all deform 1 x scale ${factor_L} y scale ${factor_L} z scale ${factor_L} remap x
+if "${i_ReadData} == 0" then &
+    "run        ${n_equ_vol}"
+unfix           def
+
+# Set box elongation (isochoric)
+# change_box      all x scale ${k_elongate} y volume z volume remap
+# NVT to elongate box
+fix             def all deform 1 x scale ${k_elongate} y volume z volume remap x
+if "${i_ReadData} == 0" then &
+    "run        ${n_equ_vol}"
+unfix           def
+
+unfix           wall
+unfix           NVT
+
+# Set box volume
+if "${rho_in} != 0 && ${i_ReadData} == 0" then &
+    "change_box all x scale ${factor_L} y scale ${factor_L} z scale ${factor_L} remap"
+
+# --- Expansion of simulation box in x direction ---
+variable        xxlo equal xlo
+variable        xxhi equal xhi
+variable        rc_wall equal 10
+variable        xxlo_wall equal ${xxlo}-${rc_wall}
+variable        xxhi_wall equal ${xxhi}+${rc_wall}
+variable        yylo equal ylo
+variable        yyhi equal yhi
+variable        zzlo equal zlo
+variable        zzhi equal zhi
+variable        dx_start equal (${k_rho_start}-1)/2*lx
+variable        xxlo_new equal ${xxlo}-${dx_start}
+variable        xxhi_new equal ${xxhi}+${dx_start}
+
+if "${i_ReadData} == 0" then &
+    "change_box all x final ${xxlo_new} ${xxhi_new}"
+
+variable        dx equal lx/${nbin}
+print """
+xmin: ${xxlo}, xmax: ${xxhi}
+ymin: ${yylo}, ymax: ${yyhi}
+zmin: ${zzlo}, zmax: ${zzhi}
+"""
+
+# --- Definition of variables ---
+variable 		dt equal dt
+variable        N_atoms equal atoms
+variable 		V equal vol
+variable 		T equal temp
+variable		px equal pxx
+variable        py equal pyy
+variable        pz equal pzz
+variable		rho equal density
+variable 		Etot equal etotal
+variable 		Ekin equal ke
+variable 		Epot equal pe
+variable        header string "MolType: ${MolData}; TimeStep: ${dt}; No. Atoms: ${N_atoms};"
+
+# Print Simulation info to file -> info.dat
+print			"MolType: ${MolData}"               file info.vle.2phase.${norun}.dat
+print			"TimeStep: ${dt}"                   append info.vle.2phase.${norun}.dat
+print			"No. Atoms: ${N_atoms}"             append info.vle.2phase.${norun}.dat
+print			"Average Molar Mass: ${M_molar}"    append info.vle.2phase.${norun}.dat
+
+
+# --- Equilibration 2 phase ---
+# Fix center of mass
+fix             fixcom all momentum 1 linear 1 0 0
+
+# Definition of Ouptut
+# Stress per atom
+variable        volBin equal ly*lz*${dx}
+compute         myStress all stress/atom NULL
+variable        p_xx atom c_myStress[1]/v_volBin
+variable        p_yy atom c_myStress[2]/v_volBin
+variable        p_zz atom c_myStress[3]/v_volBin
+variable        p_xy atom c_myStress[4]/v_volBin
+variable        p_xz atom c_myStress[5]/v_volBin
+variable        p_yz atom c_myStress[6]/v_volBin
+
+# Atom positions
+dump            1 all custom 100000 vle.2phase.equ.dump id mol mass x y z
+
+# Profile
+compute         layers1 all chunk/atom bin/1d x lower ${dx} units box
+fix		        prof1 all ave/chunk ${neve_prof} ${nrep_prof} ${nfre_prof} layers1 density/number density/mass temp v_p_xx v_p_yy v_p_zz v_p_xy v_p_xz v_p_yz file vle.2phase.equ.profile
+
+# Define NVE Fix
+fix             NVE all nve
+fix             VS all temp/rescale 10 ${tmp_start} ${tmp} 0.02 1.0
+
+if "${i_ReadData} == 0" then &
+    "run        ${n_equ_T}"
+
+unfix           VS
+unfix           NVE
+
+if "${i_ReadData} == 0" then &
+    "velocity   all scale ${tmp}"
+
+# Define NVT Fix
+fix             NVT all nvt temp ${tmp} ${tmp} ${Tdamp}
+
+if "${i_ReadData} == 0" then &
+    "run        ${n_equ_2pha}"
+
+undump          1
+unfix           prof1
+unfix           fixcom
+
+# --- Actual Run ---
+reset_timestep  0
+
+# Definition of Ouptut
+# Atom positions
+dump            2 all custom 100000 vle.2phase.${norun}.dump id mol mass x y z
+# Profile
+compute         layers2 all chunk/atom bin/1d x lower ${dx} units box
+fix		        prof2 all ave/chunk ${neve_prof} ${nrep_prof} ${nfre_prof} layers2 density/number density/mass temp v_p_xx v_p_yy v_p_zz v_p_xy v_p_xz v_p_yz file vle.2phase.${norun}.profile
+# Thermo data
+variable		nfre equal 50
+fix				thermo_ave all ave/time 1 1 ${nfre}	v_T v_px v_py v_pz v_rho v_Etot v_Ekin v_Epot file thermo.vle.2phase.${norun}.dat
+
+run             ${n_run}
+
+undump          2
+unfix           prof2
+
+unfix           NVT
+
+# Write Data File
+write_data      data.${norun}.2Phase_VLE nocoeff nofix
+
+shell           mv log.lammps log.${norun}.2Phase_VLE

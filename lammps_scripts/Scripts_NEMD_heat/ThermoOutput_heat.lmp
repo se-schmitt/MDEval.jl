@@ -1,0 +1,44 @@
+# Script to write out data for subsequent calculation of transport coefficients
+
+# ----------  General ----------
+variable 		dt equal dt
+variable    	N_atoms equal atoms
+variable 		V equal vol
+variable 		T equal temp
+variable		p equal press
+variable		rho equal density
+variable 		Etot equal etotal
+variable 		Ekin equal ke
+variable 		Epot equal pe
+variable        header string "MolType: ${MolData}; TimeStep: ${dt}; No. Atoms: ${N_atoms};"
+
+# Print Simulation info to file -> info.dat
+print			"MolType: ${MolData}" file info.${ensemble}.${norun}.dat
+print			"TimeStep: ${dt}" append info.${ensemble}.${norun}.dat
+print			"No. Atoms: ${N_atoms}" append info.${ensemble}.${norun}.dat
+print			"Average Molar Mass: ${M_molar}" append info.${ensemble}.${norun}.dat
+print     		"xLength: $(lx)" append info.${ensemble}.${norun}.dat
+print     		"yLength: $(ly)" append info.${ensemble}.${norun}.dat
+print     		"zLength: $(lz)" append info.${ensemble}.${norun}.dat
+print			"Bins: ${n_bins}" append info.${ensemble}.${norun}.dat
+
+# ---------- Thermodynamics Output to Calculate Averages ----------
+# -> output: thermo.dat
+# Averaging Setup
+variable		nfre_stat equal 50
+fix				thermo_ave all ave/time 1 ${nfre_stat} ${nfre_stat} &
+					v_T v_p v_rho v_Etot v_Ekin v_Epot f_hot f_cold &
+					file thermo.${ensemble}.${norun}.dat
+
+# ---------- Atoms Positions ----------
+# INPUT
+variable    	ndump equal 100000
+dump			atomspos all custom ${ndump} atoms_position.${ensemble}.${norun}.dump id mol type mass x y z
+
+# ----- Temperature profile to calculate Thermal conducitvity -----
+# -> output: temp_profile.dat
+variable 		neve		equal 	1
+variable		nfre		equal	5000
+variable		dx			equal	lx/${n_bins}
+compute     	layers all chunk/atom bin/1d x center ${dx} units box
+fix		      	profile all ave/chunk ${neve} ${nfre} ${nfre} layers temp file temp_profile.dat

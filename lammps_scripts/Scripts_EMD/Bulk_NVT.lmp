@@ -1,0 +1,118 @@
+echo            both
+
+#----------------------------------------------#
+#-------------- BULK SIMULATION ---------------#
+#----------------------------------------------#
+
+# ---------- INPUT ----------
+# Molecule data
+variable        MolData     string "Methane.TraPPE-UA"	
+variable        N           equal 400                   # Nr. of molecules
+# Read data
+variable        i_ReadData  equal 0                     # 0 - create atoms, 1,2,3,... - read data file
+variable        file        string "Bulk_NVT"           # Data file to read (just file ending)
+# State point
+variable        tmp         equal 130                   # Temperature [K]
+variable        rho_in      equal 0.4                   # Density [g/ml] (if 0, density remains as in input -> just possible for i_ReadData > 0)
+variable        x1          equal 0.5                   # Mole fraction component 1
+variable        x2          equal 0.5                   # Mole fraction component 2 ...
+# Numerics
+variable        dt          equal 0.001
+variable        n_run       equal 1e5                   # NVT run
+variable        n_equ       equal 1e4                   # Timesteps before production run (NVT)
+variable        n_equ_vol   equal 1e5                   # Timesteps to increase density before equilibration run (NVT) -> recommended: 50 ps
+variable        c_Tdamp     equal 100                   # Suggested by lammps: 100
+# Ensemble string
+variable        ensemble    string "NVT"
+# Write data
+variable        do_set_E    equal 0                     # Scale total Energy at the end of run
+# ---------------------------
+
+# ---------- Simulation setup ---------
+variable        norun       equal ${i_ReadData}+1
+variable        is_vle      equal 0
+
+# Set simulation conditions
+units           metal
+atom_style      full
+
+dimension       3
+atom_modify     map array
+boundary        p p p
+neighbor        2 bin
+neigh_modify    every 1 delay 0 check yes
+
+# Set timestep
+timestep        ${dt}
+
+# Start density and density factor
+variable        rho_start equal ${rho_in}/50
+variable 		factor_L equal "(density / v_rho_in)^(1/3)"
+
+# Molecule and force field file
+include         ${MolData}.inMolData
+
+# Check if rho_in fits to i_ReadData
+if "${rho_in} == 0 && ${i_ReadData} == 0" then "quit"
+
+# Set velocity atoms defined by temperature
+if "${i_ReadData} == 0" then    "velocity all create ${tmp} $$"
+
+# ---------- Minimize Eenergy ---------
+if "${i_ReadData} == 0" then    "minimize   0.001 1.0e-4 1000 10000"
+
+# -------------- MD NVT ---------------
+# NpT/NVT Setup
+variable        Tdamp equal ${c_Tdamp}*dt
+
+# Log File
+thermo          1000
+thermo_style    custom step atoms vol temp press density etotal pe ke
+
+# Shake Fix
+if "${do_shake} == 1" then      "fix        shk all shake 1e-5 100 10000 b $$"
+
+# --- Equilibration ---
+# Ensemble Setup
+fix             NVT all nvt temp ${tmp} ${tmp} ${Tdamp}
+
+# NVT to reduce volume to target density
+fix             def all deform 1 x scale ${factor_L} y scale ${factor_L} z scale ${factor_L} remap x
+if "${i_ReadData} == 0" then    "run             ${n_equ_vol}"
+unfix           def
+
+change_box      all x scale ${factor_L} y scale ${factor_L} z scale ${factor_L} remap
+
+# Actual Equilibration
+run             ${n_equ}
+
+# --- Actual Run ---
+reset_timestep  0
+
+# Output
+include         in.ThermoOutput
+
+# Get total energy average from NVT run
+variable        etotal equal etotal
+fix             mEtot_box all ave/time 50 20 1000 v_etotal ave running
+
+run             ${n_run}
+
+if "${do_shake} == 1" then      "unfix      shk"
+unfix           NVT
+
+# Set new total energy
+variable        Etot_old equal ${etotal}
+variable        Ekin_new equal "f_mEtot_box - pe"
+variable        T_new equal 2/3*${Ekin_new}/(atoms*8.617333262e-5)
+if "${do_set_E} == 1" then "velocity        all scale ${T_new}"
+print           "Old total energy:       ${Etot_old}"
+print           "New total energy:       f_mEtot_box"
+
+# Unfixes
+unfix           mEtot_box
+
+# Write Data File
+write_data      data.${norun}.Bulk_NVT nocoeff nofix
+
+shell           mv log.lammps log.${norun}.Bulk_NVT
