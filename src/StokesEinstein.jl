@@ -25,6 +25,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
         for i = 1:N_moltype
             # Get all molecules of type 'moltype'
             mol_i = get_mol_by_type(mol,i)
+            Nmol = length(mol_i[1].molid)
 
             # Calculation of Mean Square Displacement
             msd_t, t, msd_t_all = calc_msd(mol_i,info)
@@ -58,7 +59,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
                 t_val095 = quantile(TDist(length(what_eval)-2))
                 ε = beta[1] .+ beta[2].*t[what_eval] .- msd_t[what_eval]
                 err_D = sqrt(sum(ε.^2) / sum((t[what_eval] .- mean(t[what_eval])).^2) / (length(what_eval)-2)) * t_val095
-            elseif err_mode == "particles"
+            elseif err_mode == "particles" && Nmol >= 200
                 # Block averaging with the particles (M_block: number of particles per block)
                 msd_blocks = []
                 for j = 1:floor(Int64, length(msd_t_all)/M_block)
@@ -67,7 +68,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
                 beta_all = pmap(x -> A \ x[what_eval], msd_blocks)
                 std_D = std(hcat(beta_all...)'[:,2])
                 err_D = std_D / sqrt(length(beta_all))
-            elseif err_mode == "blocks"
+            elseif err_mode == "blocks" || (err_mode == "particles" && Nmol <= 200)
                 # Block averaging (classical, dividing the trajectory into different time intervals)
                 # Split the trajectory
                 mol_i_split = []
@@ -86,7 +87,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
                 D_split = Float64[]
                 for beta_i in beta_split append!(D_split,beta_i[2]) end
                 std_D = std(D_split)
-                err_D = std_D / sqrt(N_block)
+                err_D = std_D / sqrt(N_blocks)
             else
                 std_D = NaN
                 err_D = NaN
