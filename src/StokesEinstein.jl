@@ -56,7 +56,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
             if err_mode == "regression" || (err_mode == "particles" && Nmol <= 100)
                 # Claculation of the deviation from the regression
                 std_D = NaN
-                t_val095 = quantile(TDist(length(what_eval)-2))
+                t_val095 = quantile(TDist(length(what_eval)-2),0.95)
                 ε = beta[1] .+ beta[2].*t[what_eval] .- msd_t[what_eval]
                 err_D = sqrt(sum(ε.^2) / sum((t[what_eval] .- mean(t[what_eval])).^2) / (length(what_eval)-2)) * t_val095
             elseif err_mode == "particles" && Nmol >= 100
