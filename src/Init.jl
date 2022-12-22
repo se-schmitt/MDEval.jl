@@ -149,6 +149,7 @@ mutable struct results_struct
     η_V
     D
     λ
+    Rg
 end
 
 mutable struct results_struct_nemd

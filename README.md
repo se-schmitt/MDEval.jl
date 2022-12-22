@@ -8,6 +8,15 @@ Notes:
 
 ## 1. Overview
 
+### 1.1. Running an Evaluation
+
+Two options:
+
+- running `MD_EVAL_master.jl` in julia environment
+- running from bash: `julia MD_EVAL_master [input file] [no. processors]` 
+
+### 1.2. Evaluation Modes
+
 Program evaluates four different simulation types:
 
 - Evaluation of **single run simulations** for transport properties (**single_run**)
@@ -15,14 +24,14 @@ Program evaluates four different simulation types:
 - Evaluation of **VLE simulations** (two phase simualtions) (**vle**)
 - Evaluation of **NEMD shear simulations** (**nemd-shear**)
 
-### Single run simulations
+#### Single run simulations
 
 **Required Folder structure:**
 
 - *SIM_1* [contains all output files of a EMD simulation of one state point]
 - ...
 
-### TDM
+#### TDM
 
 **Required Folder structure:**
 
@@ -32,7 +41,7 @@ Program evaluates four different simulation types:
   - ...
 - ...
 
-### VLE simulations
+#### VLE simulations
 
 **Required Folder structure:**
 
@@ -42,7 +51,7 @@ Program evaluates four different simulation types:
   - ...
 - ...
 
-### NEMD shear simulations
+#### NEMD shear simulations
 
 **Required Folder structure:**
 

@@ -104,13 +104,15 @@ function EvalSingle(subfolder,inpar)
 
     # Structural evaluation
     if inpar.do_structure == 1
-        structural = eval_structure(dump,info)
+        Rg = eval_structure(dump,info)
+    else
+        Rg = []
     end
 
     close("all")
 
     # Output Results
-    res = results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ)
+    res = results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ, Rg)
     OutputResult(res, info.folder)
 end
 

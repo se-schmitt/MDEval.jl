@@ -91,12 +91,12 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         end
 
         # Shear viscosity
-        val, std, err = calc_average_GK(dat.step[what_pos1], η_t_all, info; do_err=calc_error, sym="η", name="viscosity", unit="Pa*s")
+        val, std, err = calc_average_GK(dat.step[what_pos1], η_t_all, info; do_fit=calc_error, sym="η", name="viscosity", unit="Pa*s")
         plot_acf(dat.step[what_pos1],acf_η_all, info; sym="J_{η}^{(acf)}", name="viscosity", unit="Pa^2")
         η = single_dat(val, std, err)
 
         # Bulk viscosity
-        val, std, err = calc_average_GK(dat.step[what_pos1], η_V_t_all, info; do_plt=0, do_err=0)
+        val, std, err = calc_average_GK(dat.step[what_pos1], η_V_t_all, info; do_plt=0, do_fit=0)
         η_V = single_dat(val, std, err)
 
         # Write data to file
@@ -186,7 +186,7 @@ function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::Str
         end
 
         # Averaging and error estimation
-        val, std, err = calc_average_GK(dat.step[what_pos1], λ_t_all, info; do_err=calc_error, sym="λ", name="thermalconductivity", unit="W/(m*K)")
+        val, std, err = calc_average_GK(dat.step[what_pos1], λ_t_all, info; do_fit=calc_error, sym="λ", name="thermalconductivity", unit="W/(m*K)")
         plot_acf(dat.step[what_pos1],acf_λ_all, info; sym="J_{λ}^{(acf)}", name="thermalconductivity", unit="eV^2/(Å^4*ps)")
         λ = single_dat(val, std, err)
 
@@ -246,7 +246,7 @@ end
 end
 
 # Function to calculate averge from GK integral
-function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100, sym="", name="", unit="")
+function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_fit=1, N_block=100, sym="", name="", unit="")
     ## Average value calculation
     # Running integral average
     ave_t = mean(ave_t_all,dims=2)[:]
@@ -258,29 +258,34 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100
                                   (p[2].*p[3].+(1 .-p[1]).*p[4]) )
 
     # Fitting
-    p0 = [  [abs(ave_t[end]), 1.0, 1.0,  1.0],
-            [abs(ave_t[end]), 1.0, 0.1,  10.0],
-            [abs(ave_t[end]), 1.0, 1e-3, 1.0],
-            [abs(ave_t[end]), 0.1, 0.1,  1.0],
-            [0.1,             1.0, 0.1,  1.0] ]
-    fit_ave = []
-    converged = false
-    k = 0
-    while !(converged) && k < length(p0)
-        k += 1
-        fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
-        converged = fit_ave.converged
-    end
-
-    if fit_ave.converged
-        val = fit_ave.param[1]
-    else
-        @warn("Fit to single data not converged!")
+    if do_fit == 1
+        p0 = [  [abs(ave_t[end]), 1.0, 1.0,  1.0],
+                [abs(ave_t[end]), 1.0, 0.1,  10.0],
+                [abs(ave_t[end]), 1.0, 1e-3, 1.0],
+                [abs(ave_t[end]), 0.1, 0.1,  1.0],
+                [0.1,             1.0, 0.1,  1.0] ]
+        
+        fit_ave = []
+        converged = false
+        k = 0
+        while !(converged) && k < length(p0)
+            k += 1
+            fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
+            converged = fit_ave.converged
+        end
+    
+        if fit_ave.converged
+            val = fit_ave.param[1]
+        else
+            @warn("Fit to single data not converged!")
+            val = NaN
+        end
+    else 
         val = NaN
-    end
+    end    
 
     ## Error bar calculation
-    if do_err == 1
+    if do_fit == 1
         # Get number of independent ACF's
         N = size(ave_t_all, 2)
         M_block = floor(Int64,N/N_block)
@@ -300,7 +305,7 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100
                 else
                     what = col_start:N
                 end
-                push!(vals,calc_average_GK(steps, ave_t_all[:,what], info; do_plt = 0, do_err = 0)[1])
+                push!(vals,calc_average_GK(steps, ave_t_all[:,what], info; do_plt = 0, do_fit = 0)[1])
             end
 
             # Exclude very high values
@@ -324,10 +329,10 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_err=1, N_block=100
         t = steps.*info.dt
         figure()
         plot(t[1:teve:end], ave_t[1:teve:end], "b", linewidth=1, label="running integral")
-        plot(t,fun_ave(steps, fit_ave.param),"r", lw=0.75, label="fit to running integral")
         # fill_between(t,minimum(ave_t_all,dims=2)[:],maximum(ave_t_all,dims=2)[:],color="blue",alpha=0.2)
         plot([t[1],t[end]],[val,val],"k",label="result value", linewidth=0.5)
-        if do_err == 1
+        if do_fit == 1
+            plot(t,fun_ave(steps, fit_ave.param),"r", lw=0.75, label="fit to running integral")
             plot([t[1],t[end]], [val+std, val+std], "k--", linewidth=0.5, label="calculated standard deviation")
             plot([t[1],t[end]], [val-std, val-std], "k--", linewidth=0.5)
         end

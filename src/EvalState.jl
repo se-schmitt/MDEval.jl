@@ -48,7 +48,7 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
     println(string("TransportProperties DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Output Data
-    OutputResult(results_struct(T,p,ρ,x,[],[],[],c,η,η_V,D,λ),folder)
+    OutputResult(results_struct(T,p,ρ,x,[],[],[],c,η,η_V,D,λ,[]),folder)
 end
 
 # Subfunctions
@@ -86,7 +86,7 @@ function load_result(file)
     fID = open(file,"r")
     lines = readlines(fID);
     close(fID)
-    res = results_struct([],[],[],single_dat[],[],[],[],[],[],[],single_dat[],[])
+    res = results_struct([],[],[],single_dat[],[],[],[],[],[],[],single_dat[],[],[])
 
     for i = 1:length(lines)
         pos_colon = findfirst(isequal(':'),lines[i])

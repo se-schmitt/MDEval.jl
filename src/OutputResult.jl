@@ -11,6 +11,14 @@ function OutputResult(result::results_struct, folder::String)
     # Create Filepath
     path = string(folder,"/result.dat")
 
+    no = 0
+    while isfile(path)
+        no += 1
+        if no == 1  path = replace(path,".dat" => "_$(no).dat")
+        else        path = replace(path,"_$(no-1).dat" => "_$(no).dat")  
+        end
+    end
+
     # Write to file
     fID = open(path,"w")
     line1 = "# Created by MD - Bulk Evaluation, folder: $folder, time: $(Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))"
@@ -32,6 +40,7 @@ function OutputResult(result::results_struct, folder::String)
     print_prop(fID, result.η_V, "η_V")
     print_prop(fID, result.D, "D")
     print_prop(fID, result.λ, "λ")
+    print_prop(fID, result.Rg, "Rg")
     close(fID)
 end
 

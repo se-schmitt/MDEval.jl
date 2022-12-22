@@ -7,7 +7,7 @@
 # ------------------------------------------------------------------------------
 
 ## Main function ---------------------------------------------------------------
-function eval_structure(dump, info)
+function eval_structure(adump, info)
 
     # Read RDF file if available
     list = readdir(info.folder)
@@ -18,10 +18,16 @@ function eval_structure(dump, info)
     else
         # if RDF not computed in LAMMPS
         # Calculation of radial distribution function
-        calc_rdf(dump,info)
+        # calc_rdf(adump,info)
     end
 
+    # Calculation of radius of gyration
+    mdump = atom2mol(adump)
+    Rg = calc_radius_of_gyration(adump, info)
+
     close("all")
+
+    return Rg
 end
 
 ## Subfunction -----------------------------------------------------------------
@@ -208,4 +214,30 @@ function read_rdf(filepaths,info)
     println(fID,header)
     writedlm(fID,[r hcat([g_r std_g_r]'[:]'...)],' ')
     close(fID)
+end
+
+# Function to calculate radius of gyration
+function calc_radius_of_gyration(dump, info)
+    Nmol = length(unique(dump[1].molid))
+    moltypes = unique(dump[1].moltype)
+    Rg_all = fill(fill(NaN,length(dump)),Nmol)
+
+    # for loop over all timesteps
+    it = 0
+    for d in dump
+        it += 1
+
+        # for loop over all molecules
+        for imol in sort(unique(d.molid))
+            what_i = d.molid .== imol
+            Rg_all[imol][it] = √(d.mass[what_i]' * (d.x[what_i].^2 .+ d.y[what_i].^2 .+ d.y[what_i].^2) / sum(d.mass[what_i]))
+        end
+    end
+
+    Rg = single_dat[]
+    for itype in moltypes
+        what_type = dump[1].moltype .== itype
+        push!(Rg,single_dat(mean(mean.(Rg_all[what_type])),NaN,NaN))
+    end
+    return Rg
 end
