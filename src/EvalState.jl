@@ -32,12 +32,7 @@ function EvalState(subfolder::Array{String,1}, inpar::input_struct)
     println(string("ave_state DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS")))
 
     # Calculation of box length L_box
-    mass_total = natoms*molmass/NA                          # [mass] = g | 1
-    if (reduced_units)
-        L_box = (mass_total / ρ.val) ^ (1/3)                # [L_box] = 1
-    else
-        L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
-    end
+    L_box = get_L_box(subfolder[1])
 
     setTDM = set_TDM(folder,subfolder,false,NaN,NaN,NaN,"","","",inpar.n_boot)
     setTDM.tskip = 2
@@ -138,4 +133,23 @@ function load_result(file)
         end
     end
     return res
+end
+
+## Function to get box length
+function get_L_box(folder)
+    # Get data Files
+    files = readdir(folder)
+    datafiles = files[startswith.(files,"data.")]
+
+    if sum(contains.(datafiles,"NVT")) > 0
+        datafile = datafiles[contains.(datafiles,"NVT")][end]
+    else
+        datafile = datafiles[end]
+    end
+
+    lines = readlines("$folder/$datafile")
+    k = findfirst(contains.(lines,"xlo xhi"))
+    L_box = parse(Float64,split(lines[k])[2]) - parse(Float64,split(lines[k])[1])
+
+    return L_box*1e-10
 end
