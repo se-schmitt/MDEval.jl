@@ -230,7 +230,11 @@ function calc_radius_of_gyration(dump, info)
         # for loop over all molecules
         for imol in sort(unique(d.molid))
             what_i = d.molid .== imol
-            Rg_all[imol][it] = √(d.mass[what_i]' * (d.x[what_i].^2 .+ d.y[what_i].^2 .+ d.y[what_i].^2) / sum(d.mass[what_i]))
+            M = sum(d.mass[what_i])
+            xm = (d.mass[what_i]' * d.x[what_i])/M
+            ym = (d.mass[what_i]' * d.y[what_i])/M
+            zm = (d.mass[what_i]' * d.z[what_i])/M
+            Rg_all[imol][it] = √(d.mass[what_i]' * ((d.x[what_i] .- xm).^2 .+ (d.y[what_i] .- ym).^2 .+ (d.z[what_i] .- zm).^2) / sum(d.mass[what_i]))
         end
     end
 
