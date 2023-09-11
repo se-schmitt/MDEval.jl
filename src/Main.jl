@@ -248,6 +248,9 @@ function read_input(args::Array{String,1})
         if inpar.mode == "single_run"   inpar.acf_calc_mode = "autocov" 	end
         if inpar.mode == "tdm"          inpar.acf_calc_mode = "fft"         end
     end
+    if inpar.mode == "nemd-shear"
+        inpar.ensemble = "NVT"
+    end
     if inpar.mode == "nemd-heat"
         inpar.ensemble = "NVE"
         if inpar.k_L_thermo  == -1.0
