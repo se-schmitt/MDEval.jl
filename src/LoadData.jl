@@ -240,14 +240,14 @@ function load_dump(info)
                     bounds[3,:] = parse.(Float64,split(readline(fID)))
                 else error("Dump file format wrong") end
                 # Reading positions of atoms
-                lineITEM = readline(fID)
+                lineITEM = strip(readline(fID))
                 id = Int64.(zeros(natoms))
                 molid = Int64.(zeros(natoms))
                 type = Int64.(zeros(natoms))
                 x = zeros(natoms)
                 y = zeros(natoms)
                 z = zeros(natoms)
-                if (lineITEM == "ITEM: ATOMS id mol xu yu zu ")
+                if (lineITEM == "ITEM: ATOMS id mol xu yu zu")
                     mass = []
                     for i = 1:natoms
                         line_float = parse.(Float64,split(readline(fID)))
@@ -257,7 +257,7 @@ function load_dump(info)
                         y[i] = line_float[4]
                         z[i] = line_float[5]
                     end
-                elseif (lineITEM == "ITEM: ATOMS id mol mass xu yu zu ")
+                elseif (lineITEM == "ITEM: ATOMS id mol mass xu yu zu")
                     mass = zeros(natoms)
                     for i = 1:natoms
                         line_float = parse.(Float64,split(readline(fID)))
@@ -268,7 +268,7 @@ function load_dump(info)
                         y[i] = line_float[5]
                         z[i] = line_float[6]
                     end
-                elseif (lineITEM == "ITEM: ATOMS id mass xu yu zu ")
+                elseif (lineITEM == "ITEM: ATOMS id mass xu yu zu")
                     mass = zeros(natoms)
                     for i = 1:natoms
                         line_float = parse.(Float64,split(readline(fID)))
@@ -279,7 +279,7 @@ function load_dump(info)
                         y[i] = line_float[4]
                         z[i] = line_float[5]
                     end
-                elseif (lineITEM == "ITEM: ATOMS id mol type mass xu yu zu ")
+                elseif (lineITEM == "ITEM: ATOMS id mol type mass xu yu zu")
                     mass = zeros(natoms)
                     for i = 1:natoms
                         line_float = parse.(Float64,split(readline(fID)))
