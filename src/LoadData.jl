@@ -73,7 +73,7 @@ end
 
 # Loading Thermo File
 function load_thermo(info::info_struct; is_nemd::String="no")
-    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],"")
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
     if length(files) > 9
@@ -85,7 +85,7 @@ function load_thermo(info::info_struct; is_nemd::String="no")
         if is_nemd == "no"
             step, time, T, p, ρ, Etot, Ekin, Epot = load_thermo_file(file,info,is_nemd)
         elseif is_nemd == "shear"
-            step, time, T, p, ρ, Etot, Ekin, Epot, pyz = load_thermo_file(file,info,is_nemd)
+            step, time, T, p, ρ, Etot, Ekin, Epot, pyz, method = load_thermo_file(file,info,is_nemd)
         elseif is_nemd == "heat"
             step, time, T, p, ρ, Etot, Ekin, Epot, Qhot, Qcold = load_thermo_file(file,info,is_nemd)
         end
@@ -99,6 +99,7 @@ function load_thermo(info::info_struct; is_nemd::String="no")
         thermodat.Epot = vcat(thermodat.Epot,Epot)
         if is_nemd == "shear"
             thermodat.pyz = vcat(thermodat.pyz,pyz)
+            thermodat.method = method
         elseif is_nemd == "heat"
             thermodat.Qhot = vcat(thermodat.Qhot,Qhot)
             thermodat.Qcold = vcat(thermodat.Qcold,Qcold)
@@ -127,9 +128,14 @@ function load_thermo_file(file::String, info::info_struct, is_nemd::String)
         return step, time, T, p, ρ, Etot, Ekin, Epot
 
     elseif is_nemd == "shear"
-        if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot v_pyz v_eta"
+        if line2 == "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot v_pyz v_eta"
+            method = "sllod"
+        elseif line2 == "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot v_mom_flux v_mom_flux_cum"
+            method = "rnemd"
+        else
             error("Format of File \"thermo.dat\" not right")
         end
+
         # Read data
         dat = readdlm(file, skipstart=2)
         step = dat[:,1];    time = step*info.dt
@@ -137,7 +143,7 @@ function load_thermo_file(file::String, info::info_struct, is_nemd::String)
         ρ    = dat[:,4];    Etot = dat[:,5]
         Ekin = dat[:,6];    Epot = dat[:,7]
         pyz  = dat[:,8]
-        return step, time, T, p, ρ, Etot, Ekin, Epot, pyz
+        return step, time, T, p, ρ, Etot, Ekin, Epot, pyz, method
 
     elseif is_nemd == "heat"
         if line2 != "# TimeStep v_T v_p v_rho v_Etot v_Ekin v_Epot f_hot f_cold"

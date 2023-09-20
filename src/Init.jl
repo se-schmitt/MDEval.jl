@@ -85,6 +85,7 @@ mutable struct thermo_dat
     pyz::Array{Float64,1}
     Qhot::Array{Float64,1}
     Qcold::Array{Float64,1}
+    method::String
 end
 
 # Data structure to store pressure tensor (pressure.dat)
