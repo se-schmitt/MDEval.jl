@@ -6,7 +6,15 @@
 # created by Sebastian Schmitt, 03.09.2020
 # ------------------------------------------------------------------------------
 
-function EvalVLE(info)
+function EvalVLE(folder,inpar)
+    info = info_struct()
+    info.folder = folder
+    info.ensemble = inpar.ensemble
+    info.n_equ = inpar.n_equ
+    info.n_blocks = inpar.n_blocks
+    info.N_bin = inpar.N_bin
+    info.r_cut = inpar.r_cut
+
     # Get subfolder
     subfolder = get_subfolder(info.folder)
 
@@ -109,7 +117,7 @@ function eval_profiles(folder,info)
     for i = 1:10
         filename = string(folder,"/vle.2phase.",i,".profile")
         if isfile(filename)
-            dat = read_profile1D(filename,dat,ts_add)
+            dat = read_profile1D(filename,dat,ts_add)[1]
             ts_add = dat.timestep[end]
         end
     end

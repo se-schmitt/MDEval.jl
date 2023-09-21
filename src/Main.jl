@@ -79,8 +79,7 @@ function main(args::Array{String,1})
 
         ## Mode "vle" ----------------------------------------------------------
         elseif inpar.mode == "vle"
-            info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",NaN,0,NaN)
-            EvalVLE(info)
+            EvalVLE(folder, inpar)
 
         ## Mode "nemd-shear" --------------------------------------------------------
         elseif inpar.mode == "nemd-shear"

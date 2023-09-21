@@ -70,6 +70,7 @@ end
     n_blocks::Int64
     N_bin::Int64
     r_cut::Float64
+    info_struct() = new()
 end
 
 # Data structure to store thermo data (thermo.dat)
