@@ -7,13 +7,7 @@
 # ------------------------------------------------------------------------------
 
 function EvalVLE(folder,inpar)
-    info = info_struct()
-    info.folder = folder
-    info.ensemble = inpar.ensemble
-    info.n_equ = inpar.n_equ
-    info.n_blocks = inpar.n_blocks
-    info.N_bin = inpar.N_bin
-    info.r_cut = inpar.r_cut
+    info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",0.0,0,0.0,inpar.n_blocks,inpar.N_bin,inpar.r_cut)
 
     # Get subfolder
     subfolder = get_subfolder(info.folder)
