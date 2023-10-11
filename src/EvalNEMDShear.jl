@@ -100,9 +100,8 @@ function EvalNEMDShear(subfolder,inpar)
     figure()
     w_sz = 20
     if dat.method == "sllod"
-        no_mean = 5
-        plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(mean(prof.vy[:,1:no_mean],dims=2)[:],w_sz), "-b", label="\$0.0 \\leq z/L_{\\rm z} \\leq $(round(xbins[no_mean],digits=4))\$")
-        plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(mean(prof.vy[:,end-no_mean+1:end],dims=2)[:],w_sz), "-r", label="\$$(round(xbins[end-no_mean+1],digits=4)) \\leq z/L_{\\rm z} \\leq 1.0\$")
+        plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(mean(prof.vy[:,1],dims=2)[:],w_sz), "-b", label="\$0.0 \\leq z/L_{\\rm z} \\leq $(round(xbins[1],digits=4))\$")
+        plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(mean(prof.vy[:,end],dims=2)[:],w_sz), "-r", label="\$$(round(xbins[end],digits=4)) \\leq z/L_{\\rm z} \\leq 1.0\$")
     elseif dat.method == "rnemd"
         plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(prof.vy[:,1][:],w_sz), "-b", label="bin 1 (\$v = v_{\\rm min}\$)")
         plot(prof.timestep[Int64(w_sz/2):end-Int64(w_sz/2)].*info.dt, rollmean(prof.vy[:,round(Int64,no_chunks/2+1)][:],w_sz), "-b", label="bin $(round(Int64,no_chunks/2+1)) (\$v = v_{\\rm max}\$)")
