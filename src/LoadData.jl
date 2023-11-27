@@ -142,7 +142,11 @@ function load_thermo_file(file::String, info::info_struct, is_nemd::String)
         T    = dat[:,2];    p    = dat[:,3]
         ρ    = dat[:,4];    Etot = dat[:,5]
         Ekin = dat[:,6];    Epot = dat[:,7]
-        pyz  = dat[:,8]
+        if method == "sllod"
+            pyz  = dat[:,8]
+        elseif method == "rnemd"
+            pyz  = dat[:,9]
+        end
         return step, time, T, p, ρ, Etot, Ekin, Epot, pyz, method
 
     elseif is_nemd == "heat"

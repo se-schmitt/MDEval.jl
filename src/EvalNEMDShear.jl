@@ -48,28 +48,41 @@ function EvalNEMDShear(subfolder,inpar)
 
     if dat.method == "sllod"
         # SLLOD
+        # Fit velocity profile
         fit_v = ([ones(length(xbins[2:end-1]),1) xbins[2:end-1]] \ vybins[2:end-1])
         dvdx = fit_v[2]
         yinterc = fit_v[1]
         s_rate = factor_t*dvdx
+
+        # Calculation of viscosity and its uncertainties
+        η_vec = -dat.pyz.*factor_p/s_rate
+        η_ave = mean(η_vec)
+        η_std, η_err = block_average(η_vec; N_blocks=100)
+
     elseif dat.method == "rnemd"
         # RNEMD
+        # Fit velocity profiles
         what_grad1 = 2:round(Int64,no_chunks/2)
         what_grad2 = round(Int64,no_chunks/2+2):no_chunks
-        fit_v1 = ([ones(length(xbins[what_grad1]),1) xbins[what_grad1]] \ vybins[what_grad1])
-        fit_v2 = ([ones(length(xbins[what_grad2]),1) xbins[what_grad2]] \ vybins[what_grad2])
-        dvdx1 = fit_v1[2]
-        dvdx2 = fit_v2[2]
+        (yinterc1,dvdx1) = ([ones(length(what_grad1)) xbins[what_grad1]] \ vybins[what_grad1])
+        (yinterc2,dvdx2) = ([ones(length(what_grad2)) xbins[what_grad2]] \ vybins[what_grad2])
+        ε1 = vybins[what_grad1] .- (yinterc1 .+ dvdx1.*xbins[what_grad1])
+        ε2 = vybins[what_grad2] .- (yinterc2 .+ dvdx2.*xbins[what_grad2])
+        s1 = sqrt(1/(length(what_grad1)-2)*sum(ε1.^2)/sum((xbins[what_grad1].-mean(xbins[what_grad1])).^2))
+        s2 = sqrt(1/(length(what_grad2)-2)*sum(ε2.^2)/sum((xbins[what_grad2].-mean(xbins[what_grad2])).^2))
         dvdx = mean(abs.([dvdx1,dvdx2]))
-        yinterc1 = fit_v1[1]
-        yinterc2 = fit_v2[1]
         s_rate = factor_t*dvdx
-    end
+        s_rate_std = factor_t * mean([s1,s2])
 
-    # Calculation of viscosity and its uncertainties
-    η_vec = -dat.pyz.*factor_p/s_rate
-    η_ave = mean(η_vec)
-    η_std, η_err = block_average(η_vec; N_blocks=100)
+        # Calculate slope to accumulated stress
+        (α,pyz) = [ones(length(dat.t)) dat.t] \ dat.pyz
+        
+        # Calculation of viscosity and its uncertainties
+        η_ave = -pyz*0.5.*factor_p/s_rate
+        η_std = -pyz*0.5.*factor_p/s_rate^2 * s_rate_std
+        η_err = η_std * quantile(TDist(length(xbins)-2),0.975)
+        
+    end
 
     # Save viscosity
     η = single_dat(η_ave, η_std, η_err)
