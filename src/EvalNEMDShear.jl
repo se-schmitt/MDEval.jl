@@ -33,9 +33,29 @@ function EvalNEMDShear(subfolder,inpar)
         prof, no_chunks, n_steps = read_profile1D("$(info.folder)/$f",prof,ts_add)
         ts_add = prof.timestep[end]
     end
+    if info.n_equ > 0
+        what_eval = prof.timestep .≥ info.n_equ
+        prof.timestep = prof.timestep[what_eval]
+        for f in fieldnames(typeof(prof))
+            if !(f in [:timestep])
+                setfield!(prof,f,getfield(prof,f)[what_eval,:])
+            end
+        end
+        prof.timestep = prof.timestep .- prof.timestep[1]
+    end
 
     # Load thermo data
     dat = load_thermo(info, is_nemd="shear")
+    if info.n_equ > 0
+        what_eval = dat.step .≥ info.n_equ
+        for f in fieldnames(typeof(dat))
+            if !(f in [:method]) && !isempty(getfield(dat,f))
+                setfield!(dat,f,getfield(dat,f)[what_eval])
+            end
+        end
+        dat.step = dat.step .- dat.step[1]
+        dat.t = dat.t .- dat.t[1]
+    end
     if (reduced_units)      factor_p = 1; factor_t = 1
     elseif !(reduced_units) factor_p = 1e5; factor_t = 10^12 end
 
@@ -61,25 +81,40 @@ function EvalNEMDShear(subfolder,inpar)
 
     elseif dat.method == "rnemd"
         # RNEMD
+        N_blocks = 5
+
         # Fit velocity profiles
         what_grad1 = 2:round(Int64,no_chunks/2)
         what_grad2 = round(Int64,no_chunks/2+2):no_chunks
-        (yinterc1,dvdx1) = ([ones(length(what_grad1)) xbins[what_grad1]] \ vybins[what_grad1])
-        (yinterc2,dvdx2) = ([ones(length(what_grad2)) xbins[what_grad2]] \ vybins[what_grad2])
-        ε1 = vybins[what_grad1] .- (yinterc1 .+ dvdx1.*xbins[what_grad1])
-        ε2 = vybins[what_grad2] .- (yinterc2 .+ dvdx2.*xbins[what_grad2])
-        s1 = sqrt(1/(length(what_grad1)-2)*sum(ε1.^2)/sum((xbins[what_grad1].-mean(xbins[what_grad1])).^2))
-        s2 = sqrt(1/(length(what_grad2)-2)*sum(ε2.^2)/sum((xbins[what_grad2].-mean(xbins[what_grad2])).^2))
-        dvdx = mean(abs.([dvdx1,dvdx2]))
-        s_rate = factor_t*dvdx
-        s_rate_std = factor_t * mean([s1,s2])
+        dvdx_all = Float64[]
+        yinterc_all = Float64[]
+        for i in 1:N_blocks
+            what_i = round(Int64,size(prof.x,1)/N_blocks*(i-1)+1):round(Int64,size(prof.x,1)/N_blocks*i)
+            (α1_i,dvdx1_i) = [ones(length(what_grad1)) mean(prof.x[what_i,:].*Lz,dims=1)[what_grad1]] \ mean(prof.vy[what_i,:],dims=1)[what_grad1]
+            (α2_i,dvdx2_i) = [ones(length(what_grad2)) mean(prof.x[what_i,:].*Lz,dims=1)[what_grad2]] \ mean(prof.vy[what_i,:],dims=1)[what_grad2]
+            append!(dvdx_all,abs.([dvdx1_i,dvdx2_i]))
+            append!(yinterc_all,[α1_i,α2_i])
+        end
+        s_rate = factor_t * mean(dvdx_all)
+        dvdx1 = mean(dvdx_all[1:2:end])
+        dvdx2 = mean(dvdx_all[2:2:end])
+        yinterc1 = mean(yinterc_all[1:2:end])
+        yinterc2 = mean(yinterc_all[2:2:end])
+        s_rate_std = factor_t * std(dvdx_all)
 
         # Calculate slope to accumulated stress
-        (α,pyz) = [ones(length(dat.t)) dat.t] \ dat.pyz
+        pyz_all = Float64[]
+        for i in 1:N_blocks
+            what_i = round(Int64,length(dat.t)/N_blocks*(i-1)+1):round(Int64,length(dat.t)/N_blocks*i)
+            (α_i,pyz_i) = [ones(length(what_i)) dat.t[what_i]] \ dat.pyz[what_i]
+            push!(pyz_all,pyz_i)
+        end
+        pyz = mean(pyz_all)
+        pyz_std = std(pyz_all)
         
         # Calculation of viscosity and its uncertainties
         η_ave = -pyz*0.5.*factor_p/s_rate
-        η_std = -pyz*0.5.*factor_p/s_rate^2 * s_rate_std
+        η_std = -pyz*0.5.*factor_p/s_rate^2 * s_rate_std + pyz_std*0.5.*factor_p/s_rate
         η_err = η_std * quantile(TDist(length(xbins)-2),0.975)
         
     end

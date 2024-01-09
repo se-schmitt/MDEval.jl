@@ -272,8 +272,16 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_fit=1, do_err=0, N
         k = 0
         while !(converged) && k < length(p0)
             k += 1
-            fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
-            converged = fit_ave.converged
+            try 
+                fit_ave = curve_fit(fun_ave, steps, ave_t, p0[k])
+                converged = fit_ave.converged
+            catch e
+                if (e isa ArgumentError) && (k < length(p0))
+                    @warn("ArgumentError in fitting procedure! (k = $k/$(length(p0)))")
+                else
+                    throw(e)
+                end
+            end
         end
     
         if fit_ave.converged
