@@ -1,2 +1,4 @@
-run.bat
+*.bat
 INPUT*
+.vscode
+Manifest.toml

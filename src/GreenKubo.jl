@@ -255,13 +255,11 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_fit=1, do_err=0, N
 
     ## Fitting procedure following (2) Eq. 10
     # Function to fit following Ref. (3)
-    @. fun_ave(x, p) = p[1] .* ( ((p[2].*p[3].*(1 .-exp(-x./p[3])) .+
-                                  (1 .-p[1]).*p[4]).*(1 .-exp(-x./p[4]))) ./
-                                  (p[2].*p[3].+(1 .-p[1]).*p[4]) )
+    fun_ave(x, p) = @. p[1] * (p[2]*p[3]*(1-exp(-x/p[3])) + (1-p[1])*p[4]*(1-exp(-x/p[4]))) / (p[2]*p[3]+(1-p[1])*p[4])
 
     # Fitting
     if do_fit == 1
-        p0 = [  [abs(ave_t[end]), 1.0, 1.0,  1.0],
+        p0 = [  [abs(ave_t[end]), 1.0, 0.05*maximum(steps),  1.0],
                 [abs(ave_t[end]), 1.0, 0.1,  10.0],
                 [abs(ave_t[end]), 1.0, 1e-3, 1.0],
                 [abs(ave_t[end]), 0.1, 0.1,  1.0],
@@ -322,9 +320,9 @@ function calc_average_GK(steps, ave_t_all, info; do_plt=1, do_fit=1, do_err=0, N
             vals = vals[abs.(vals) .< 4*val]
 
             # Calculation of standard deviation and standard error
-            μ = mean(vals)
-            std = sqrt(sum((vals.-μ).^2)/length(vals))
-            err = std./sqrt(length(vals))
+            μ = mean(filter(!isnan,vals))
+            std = sqrt(sum(filter(!isnan,(vals.-μ).^2))/length(filter(!isnan,vals)))
+            err = std./sqrt(length(filter(!isnan,vals)))
         end
     else
         std = NaN

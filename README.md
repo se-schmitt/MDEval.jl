@@ -155,6 +155,7 @@ N_boot        =   100
 
 ## Issues
 
+- [ ] make it a module
 - [ ] NEMD parts  
   - [ ] provide $x$ (mole fraction)
   - [ ] improve error calculation
