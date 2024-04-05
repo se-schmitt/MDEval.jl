@@ -1,3 +1,8 @@
+name = "MDEval"
+uuid = "bba1ccd8-fecb-436b-971a-0b57286bda9f"
+authors = ["Sebastian Schmitt <schmitts@rhrk.uni-kl.de>"]
+version = "0.1.0"
+
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"

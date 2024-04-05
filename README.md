@@ -1,21 +1,49 @@
-# Documentation - MD_Evaluation
+# MDEval.jl
 
-Program to evaluate MD output files of bulk simulations
-Notes:
+Package to evaluate molecular dynamics (MD) simulations.
 
-- usable for LAMMPS simulations in metal units
-- required files provided by specific LAMMPS scripts
+> [!WARNING]  
+> Work in progress. Currently not working as documented here.
 
 ## 1. Overview
 
-### 1.1. Running an Evaluation
+### 1.1 Installation
+
+To register the module locally, type 
+```julia
+Pkg> add https://github.com/se-schmitt/MDEval.jl
+```
+in package mode (type `]` in REPL to enter Pkg mode).
+
+Then, the module can be loaded by
+```julia
+using MDEval
+```
+
+### 1.2 Running an Evaluation
+
+```julia
+using MDEval
+
+mode = :single_run
+folder = "your/simulation/folder"
+keywords = (;
+    ensemble        =   :NVT,
+    timesteps_equ   =   1e5,
+    do_transport    =   true,
+    corr_length     =   100000
+    span_corr_fun   =   20000
+)
+
+MDeval(mode,folder,keywords)
+```
 
 Two options:
 
 - running `MD_EVAL_master.jl` in julia environment
 - running from bash: `julia MD_EVAL_master [input file] [no. processors]` 
 
-### 1.2. Evaluation Modes
+### 1.3. Evaluation Modes
 
 Program evaluates four different simulation types:
 
@@ -98,8 +126,9 @@ Two options:
 | **r_cut**         | float (unit: Å) {*10 Å*}                                        | all                  | cut-off radius for rdf calculation                                                                                                                                                |
 | **units**         | string [*real*, *reduced*] {*real*}                             | all                  | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters)                                                                                                    |
 | **k_L_thermo**    | float ($0\leq k \leq 0.5$) {0.1}                                | nemd-heat            | reduced length of thermostats ($L_x^*=1$)                                                                                                                                         |
+## 3. Examples
 
-Example *single*:
+Example *single run*:
 
 ```
 # Mode
@@ -138,9 +167,9 @@ DO_state      =   1
 N_boot        =   100
 ```
 
-## Output
+## 4. Output
 
-### Units
+## 5. Units
 
 | Property                   | Symbol | Unit    |
 | -------------------------- | ------ | ------- |
@@ -152,6 +181,8 @@ N_boot        =   100
 | viscosity                  | *η*    | Pa*s    |
 | self-diffusion coefficient | *D*    | m²/s    |
 | thermal conductivity       | *λ*    | W/(m*K) |
+
+## 6. Parallel execution
 
 ## Issues
 

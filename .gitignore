@@ -1,4 +1,1 @@
-*.bat
-INPUT*
-.vscode
-Manifest.toml
+/Manifest.toml
