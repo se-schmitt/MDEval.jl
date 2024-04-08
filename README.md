@@ -28,7 +28,7 @@ using MDEval
 mode = :single_run
 folder = "your/simulation/folder"
 keywords = (;
-    ensemble        =   :NVT,
+    ensemble        =   "NVT",
     timesteps_equ   =   1e5,
     do_transport    =   true,
     corr_length     =   100000
@@ -38,138 +38,89 @@ keywords = (;
 MDeval(mode,folder,keywords)
 ```
 
-Two options:
-
-- running `MD_EVAL_master.jl` in julia environment
-- running from bash: `julia MD_EVAL_master [input file] [no. processors]` 
-
 ### 1.3. Evaluation Modes
 
 Program evaluates four different simulation types:
 
-- Evaluation of **single run simulations** for transport properties (**single_run**)
-- **Time decomposition method (TDM)** for transport properties (**tdm**)
-- Evaluation of **VLE simulations** (two phase simualtions) (**vle**)
-- Evaluation of **NEMD shear simulations** (**nemd-shear**)
+- Evaluation of single run simulations for thermodynamic properties (including transport properties) (`:single_run`)
+- [Time decomposition method (TDM)](https://www.doi.org/10.1021/acs.jctc.5b00351) for transport properties (`:tdm`)
+- Evaluation of VLE simulations (direct two phase simualtions) (`:vle`)
+- Evaluation of NEMD shear simulations to determine viscosity (`:nemd-shear`)
+- Evaluation of NEMD heat transfer simulation to determine thermal conductivity (`:nemd-heat`)
 
-#### Single run simulations
+## 2. Manual
 
-**Required Folder structure:**
+### 2.1 Function `MDEval`
 
-- *SIM_1* [contains all output files of a EMD simulation of one state point]
-- ...
+`MDEval(mode::Symbol,folder::String,keywords::NamedTuple)`
 
-#### TDM
+Input arguments:
+- `mode`: defines the mode of the simulations/evaluation. Possible values: `:single_run`, `:tdm,:vle`, `:nemd_shear`, or `:nemd_heat`
+- `folder`: path to main folder containing all simulation data (see [Section 2.2](#22-folder-structure))
+- `keywords`: options to define the evaluation parameters (see [Section 2.1](#21-keywords))
 
-**Required Folder structure:**
+### 2.1 Keywords
 
-- *STATE_1* [contains all simulations of one state point]
-  - *Sim_001*
-  - *Sim_002*
-  - ...
-- ...
+| Name              | Possible values [default value]                                         | Modes                | Description                                                                                                                                                                       |
+| ----------------- | --------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| `ensemble`      | `NVT`, `NVE`, `NpT`                                     | `:single_run`, `:tdm`, `:nemd-shear`     | ensemble to evaluate                                                                                                                                                              |
+| `timesteps_equ` | interger ≥ 0 [`0`]                                                  | `:single_run`, `:tdm`, `:vle` | number of timesteps to ignore at the start of each simulation                                                                                                                     |
+| `do_single`     | `true`, `false`                                                   | `:tdm`, `:nemd-shear`      | 1 - evaluate single folders, 0 - single folders already evaluated                                                                                                                 |
+| `do_state`      | `true`, `false`                                                   | `:tdm`, `:nemd-shear`      | 1 - evaluate complete thermodynamic state (main folder)                                                                                                                           |
+| `n_boot`        | integer ≥ 0 [`0`]                                                   | `:tdm`                  | number of bootstrapping repetitions                                                                                                                                               |
+| `cutcrit`       | float ≥ 0 [`0.4`]                                             | `:tdm`                  | cut criteria for `:tdm` method                                                                                                                                                       |
+| `do_transport`  | `true`, `false`                                                    | `:single_run`           | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties                                                                                            |
+| `corr_length`   | integer ≥ 0                                                   | `:single_run`           | length (timesteps) of correlation function                                                                                                                                        |
+| `span_corr_fun` | integer ≥ 0                                                   | `:single_run`           | timesteps between single correlation functions                                                                                                                                    |
+| `n_blocks`      | integer ≥ 0                                                   | `:single_run`           | number of blocks for static properties                                                                                                                                            |
+| `n_every`       | integer ≥ 1                                                   | `:single_run`           | skip n_every timesteps when calculating acf (useful for slowly converging states, e.g. ideal gas)                                                                                 |
+| `debug_mode`    | `true`, `false`                                             | `:single_run`           | if debug mode is enables, errors are thrown directly                                                                                                                              |
+| `acf_calc_mode` | `autocov`, `fft` [`:single_run`→`autocov`, `:tdm`→`fft`] | `:single_run`, `:tdm`      | mode for acf calculation (`autocov`: full acf by Julia `autocov` command (can be slowly for long signals), `fft`: acf calculation by FFT (fast, but inaccurate for long times)) |
+| `do_structure`  | `true`, `false` [`false`]                                             | all                  | 1 - do structure evaluation, 0 - skip structure evaluation                                                                                                                        |
+| `n_bin`         | integer ≥ 0 [`100`]                                           | all                  | number of bins for rdf calculation                                                                                                                                                |
+| `r_cut`         | float [`10.0`]                                        | all                  | cut-off radius for rdf (unit: Å)calculation                                                                                                                                                |
+| `units`         | `real`, `reduced` [`real`]                             | all                  | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters)                                                                                                    |
+| `k_L_thermo`    | float [`0.1`]                               | `:nemd-heat`            | reduced length of thermostats ($L_x^*=1$)                                                                                                                                         |
 
-#### VLE simulations
+### 2.2 Folder structure
 
-**Required Folder structure:**
-
-- *FOLDER_1* [contains all simulations done for one substance]
-  - *Sim_T1* [VLE simulation at temperature T1]
-  - *Sim_T2* [VLE simulation at temperature T2]
-  - ...
-- ...
-
-#### NEMD shear simulations
-
-**Required Folder structure:**
-
-- *STATE_1* [contains all simulations of one state point]
-  - *Sim_S1* [VLE simulation with shear rate S1]
-  - *Sim_S2* [VLE simulation with shear rate S2]
-  - ...
-- ...
-
-## 2. Input File
-
-**Selecting a input file:**
-
-Two options:
-
-- There has to be a file *INPUT.txt*  in the MD_Evaluation folder **or**
-- the path of the file can be passed as argument when running the master function *MD_EVAL_Master.jl* (julia *MD_EVAL_Master.jl* [*name of the input file*])
-
-**General structure of the input file:**
-
-`name_of_keyword = value_for_parameter`
-
-### Keywords:
-
-| Name              | Type {*standard value*}                                         | Modes                | Description                                                                                                                                                                       |
-| ----------------- | --------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **mode**          | string [*single_run*, *tdm*, *vle*, *nemd-shear*, *nemd-heat*]  | all                  | defines the mode of the simulations/evaluation                                                                                                                                    |
-| **folder**        | string                                                          | all                  | path to main folder containing all simulation data (see chapter 1)                                                                                                                |
-| **ensemble**      | string [*NVT*, *NVE*, *NpT*]                                    | single_run, tdm, nemd-shear     | ensemble to evaluate                                                                                                                                                              |
-| **timesteps_equ** | interger (≥ 0)                                                  | single_run, tdm, vle | number of timesteps to ignore at the start of each simulation                                                                                                                     |
-| **do_single**     | integer [0,1]                                                   | tdm, nemd-shear      | 1 - evaluate single folders, 0 - single folders already evaluated                                                                                                                 |
-| **do_state**      | integer [0,1]                                                   | tdm, nemd-shear      | 1 - evaluate complete thermodynamic state (main folder)                                                                                                                           |
-| **n_boot**        | integer (≥ 0)                                                   | tdm                  | number of bootstrapping repetitions                                                                                                                                               |
-| **cutcrit**       | float (≥ 0) {*0.4*}                                             | tdm                  | cut criteria for tdm method                                                                                                                                                       |
-| **do_transport**  | integer [0,1]                                                   | single_run           | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties                                                                                            |
-| **corr_length**   | integer (≥ 0)                                                   | single_run           | length (timesteps) of correlation function                                                                                                                                        |
-| **span_corr_fun** | integer (≥ 0)                                                   | single_run           | timesteps between single correlation functions                                                                                                                                    |
-| **n_blocks**      | integer (≥ 0)                                                   | single_run           | number of blocks for static properties                                                                                                                                            |
-| **n_every**       | integer (≥ 1)                                                   | single_run           | skip n_every timesteps when calculating acf (useful for slowly converging states, e.g. ideal gas)                                                                                 |
-| **debug_mode**    | integer [0,1] {*0*}                                             | single_run           | if debug mode is enables, errors are thrown directly                                                                                                                              |
-| **acf_calc_mode** | string [*autocov*, *fft*] {single_run → *autocov*, tdm → *fft*} | single_run, tdm      | mode for acf calculation (*autocov*: full acf by Julia *autocov* command (can be slowly for long signals), *fft*: acf calculation by FFT (fast, but inaccurate for long signals)) |
-| **do_structure**  | integer [0,1] {*0*}                                             | all                  | 1 - do structure evaluation, 0 - skip structure evaluation                                                                                                                        |
-| **n_bin**         | integer (≥ 0) {*100*}                                           | all                  | number of bins for rdf calculation                                                                                                                                                |
-| **r_cut**         | float (unit: Å) {*10 Å*}                                        | all                  | cut-off radius for rdf calculation                                                                                                                                                |
-| **units**         | string [*real*, *reduced*] {*real*}                             | all                  | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters)                                                                                                    |
-| **k_L_thermo**    | float ($0\leq k \leq 0.5$) {0.1}                                | nemd-heat            | reduced length of thermostats ($L_x^*=1$)                                                                                                                                         |
-## 3. Examples
-
-Example *single run*:
+#### 2.2.1 Single run simulations
 
 ```
-# Mode
-mode          =   single_run
-
-# Folder
-folder        =   C:/path2simulations/sim_1
-folder        =   C:/path2simulations/sim_*
-
-# Ensemble and equilibration
-ensemble      =   NVT
-timesteps_EQU =   0
-
-# Settings for acf
-corr_length   =   100000
-span_corr_fun =   20000
+├── SIM_1* [contains all output files of a EMD simulation of one state point]
+:
 ```
 
-Example *TDM*:
+#### 2.2.2 TDM
 
 ```
-# Mode
-mode          =   tdm
-
-# Folder
-folder        =   C:/path2simulations/sim_1
-folder        =   C:/path2simulations/sim_*
-
-# Ensemble and equilibration
-ensemble      =   NVT
-timesteps_EQU =   0
-
-# TDM Settings
-DO_single     =   1
-DO_state      =   1
-N_boot        =   100
+├── STATE_1 [contains all replica simulations of one state point]
+│   ├── Sim_001
+│   ├── Sim_002
+:   :
 ```
 
-## 4. Output
+#### 2.2.3 VLE simulations
 
-## 5. Units
+```
+├── FOLDER_1 [contains all simulations for one substance]
+│   ├── Sim_T1 [VLE simulation at temperature T1]
+│   ├── Sim_T2 [VLE simulation at temperature T2]
+:   :
+```
+
+#### 2.2.4 NEMD shear simulations
+
+```
+├── STATE_1 [contains all simulations of one state point]
+│   ├── Sim_S1 [VLE simulation with shear rate S1]
+│   ├── Sim_S2 [VLE simulation with shear rate S2]
+:   : 
+```
+
+## 3. Output
+
+## 4. Units
 
 | Property                   | Symbol | Unit    |
 | -------------------------- | ------ | ------- |
@@ -182,7 +133,7 @@ N_boot        =   100
 | self-diffusion coefficient | *D*    | m²/s    |
 | thermal conductivity       | *λ*    | W/(m*K) |
 
-## 6. Parallel execution
+## 5. Parallel execution
 
 ## Issues
 
