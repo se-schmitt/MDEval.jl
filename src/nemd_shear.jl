@@ -137,7 +137,7 @@ function eval_shear(subfolder,inpar)
         plot(xbins[2:end-1], xbins[2:end-1].*dvdx.+yinterc, color="red", label="Fit")
     elseif dat.method == "rnemd"
         plot(xbins[what_grad1], xbins[what_grad1].*dvdx1.+yinterc1, color="red", label="Fit gradient 1")
-        plot(xbins[what_grad2], xbins[what_grad2].*dvdx2.+yinterc2, color="red", label="Fit gradient 2")
+        plot(xbins[what_grad2],-xbins[what_grad2].*dvdx2.+yinterc2, color="red", label="Fit gradient 2")
     end
     xlim([0,Lz])
     legend(loc="upper left")
