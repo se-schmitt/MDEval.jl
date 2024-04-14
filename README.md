@@ -45,8 +45,8 @@ Program evaluates four different simulation types:
 - Evaluation of single run simulations for thermodynamic properties (including transport properties) (`:single_run`)
 - [Time decomposition method (TDM)](https://www.doi.org/10.1021/acs.jctc.5b00351) for transport properties (`:tdm`)
 - Evaluation of VLE simulations (direct two phase simualtions) (`:vle`)
-- Evaluation of NEMD shear simulations to determine viscosity (`:nemd-shear`)
-- Evaluation of NEMD heat transfer simulation to determine thermal conductivity (`:nemd-heat`)
+- Evaluation of NEMD shear simulations to determine viscosity (`:nemd_shear`)
+- Evaluation of NEMD heat transfer simulation to determine thermal conductivity (`:nemd_heat`)
 
 ## 2. Manual
 
@@ -63,10 +63,10 @@ Input arguments:
 
 | Name              | Possible values [default value]                                         | Modes                | Description                                                                                                                                                                       |
 | ----------------- | --------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| `ensemble`      | `NVT`, `NVE`, `NpT`                                     | `:single_run`, `:tdm`, `:nemd-shear`     | ensemble to evaluate                                                                                                                                                              |
+| `ensemble`      | `NVT`, `NVE`, `NpT`                                     | `:single_run`, `:tdm`, `:nemd_shear`     | ensemble to evaluate                                                                                                                                                              |
 | `timesteps_equ` | interger ≥ 0 [`0`]                                                  | `:single_run`, `:tdm`, `:vle` | number of timesteps to ignore at the start of each simulation                                                                                                                     |
-| `do_single`     | `true`, `false`                                                   | `:tdm`, `:nemd-shear`      | 1 - evaluate single folders, 0 - single folders already evaluated                                                                                                                 |
-| `do_state`      | `true`, `false`                                                   | `:tdm`, `:nemd-shear`      | 1 - evaluate complete thermodynamic state (main folder)                                                                                                                           |
+| `do_single`     | `true`, `false` [`true`]                                                  | `:tdm`, `:nemd_shear`      | 1 - evaluate single folders, 0 - single folders already evaluated                                                                                                                 |
+| `do_state`      | `true`, `false` [`true`]                                                  | `:tdm`, `:nemd_shear`      | 1 - evaluate complete thermodynamic state (main folder)                                                                                                                           |
 | `n_boot`        | integer ≥ 0 [`0`]                                                   | `:tdm`                  | number of bootstrapping repetitions                                                                                                                                               |
 | `cutcrit`       | float ≥ 0 [`0.4`]                                             | `:tdm`                  | cut criteria for `:tdm` method                                                                                                                                                       |
 | `do_transport`  | `true`, `false`                                                    | `:single_run`           | 1 - do evaluation of transport properties, 0 - skip evaluation of transport properties                                                                                            |
@@ -79,8 +79,8 @@ Input arguments:
 | `do_structure`  | `true`, `false` [`false`]                                             | all                  | 1 - do structure evaluation, 0 - skip structure evaluation                                                                                                                        |
 | `n_bin`         | integer ≥ 0 [`100`]                                           | all                  | number of bins for rdf calculation                                                                                                                                                |
 | `r_cut`         | float [`10.0`]                                        | all                  | cut-off radius for rdf (unit: Å)calculation                                                                                                                                                |
-| `units`         | `real`, `reduced` [`real`]                             | all                  | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters)                                                                                                    |
-| `k_L_thermo`    | float [`0.1`]                               | `:nemd-heat`            | reduced length of thermostats ($L_x^*=1$)                                                                                                                                         |
+| `units`         | `metal`, `reduced` [`real`]                             | all                  | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters)                                                                                                    |
+| `k_L_thermo`    | float [`0.1`]                               | `:nemd_heat`            | reduced length of thermostats ($L_x^*=1$)                                                                                                                                         |
 
 ### 2.2 Folder structure
 
