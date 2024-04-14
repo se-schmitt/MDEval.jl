@@ -1,4 +1,3 @@
-## OutputResult.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalData
 # Function to evaluate data from single MD run
@@ -7,7 +6,7 @@
 # ------------------------------------------------------------------------------
 
 # Function to ouput results of a single simulation / state point
-function OutputResult(result::results_struct, folder::String)
+function output_results(result::ResultsDat, folder::String)
     # Create Filepath
     path = string(folder,"/result.dat")
 
@@ -44,7 +43,7 @@ function OutputResult(result::results_struct, folder::String)
     close(fID)
 end
 
-function OutputResultNEMD(result::results_struct_nemd, folder::String; note="")
+function output_resultsNEMD(result::ResultsDatNEMD, folder::String; note="")
     # Create Filepath
     path = string(folder,"/result.dat")
 
@@ -70,7 +69,7 @@ function OutputResultNEMD(result::results_struct_nemd, folder::String; note="")
 end
 
 # Function to ouput data from vle simulations (single simulation)
-function OutputResult_VLE(dat::thermo_vle_dat, folder::String)
+function output_results_VLE(dat::ThermoVLEDat, folder::String)
     # Create Filepath
     path = string(folder,"/result.dat")
 
@@ -83,14 +82,14 @@ function OutputResult_VLE(dat::thermo_vle_dat, folder::String)
     print(fID,header)
 
     # Calculation of means, stds, errs
-    T = single_dat(mean(dat.T),block_average(dat.T)[1],block_average(dat.T)[2])
-    px = single_dat(mean(dat.px),block_average(dat.px)[1],block_average(dat.px)[2])
-    py = single_dat(mean(dat.py),block_average(dat.py)[1],block_average(dat.py)[2])
-    pz = single_dat(mean(dat.pz),block_average(dat.pz)[1],block_average(dat.pz)[2])
-    ρ = single_dat(mean(dat.ρ),block_average(dat.ρ)[1],block_average(dat.ρ)[2])
-    Etot = single_dat(mean(dat.Etot),block_average(dat.Etot)[1],block_average(dat.Etot)[2])
-    Ekin = single_dat(mean(dat.Ekin),block_average(dat.Ekin)[1],block_average(dat.Ekin)[2])
-    Epot = single_dat(mean(dat.Epot),block_average(dat.Epot)[1],block_average(dat.Epot)[2])
+    T = SingleDat(mean(dat.T),block_average(dat.T)[1],block_average(dat.T)[2])
+    px = SingleDat(mean(dat.px),block_average(dat.px)[1],block_average(dat.px)[2])
+    py = SingleDat(mean(dat.py),block_average(dat.py)[1],block_average(dat.py)[2])
+    pz = SingleDat(mean(dat.pz),block_average(dat.pz)[1],block_average(dat.pz)[2])
+    ρ = SingleDat(mean(dat.ρ),block_average(dat.ρ)[1],block_average(dat.ρ)[2])
+    Etot = SingleDat(mean(dat.Etot),block_average(dat.Etot)[1],block_average(dat.Etot)[2])
+    Ekin = SingleDat(mean(dat.Ekin),block_average(dat.Ekin)[1],block_average(dat.Ekin)[2])
+    Epot = SingleDat(mean(dat.Epot),block_average(dat.Epot)[1],block_average(dat.Epot)[2])
 
     # Write data
     print_prop(fID, T, "T")
@@ -107,7 +106,7 @@ end
 # Help function
 # Function to write a single line
 function print_prop(fID, x, sym)
-    if typeof(x) == single_dat
+    if typeof(x) == SingleDat
         spacestr = " "^(6-length(sym))
         if !isnan(x.val)
             @printf(fID,"%s:%s%.8e",sym,spacestr,x.val)
@@ -123,7 +122,7 @@ function print_prop(fID, x, sym)
         else
             @printf(fID,"%s:%s---,\n",sym,spacestr)
         end
-    elseif typeof(x) == Array{single_dat,1}
+    elseif typeof(x) == Array{SingleDat,1}
         for i = 1:length(x)
             print_prop(fID, x[i], string(sym,i))
         end

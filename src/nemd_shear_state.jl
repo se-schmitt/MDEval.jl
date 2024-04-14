@@ -7,7 +7,7 @@
 # ------------------------------------------------------------------------------
 
 # Main Function
-function EvalStateNEMD(subfolder::Array{String,1}, inpar::input_struct)
+function eval_state_shear(subfolder::Array{String,1}, inpar::Opts)
 
     # Get excluded folders
     what_include = Bool[]
@@ -71,16 +71,16 @@ function EvalStateNEMD(subfolder::Array{String,1}, inpar::input_struct)
     # Choose the fit with the lower SSE
     if SSE_Carreau < SSE_Eyring
         best_fit = "Carreau"
-        η_N = single_dat(fit_Carreau.param[1], stderror(fit_Carreau)[1], margin_error(fit_Carreau,0.05)[1])
+        η_N = SingleDat(fit_Carreau.param[1], stderror(fit_Carreau)[1], margin_error(fit_Carreau,0.05)[1])
     else
         best_fit = "Eyring"
-        η_N = single_dat(fit_Eyring.param[1], stderror(fit_Eyring)[1], margin_error(fit_Eyring,0.05)[1])
+        η_N = SingleDat(fit_Eyring.param[1], stderror(fit_Eyring)[1], margin_error(fit_Eyring,0.05)[1])
     end
     note_bestfit = " (Newtonian viscosity calculated by the $best_fit model)"
 
     # Create result
-    res = results_struct_nemd(T, p, ρ, x, [], [], [], η_N, [], [])
-    OutputResultNEMD(res, folder; note=note_bestfit)
+    res = ResultsDatNEMD(T, p, ρ, x, [], [], [], η_N, [], [])
+    output_resultsNEMD(res, folder; note=note_bestfit)
 
     create_parameterfile_shear(folder, fit_Carreau.param, fit_Eyring.param)
 
@@ -94,11 +94,11 @@ end
 # Collect NEMD properties from single simulations
 function collectNEMD(subf)
     n = length(subf)
-    T_all = Array{single_dat,1}(undef,n)
-    p_all = Array{single_dat,1}(undef,n)
-    ρ_all = Array{single_dat,1}(undef,n)
-    η_all = Array{single_dat,1}(undef,n)
-    s_rate_all = Array{single_dat,1}(undef,n)
+    T_all = Array{SingleDat,1}(undef,n)
+    p_all = Array{SingleDat,1}(undef,n)
+    ρ_all = Array{SingleDat,1}(undef,n)
+    η_all = Array{SingleDat,1}(undef,n)
+    s_rate_all = Array{SingleDat,1}(undef,n)
 
     for i = 1:n
         res = load_result_NEMD(string(subf[i],"/result.dat"))
@@ -148,7 +148,7 @@ function load_result_NEMD(file)
     fID = open(file,"r")
     lines = readlines(fID);
     close(fID)
-    res = results_struct_nemd([],[],[],[],[],[],[],[],[],[])
+    res = ResultsDatNEMD([],[],[],[],[],[],[],[],[],[])
 
     for i = 1:length(lines)
         pos_colon = findfirst(isequal(':'),lines[i])
@@ -178,19 +178,19 @@ function load_result_NEMD(file)
                     std = parse(Float64,strip(lines[i][pos_open+1:pos_comma-1]))
                     err = parse(Float64,strip(lines[i][pos_comma+1:pos_close-1]))
                 end
-                if (name == "T")        res.T = single_dat(val,std,err) end
-                if (name == "p")        res.p = single_dat(val,std,err) end
-                if (name == "ρ")        res.ρ = single_dat(val,std,err) end
+                if (name == "T")        res.T = SingleDat(val,std,err) end
+                if (name == "p")        res.p = SingleDat(val,std,err) end
+                if (name == "ρ")        res.ρ = SingleDat(val,std,err) end
                 if (name == string("x",num))
-                                        res.x = vcat(res.x, single_dat(val,std,err))
+                                        res.x = vcat(res.x, SingleDat(val,std,err))
                                         if length(res.x) != num @warn("res.x doesn't fit num!") end
                 end
-                if (name == "Etot")     res.Etot = single_dat(val,std,err) end
-                if (name == "Ekin")     res.Ekin = single_dat(val,std,err) end
-                if (name == "Epot")     res.Epot = single_dat(val,std,err) end
-                if (name == "η")        res.η = single_dat(val,std,err) end
-                if (name == "s_rate")   res.s_rate = single_dat(val,std,err) end
-                if (name == "λ")        res.λ = single_dat(val,std,err) end
+                if (name == "Etot")     res.Etot = SingleDat(val,std,err) end
+                if (name == "Ekin")     res.Ekin = SingleDat(val,std,err) end
+                if (name == "Epot")     res.Epot = SingleDat(val,std,err) end
+                if (name == "η")        res.η = SingleDat(val,std,err) end
+                if (name == "s_rate")   res.s_rate = SingleDat(val,std,err) end
+                if (name == "λ")        res.λ = SingleDat(val,std,err) end
             end
         end
     end

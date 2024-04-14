@@ -8,13 +8,13 @@
 # [1] Maginn, E. J.; Messerly, R. A.; Carlson, D. J.; Roe, D. R.; Elliott, J. R. Best Practices for Computing Transport Properties 1. Self-Diffusivity and Viscosity from Equilibrium Molecular Dynamics [Article v1.0]. LiveCoMS 2019, 1 (1). https://doi.org/10.33011/livecoms.1.1.6324.
 
 ## Superior Function -----------------------------------------------------------
-function EvalSingle(subfolder,inpar)
+function eval_single(subfolder,inpar)
 
     # Loading Info File
     moltype, dt, natoms, molmass = load_info(subfolder)
 
     # Initialization of info structure
-    info = info_struct( subfolder,          # info.folder
+    info = Info( subfolder,          # info.folder
                         inpar.ensemble,     # info.ensemble
                         inpar.n_equ,        # info.n_equ
                         moltype,            # info.moltype
@@ -112,12 +112,12 @@ function EvalSingle(subfolder,inpar)
     close("all")
 
     # Output Results
-    res = results_struct(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ, Rg)
-    OutputResult(res, info.folder)
+    res = ResultsDat(T, p, ρ, x, Etot, Ekin, Epot, c, η, η_V, D, λ, Rg)
+    output_results(res, info.folder)
 end
 
 ## Function to Average Static Thermodynamic Properties -------------------------
-function ave_thermo(info::info_struct; is_nemd="no")
+function ave_thermo(info::Info; is_nemd="no")
     # Loading Thermo File
     dat = load_thermo(info, is_nemd=is_nemd)
 
@@ -125,31 +125,31 @@ function ave_thermo(info::info_struct; is_nemd="no")
 
     # Temperature
     T_std_err = block_average(dat.T[what],N_blocks=info.n_blocks)
-    T = single_dat(mean(dat.T[what]), T_std_err[1], T_std_err[2])
+    T = SingleDat(mean(dat.T[what]), T_std_err[1], T_std_err[2])
     # Pressure
     if (reduced_units)      factor_p = 1
     elseif !(reduced_units) factor_p = 0.1 end
     p_std_err = block_average(dat.p[what],N_blocks=info.n_blocks)
-    p = single_dat(mean(dat.p[what].*factor_p), p_std_err[1].*factor_p, p_std_err[2].*factor_p )
+    p = SingleDat(mean(dat.p[what].*factor_p), p_std_err[1].*factor_p, p_std_err[2].*factor_p )
     if is_nemd == "shear"
-        pyz  = single_dat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
+        pyz  = SingleDat(mean(dat.pyz[what].*factor_p), block_average(dat.pyz[what])[1].*factor_p, block_average(dat.pyz[what])[2].*factor_p)
     else
         pyz = Float64[]
     end
     # Density
     ρ_std_err = block_average(dat.ρ[what],N_blocks=info.n_blocks)
-    ρ = single_dat(mean(dat.ρ[what]), ρ_std_err[1], ρ_std_err[2])
+    ρ = SingleDat(mean(dat.ρ[what]), ρ_std_err[1], ρ_std_err[2])
     # Energies
     Etot_std_err = block_average(dat.Etot[what],N_blocks=info.n_blocks)
-    Etot = single_dat(mean(dat.Etot[what]), Etot_std_err[1], Etot_std_err[2])
+    Etot = SingleDat(mean(dat.Etot[what]), Etot_std_err[1], Etot_std_err[2])
     Ekin_std_err = block_average(dat.Ekin[what],N_blocks=info.n_blocks)
-    Ekin = single_dat(mean(dat.Ekin[what]), Ekin_std_err[1], Ekin_std_err[2])
+    Ekin = SingleDat(mean(dat.Ekin[what]), Ekin_std_err[1], Ekin_std_err[2])
     Epot_std_err = block_average(dat.Epot[what],N_blocks=info.n_blocks)
-    Epot = single_dat(mean(dat.Epot[what]), Epot_std_err[1], Epot_std_err[2])
+    Epot = SingleDat(mean(dat.Epot[what]), Epot_std_err[1], Epot_std_err[2])
     # Heat capacity
     if (reduced_units)      factor_c = 1 / (info.molmass .* info.natoms)
     elseif !(reduced_units) factor_c = eV2J^2 / (kB * (info.molmass*info.natoms/NA/1e3))  end
-    c = single_dat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ T.val^2 * factor_c, NaN, NaN)
+    c = SingleDat((mean(dat.Etot[what]).^2 .- mean(dat.Etot[what].^2.)) ./ T.val^2 * factor_c, NaN, NaN)
 
     return T, p, ρ, Etot, Ekin, Epot, c, pyz
 end
@@ -196,16 +196,16 @@ end
 
 ## Functions to apply to atoms positions data
 # Function to extract mole fraction from dump data (first timestep)
-function get_mole_fraction(info::info_struct, dat::dump_dat)
+function get_mole_fraction(info::Info, dat::DumpDat)
     Nmol = length(dat.moltype)
     moltype = dat.moltype
 
     # Calculation of mole fractions on the basis of moltype
-    x = Array{single_dat,1}(undef,length(unique(moltype)))
+    x = Array{SingleDat,1}(undef,length(unique(moltype)))
     i = 0
     for imoltype in unique(moltype)
         i += 1
-        x[i] = single_dat(sum(moltype .== imoltype) / Nmol,NaN,NaN)
+        x[i] = SingleDat(sum(moltype .== imoltype) / Nmol,NaN,NaN)
     end
     return x
 end
@@ -242,7 +242,7 @@ function atom2mol(atom)
             y_mol[imol] = (y_atom[what]' * mass_atom[what]) / mass_mol[imol]
             z_mol[imol] = (z_atom[what]' * mass_atom[what]) / mass_mol[imol]
         end
-        mol[i] = dump_dat(atom[i].step,atom[i].t,atom[i].bounds,Int64[],Int64[],molid_mol,atom[1].moltype,mass_mol,x_mol,y_mol,z_mol)
+        mol[i] = DumpDat(atom[i].step,atom[i].t,atom[i].bounds,Int64[],Int64[],molid_mol,atom[1].moltype,mass_mol,x_mol,y_mol,z_mol)
     end
 
     return mol
@@ -253,7 +253,7 @@ function get_mol_by_type(mol,type)
     mol_type = Array{Any,1}(undef,length(mol))
     for i = 1:length(mol)
         imol = mol[i]
-        imol_type = dump_dat(imol.step,imol.t,imol.bounds,imol.id,imol.type,imol.molid,imol.moltype,imol.mass,imol.x,imol.y,imol.z)
+        imol_type = DumpDat(imol.step,imol.t,imol.bounds,imol.id,imol.type,imol.molid,imol.moltype,imol.mass,imol.x,imol.y,imol.z)
         what = imol.moltype .== type
         imol_type.molid = imol.molid[what]
         imol_type.moltype = imol.moltype[what]

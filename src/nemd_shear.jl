@@ -6,11 +6,11 @@
 # ---
 # created by Sebastian Schmitt, 16.07.2021
 
-function EvalNEMDShear(subfolder,inpar)
+function eval_shear(subfolder,inpar)
     moltype, dt, natoms, molmass = load_info(subfolder)
 
     # Initialization of info structure
-    info = info_struct( subfolder,          # info.folder
+    info = Info(        subfolder,          # info.folder
                         inpar.ensemble,     # info.ensemble
                         inpar.n_equ,        # info.n_equ
                         moltype,            # info.moltype
@@ -120,11 +120,11 @@ function EvalNEMDShear(subfolder,inpar)
     end
 
     # Save viscosity
-    η = single_dat(η_ave, η_std, η_err)
+    η = SingleDat(η_ave, η_std, η_err)
 
     # Output results
-    res = results_struct_nemd(T, p, ρ, [1.0], Etot, Ekin, Epot, η, s_rate, [])
-    OutputResultNEMD(res, info.folder)
+    res = ResultsDatNEMD(T, p, ρ, [1.0], Etot, Ekin, Epot, η, s_rate, [])
+    output_resultsNEMD(res, info.folder)
 
     # Figures ------------------------------------------------------------------
     # Figure of velocity profile

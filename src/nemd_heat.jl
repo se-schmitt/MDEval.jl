@@ -7,11 +7,11 @@
 # ------------------------------------------------------------------------------
 
 # EvalNEMDHeat
-function EvalNEMDHeat(subfolder, inpar)
+function eval_heat(subfolder, inpar)
 
     moltype, dt, natoms, molmass = load_info(subfolder)
     # Initialization of info structure
-    info = info_struct( subfolder,          # info.folder
+    info = Info( subfolder,          # info.folder
                         inpar.ensemble,     # info.ensemble
                         inpar.n_equ,        # info.n_equ
                         moltype,            # info.moltype
@@ -71,10 +71,10 @@ function EvalNEMDHeat(subfolder, inpar)
         what_i_prof = ((i-1)*sz_prof+1):(i*sz_prof)
         λvec[i], _ , _ , _ = calc_lambda_NEMD(dat.t[what_i_dat], dQhot[what_i_dat], dQcold[what_i_dat], xbins, dropdims(mean(prof.T[what_i_prof,:],dims=1),dims=1), what_zone1, what_zone2, A)
     end
-    λ = single_dat(λval,std(λvec),std(λvec)/sqrt(info.n_blocks))
+    λ = SingleDat(λval,std(λvec),std(λvec)/sqrt(info.n_blocks))
 
-    res = results_struct_nemd(T, p, ρ, [1.0], Etot, Ekin, Epot, [], [], λ)
-    OutputResultNEMD(res,info.folder)
+    res = ResultsDatNEMD(T, p, ρ, [1.0], Etot, Ekin, Epot, [], [], λ)
+    output_resultsNEMD(res,info.folder)
 
     # Figures ------------------------------------------------------------------
     # Figure of temperature profile

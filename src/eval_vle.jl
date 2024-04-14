@@ -1,4 +1,3 @@
-## EvalVLE.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalVLE
 # Function to evaluate VLE simulations
@@ -6,8 +5,8 @@
 # created by Sebastian Schmitt, 03.09.2020
 # ------------------------------------------------------------------------------
 
-function EvalVLE(folder,inpar)
-    info = info_struct(folder,inpar.ensemble,inpar.n_equ,"",0.0,0,0.0,inpar.n_blocks,inpar.N_bin,inpar.r_cut)
+function eval_vle(folder,inpar)
+    info = Info(folder,inpar.ensemble,inpar.n_equ,"",0.0,0,0.0,inpar.n_blocks,inpar.N_bin,inpar.r_cut)
 
     # Get subfolder
     subfolder = get_subfolder(info.folder)
@@ -100,7 +99,7 @@ function eval_thermo_vle(folder,info)
     dat.pz = dat.pz .* 0.1
 
     # Output data
-    OutputResult_VLE(dat, folder)
+    output_results_VLE(dat, folder)
 end
 
 # Function to evaluate profiles of density, temperature, stress
@@ -256,10 +255,10 @@ function eval_profiles(folder,info)
 
     # Data file
     fID = open(string(folder,"/result.dat"),"a")
-    print_prop(fID, single_dat(Tm,NaN,NaN), "Tpro")
-    print_prop(fID, single_dat(ρ_l,ρ_l_calcerr_err[1],ρ_l_calcerr_err[2]), "ρl")
-    print_prop(fID, single_dat(ρ_v,ρ_v_calcerr_err[1],ρ_v_calcerr_err[2]), "ρv")
-    print_prop(fID, single_dat(D,D_calcerr_err[1],D_calcerr_err[2]), "D")
+    print_prop(fID, SingleDat(Tm,NaN,NaN), "Tpro")
+    print_prop(fID, SingleDat(ρ_l,ρ_l_calcerr_err[1],ρ_l_calcerr_err[2]), "ρl")
+    print_prop(fID, SingleDat(ρ_v,ρ_v_calcerr_err[1],ρ_v_calcerr_err[2]), "ρv")
+    print_prop(fID, SingleDat(D,D_calcerr_err[1],D_calcerr_err[2]), "D")
     close(fID)
 
     # Figure

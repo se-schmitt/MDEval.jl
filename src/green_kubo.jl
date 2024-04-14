@@ -1,4 +1,3 @@
-## GreenKubo.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - GreenKubo
 # Containing functions to apply Green-Kubo method to viscosity and thermal
@@ -13,12 +12,12 @@
 
 ## Viscosity -------------------------------------------------------------------
 # Calculation of viscosity from pressure tensor
-function calc_viscosities(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
+function calc_viscosities(info::Info, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
     # Loading Pressure File
     dat = load_pressure(info, nEvery)
     if (nEvery > 1) print("\n"); @warn("Only every $(nEvery). step of pressure tensor used for ACF calculation.") end
 
-    if (dat isa pressure_dat)
+    if (dat isa PressureDat)
         what = (dat.step .>= info.n_equ)
 
         # Unit conversion and GK factor
@@ -95,11 +94,11 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
         # Shear viscosity
         val, std, err = calc_average_GK(dat.step[what_pos1], η_t_all, info; do_fit=do_fit, do_err=do_err, sym="η", name="viscosity", unit="Pa*s")
         plot_acf(dat.step[what_pos1],acf_η_all, info; sym="J_{η}^{(acf)}", name="viscosity", unit="Pa^2")
-        η = single_dat(val, std, err)
+        η = SingleDat(val, std, err)
 
         # Bulk viscosity
         val, std, err = calc_average_GK(dat.step[what_pos1], η_V_t_all, info; do_plt=0, do_fit=0)
-        η_V = single_dat(val, std, err)
+        η_V = SingleDat(val, std, err)
 
         # Write data to file
         η_t = mean(η_t_all,dims=2)
@@ -119,8 +118,8 @@ function calc_viscosities(info::info_struct, mode::String; mode_acf::String, Cor
 
         close("all")
     else
-        η = single_dat(NaN,NaN,NaN)
-        η_V = single_dat(NaN,NaN,NaN)
+        η = SingleDat(NaN,NaN,NaN)
+        η_V = SingleDat(NaN,NaN,NaN)
     end
 
     return η, η_V
@@ -128,12 +127,12 @@ end
 
 ## Thermal conducitvity --------------------------------------------------------
 # Calculation of thermal conducitvity from heat current vector
-function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
+function calc_thermalconductivity(info::Info, mode::String; mode_acf::String, CorrLength::Int64=0, SpanCorrFun::Int64=1, nEvery::Int64=1)
     # Loading Heat Flux File
     dat = load_heatflux(info,nEvery)
     if (nEvery > 1) @warn("Only every $(nEvery). step of heat flux vector used for ACF calculation.") end
 
-    if (dat isa heat_dat)
+    if (dat isa HeatDat)
         what = (dat.step .>= info.n_equ)
 
         # Unit conversion and GK factor
@@ -190,7 +189,7 @@ function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::Str
         # Averaging and error estimation
         val, std, err = calc_average_GK(dat.step[what_pos1], λ_t_all, info; do_fit=calc_error, sym="λ", name="thermalconductivity", unit="W/(m*K)")
         plot_acf(dat.step[what_pos1],acf_λ_all, info; sym="J_{λ}^{(acf)}", name="thermalconductivity", unit="eV^2/(Å^4*ps)")
-        λ = single_dat(val, std, err)
+        λ = SingleDat(val, std, err)
 
         # Write data to file
         λ_t = mean(λ_t_all,dims=2)
@@ -207,7 +206,7 @@ function calc_thermalconductivity(info::info_struct, mode::String; mode_acf::Str
 
         close("all")
     else
-        λ = single_dat(NaN,NaN,NaN)
+        λ = SingleDat(NaN,NaN,NaN)
     end
 
     return λ
@@ -216,7 +215,7 @@ end
 
 ## Subfunctions
 # Function to integrate by trapezodial rule
-@everywhere function cumtrapz(x::Array{Float64},y::Array{Float64})
+function cumtrapz(x::Array{Float64},y::Array{Float64})
     # Check input
     lx = length(x)
     ly = length(y)
@@ -235,7 +234,7 @@ end
 # Function to calculate autocorrelation function by:
 #   1. julia function "autocov"
 #   2. FFT
-@everywhere function calc_acf(in::Array{Float64,1},mode::String)
+function calc_acf(in::Array{Float64,1},mode::String)
     L = length(in)
     if mode == "autocov"            # Mode: autocov
         out = autocov(in,Array(0:L-1),demean=false)

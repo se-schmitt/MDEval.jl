@@ -72,8 +72,8 @@ function load_info(folder; is_nemd="no")
 end
 
 # Loading Thermo File
-function load_thermo(info::info_struct; is_nemd::String="no")
-    thermodat = thermo_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],"")
+function load_thermo(info::Info; is_nemd::String="no")
+    thermodat = ThermoDat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],"")
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("thermo.",info.ensemble,"."),list)])
     if length(files) > 9
@@ -112,7 +112,7 @@ function load_thermo(info::info_struct; is_nemd::String="no")
     return thermodat
 end
 
-function load_thermo_file(file::String, info::info_struct, is_nemd::String)
+function load_thermo_file(file::String, info::Info, is_nemd::String)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
 
     if is_nemd == "no"
@@ -166,7 +166,7 @@ end
 
 # Loading Pressure File
 function load_pressure(info, nEvery)
-    pdat = pressure_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+    pdat = PressureDat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("pressure.",info.ensemble,"."),list)])
     if length(files) > 9
@@ -304,7 +304,7 @@ function load_dump(info)
                 else error("Dump file format wrong") end
 
                 if !(step==0 && skip==1)
-                    posdat = vcat(posdat,dump_dat(step+stepADD, t+timeADD, bounds, id, type, molid, Int64[], mass, x, y, z))
+                    posdat = vcat(posdat,DumpDat(step+stepADD, t+timeADD, bounds, id, type, molid, Int64[], mass, x, y, z))
                 end
             end
             skip = 1
@@ -353,7 +353,7 @@ end
 
 # Loading Heat Flux File
 function load_heatflux(info, nEvery)
-    jdat = heat_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+    jdat = HeatDat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(info.folder))
     files = string.(info.folder,"/",list[occursin.(string("heat_flux.",info.ensemble,"."),list)])
     if length(files) > 9
@@ -398,8 +398,8 @@ function load_heatflux_file(file, info, skip, nEvery)
 end
 
 # Loading thermo file in vle simulations
-function load_thermo_vle(folder::String, info::info_struct)
-    thermodat = thermo_vle_dat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+function load_thermo_vle(folder::String, info::Info)
+    thermodat = ThermoVLEDat(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
     list = sort(readdir(folder))
     files = string.(folder,"/",list[occursin.(string("thermo.vle.2phase."),list)])
     if length(files) > 9
@@ -427,7 +427,7 @@ function load_thermo_vle(folder::String, info::info_struct)
     if isempty(thermodat.step) error("No thermo data loaded!") end
     return thermodat
 end
-function load_thermo_vle_file(file::String, info::info_struct)
+function load_thermo_vle_file(file::String, info::Info)
     fID = open(file,"r"); readline(fID); line2 = readline(fID); close(fID)
     if line2 != "# TimeStep v_T v_px v_py v_pz v_rho v_Etot v_Ekin v_Epot"
         error("Format of File \"thermo.vle.2phase.dat\" not right")
@@ -480,13 +480,13 @@ function read_profile1D(filename,data,ts_add)
         # Initialization of profile_data strucutre
         init = Array{Float64,2}(undef,0,no_chunks)
         if type == "vle"
-            data = profile_data_vle(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
+            data = ProfileVLEDat(Float64[],init,init,init,init,init,init,init,init,init,init,init,init)
         elseif type == "shear"
-            data = profile_data_shear(Float64[],init,init,init,init)
+            data = ProfileShearDat(Float64[],init,init,init,init)
         elseif type == "heat"
-            data = profile_data_heat(Float64[],init,init,init,init)
+            data = ProfileHeatDat(Float64[],init,init,init,init)
         elseif type == "rdf"
-            data = profile_data_rdf(Float64[],init,init,repeat([init],N_rdf),repeat([init],N_rdf))
+            data = ProfileRDFDat(Float64[],init,init,repeat([init],N_rdf),repeat([init],N_rdf))
         end
     end
 

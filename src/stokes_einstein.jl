@@ -1,4 +1,3 @@
-## StokesEinstein.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - StokesEinstein
 # Containing functions to apply Stokes-Einstein method to self difussion
@@ -9,10 +8,10 @@
 
 ## Self diffusion coefficient --------------------------------------------------
 # Evaluate Atoms Positions to calculate Self Diffusion Coefficient
-function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, N_blocks = 10, err_mode="")
+function calc_selfdiffusion(info::Info, dat::Array{Any,1}; M_block = 50, N_blocks = 10, err_mode="")
     if (!isempty(dat))
         N_moltype = maximum(dat[1].moltype)
-        D = Array{single_dat,1}(undef,N_moltype)
+        D = Array{SingleDat,1}(undef,N_moltype)
 
         # Convert atom to molecule coordinates
         mol = atom2mol(dat)
@@ -96,7 +95,7 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
             factor_unit = 1e-8
             if (reduced_units) factor_unit = 1 end
 
-            D[i] = single_dat(beta[2]/6*factor_unit, std_D/6*factor_unit, err_D/6*factor_unit)
+            D[i] = SingleDat(beta[2]/6*factor_unit, std_D/6*factor_unit, err_D/6*factor_unit)
 
             # Plot MSD of molecule i
             t1 = round(Int64,t[what_eval[1]])
@@ -132,13 +131,13 @@ function calc_selfdiffusion(info::info_struct, dat::Array{Any,1}; M_block = 50, 
         savefig(string(info.folder,"/fig_msd(t).pdf"))
         close()
     else
-        D = single_dat(NaN,NaN,NaN)
+        D = SingleDat(NaN,NaN,NaN)
     end
     return D
 end
 
 # Function to calculate mean square displacement
-@everywhere function calc_msd(dat::Array{Any,1},info)
+function calc_msd(dat::Array{Any,1},info)
     n = length(dat[1].molid)    # No. molecules
     N = length(dat)             # No. timesteps
 

@@ -1,7 +1,6 @@
-## EvalStructure.jl
 # ------------------------------------------------------------------------------
-# Evaluation Software for MD Bulk Simulations - EvalStructure
-# Function to calculate structural properties from position data
+# Evaluation Software for MD Bulk Simulations
+# Function to calculate structural properties from positional data
 # ---
 # created by Sebastian Schmitt, 05.04.2020
 # ------------------------------------------------------------------------------
@@ -238,10 +237,10 @@ function calc_radius_of_gyration(dump, info)
         end
     end
 
-    Rg = single_dat[]
+    Rg = SingleDat[]
     for itype in moltypes
         what_type = dump[1].moltype .== itype
-        push!(Rg,single_dat(mean(mean.(Rg_all[what_type])),NaN,NaN))
+        push!(Rg,SingleDat(mean(mean.(Rg_all[what_type])),NaN,NaN))
     end
     return Rg
 end

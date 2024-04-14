@@ -1,65 +1,5 @@
-## Init.jl
-# ------------------------------------------------------------------------------
-# Evaluation Software for MD Bulk Simulations - Init
-# Initializaiton of used structures and general functions
-# ---
-# created by Sebastian Schmitt, 29.03.2020
-# ------------------------------------------------------------------------------
-
-# Load Packages
-using Dates
-using DelimitedFiles
-using Dierckx
-using Distributed
-using Distributions
-using NLsolve
-using Printf
-using Statistics
-using RollingFunctions
-
-if (nprocs() > 1) rmprocs(workers()) end
-if (no_procs > 1) addprocs(no_procs) end
-
-@everywhere using FFTW
-@everywhere using LsqFit
-@everywhere using LaTeXStrings
-@everywhere using PyCall
-# pygui(:qt)
-@everywhere using PyPlot
-close("all")
-@everywhere using StatsBase
-
-# Physical Constants
-global kB = 1.380649e-23        # J/K
-global NA = 6.02214076e23       # 1/mol
-global eV2J = 1.602176565e-19   # 1 eV = 1.602176565e-19 J
-
-# Structures
-# Structure to store input variables read in from 'INPUT.txt'
-mutable struct input_struct
-    mode::String
-    folders::Array{String,1}
-    ensemble::String
-    n_equ::Int64
-    do_eval::Int64
-    do_state::Int64
-    n_boot::Int64
-    cutcrit::Float64
-    do_transport::Int64
-    corr_length::Int64
-    span_corr_fun::Int64
-    n_blocks::Int64
-    n_every::Int64
-    debug_mode::Int64
-    acf_calc_mode::String
-    do_structure::Int64
-    N_bin::Int64
-    r_cut::Float64
-    k_L_thermo::Float64
-end
-
 # Structure to store general evaluation and simulation options
-@everywhere mutable struct info_struct
+mutable struct Info
     folder::String
     ensemble::String
     n_equ::Int64
@@ -68,12 +8,12 @@ end
     natoms::Int64
     molmass::Float64
     n_blocks::Int64
-    N_bin::Int64
-    r_cut::Float64
+    N_bin::Union{Int64,Missing}
+    r_cut::Union{Float64,Missing}
 end
 
 # Data structure to store thermo data (thermo.dat)
-mutable struct thermo_dat
+mutable struct ThermoDat
     step::Array{Int64,1}
     t::Array{Float64,1}
     T::Array{Float64,1}
@@ -89,7 +29,7 @@ mutable struct thermo_dat
 end
 
 # Data structure to store pressure tensor (pressure.dat)
-mutable struct pressure_dat
+mutable struct PressureDat
     step::Array{Int64,1}
     t::Array{Float64,1}
     V::Array{Float64,1}
@@ -104,7 +44,7 @@ mutable struct pressure_dat
 end
 
 # Data structure to store atoms positions
-@everywhere mutable struct dump_dat
+mutable struct DumpDat
     step::Int64
     t::Float64
     bounds::Array{Float64,2}
@@ -119,7 +59,7 @@ end
 end
 
 # Data structure to store heat flux vector (heat_flux.dat)
-mutable struct heat_dat
+mutable struct HeatDat
     step::Array{Int64,1}
     t::Array{Float64,1}
     V::Array{Float64,1}
@@ -130,14 +70,14 @@ mutable struct heat_dat
 end
 
 # Data structure to store single data
-mutable struct single_dat
+mutable struct SingleDat
     val::Float64
     std::Float64
     err::Float64
 end
 
 # Data structure to store results
-mutable struct results_struct
+mutable struct ResultsDat
     T
     p
     ρ
@@ -153,7 +93,7 @@ mutable struct results_struct
     Rg
 end
 
-mutable struct results_struct_nemd
+mutable struct ResultsDatNEMD
     T
     p
     ρ
@@ -167,7 +107,7 @@ mutable struct results_struct_nemd
 end
 
 # Data strucutre to store TDM settings
-@everywhere mutable struct set_TDM
+mutable struct OptsTDM
     folder::String
     subfolder::Array{String,1}
     do_out::Bool
@@ -181,7 +121,7 @@ end
 end
 
 # Data structure to store thermo data (thermo.vle.2phase.dat)
-mutable struct thermo_vle_dat
+mutable struct ThermoVLEDat
     step::Array{Int64,1}
     t::Array{Float64,1}
     T::Array{Float64,1}
@@ -195,7 +135,7 @@ mutable struct thermo_vle_dat
 end
 
 # Data structure to save profile information of vle simulations
-mutable struct profile_data_vle
+mutable struct ProfileVLEDat
     timestep::Array{Float64,1}
     id_chunk::Array{Float64,2}
     x::Array{Float64,2}
@@ -212,7 +152,7 @@ mutable struct profile_data_vle
 end
 
 # Data structure to save profile information of shear simulations
-mutable struct profile_data_shear
+mutable struct ProfileShearDat
     timestep::Array{Float64,1}
     id_chunk::Array{Float64,2}
     x::Array{Float64,2}
@@ -221,7 +161,7 @@ mutable struct profile_data_shear
 end
 
 # Data structure to save profile information of heat simulations
-mutable struct profile_data_heat
+mutable struct ProfileHeatDat
     timestep::Array{Float64,1}
     id_chunk::Array{Float64,2}
     x::Array{Float64,2}
@@ -230,7 +170,7 @@ mutable struct profile_data_heat
 end
 
 # Data structure to save profile information of rdf
-mutable struct profile_data_rdf
+mutable struct ProfileRDFDat
     timestep::Array{Float64,1}
     id_chunk::Array{Float64,2}
     r::Array{Float64,2}
@@ -238,11 +178,3 @@ mutable struct profile_data_rdf
     N_coord::Array{Any,1}
 end
 
-# Functions
-# Function to get all subfolders
-function get_subfolder(folder)
-    # Get all subfolders
-    paths = string.(folder,"/",readdir(folder))
-    what = isdir.(paths) .& .!(occursin.("TransportProperties",paths)) .& .!(startswith.(readdir(folder),"X"))
-    subf = paths[what]
-end

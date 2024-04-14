@@ -1,4 +1,4 @@
-## TransportProperties.jl
+## transport_properties.jl
 # ------------------------------------------------------------------------------
 # Evaluation Software for MD Bulk Simulations - EvalData
 # Function to apply Time Decomposition Method to Calculate Viscosity
@@ -10,7 +10,7 @@
 # [2] Maginn, E. J.; Messerly, R. A.; Carlson, D. J.; Roe, D. R.; Elliott, J. R. Best Practices for Computing Transport Properties 1. Self-Diffusivity and Viscosity from Equilibrium Molecular Dynamics [Article v1.0]. LiveCoMS 2019, 1 (1). https://doi.org/10.33011/livecoms.1.1.6324.
 
 ## Main
-function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
+function transport_properties(T::Float64,L_box::Float64,set::OptsTDM)
     # Set what to calculate and output mode
     do_η = 1
     do_D = 1
@@ -19,11 +19,11 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
                         # 2 - Take result of single fit
 
     # Create new folder if it not yet exists
-    if !(isdir(string(set.folder,"/TransportProperties")))
-        mkdir(string(set.folder,"/TransportProperties"))
+    if !(isdir(string(set.folder,"/transport_properties")))
+        mkdir(string(set.folder,"/transport_properties"))
     end
 
-    fID_info = open(string(set.folder,"/TransportProperties/info.txt"),"w")
+    fID_info = open(string(set.folder,"/transport_properties/info.txt"),"w")
     println(fID_info,"Start: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
 
     # Load existing result file
@@ -36,7 +36,7 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
     end
 
     # VISCOSITY
-    if do_η == 1 && (do_calc == 1 || !(typeof(res.η) == single_dat))
+    if do_η == 1 && (do_calc == 1 || !(typeof(res.η) == SingleDat))
         # Load runs
         ηmat, t = load_runs("viscosity.dat", 2, set)
         # Calculation of viscosity value by TDM method
@@ -59,9 +59,9 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
         end
         # Save in struct
         if !(isnan(ηboot)) && out_mode == 1
-            η = single_dat(ηboot, ηstd, ηerr)
+            η = SingleDat(ηboot, ηstd, ηerr)
         else
-            η = single_dat(ηfit, ηstd, ηerr)
+            η = SingleDat(ηfit, ηstd, ηerr)
         end
 
     elseif do_η == 0
@@ -73,8 +73,8 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
     println(fID_info,"Viscosity DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
 
     # DIFFUSION COEFFICIENT
-    if do_D == 1 && (do_calc == 1 || !(typeof(res.D) == single_dat))
-        D = Array{single_dat,1}(undef,0)
+    if do_D == 1 && (do_calc == 1 || !(typeof(res.D) == SingleDat))
+        D = Array{SingleDat,1}(undef,0)
         imol = 0
         Nmol = 10
         while true
@@ -96,7 +96,7 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
                 Dcorr = kB*T*ξ/(6*π*η.val*L_box)
             end
             Dval = mean(Dv) + Dcorr
-            D = vcat(D,single_dat(Dval,std(Dv),std(Dv)/sqrt(length(Dv))))
+            D = vcat(D,SingleDat(Dval,std(Dv),std(Dv)/sqrt(length(Dv))))
             if imol == Nmol break end
         end
     elseif do_D == 0
@@ -108,7 +108,7 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
     println(fID_info,"Self-Diffusion Coef. DONE: ",Dates.format(now(),"yyyy-mm-dd HH:MM:SS"))
 
     # THERMAL CONDUCTIVITY
-    if do_λ == 1 && (do_calc == 1 || !(typeof(res.λ) == single_dat))
+    if do_λ == 1 && (do_calc == 1 || !(typeof(res.λ) == SingleDat))
         # Load runs
         λmat, t = load_runs("thermalconductivity.dat", 2, set)
         # Calculation of viscosity value by TDM method
@@ -131,9 +131,9 @@ function TransportProperties(T::Float64,L_box::Float64,set::set_TDM)
         end
         # Save in struct
         if !(isnan(λboot)) && out_mode == 1
-            λ = single_dat(λboot, λstd, λerr)
+            λ = SingleDat(λboot, λstd, λerr)
         else
-            λ = single_dat(λfit, λstd, λerr)
+            λ = SingleDat(λfit, λstd, λerr)
         end
     elseif do_λ == 0
         λ = []
@@ -151,7 +151,7 @@ end
 
 # Subfunctions
 # Load run data
-function load_runs(file::String, index::Int64, set::set_TDM)
+function load_runs(file::String, index::Int64, set::OptsTDM)
     n = length(set.subfolder)
     tdat = Array{Array{Float64,1}}(undef,n)
     dat = Array{Array{Float64,1}}(undef,n)
@@ -170,7 +170,7 @@ function load_runs(file::String, index::Int64, set::set_TDM)
 end
 
 # Function to perform 1 TDM calculation
-@everywhere function TDM(mat::Array{Float64,2}, t::Array{Float64,1}, set::set_TDM)
+function TDM(mat::Array{Float64,2}, t::Array{Float64,1}, set::OptsTDM)
     t = t .- t[1]
     n = size(mat,2)
     ave_t = mean(mat, dims=2)
@@ -253,7 +253,7 @@ end
 
     # Output plot
     if set.do_out && !isnan(val)
-        outfolder = string(set.folder,"/TransportProperties/")
+        outfolder = string(set.folder,"/transport_properties/")
 
         # Save all single simulation data and the averaged data of the transport property
         line1 = string("# Created by MD - Bulk Evaluation, Folder: ", set.folder)
@@ -356,7 +356,7 @@ function bootstrapping(mat, t, set)
     y = exp.(-(x.-μ).^2 ./ (2 .*σ.^2)) ./ sqrt.(2 .*π.*σ.^2)
 
     # Output to dat file
-    fID = open(string(set.folder,"/TransportProperties/bootstrapping_",set.name,".dat"),"w")
+    fID = open(string(set.folder,"/transport_properties/bootstrapping_",set.name,".dat"),"w")
     writedlm(fID,vals," ")
     close(fID)
 
@@ -364,7 +364,7 @@ function bootstrapping(mat, t, set)
     figure()
     hist(vals, bins=round(Int,nboot/15), label="Data", density=true)
     plot(x,y, label="Fit", linewidth=2)
-    outfolder = string(set.folder,"/TransportProperties/")
+    outfolder = string(set.folder,"/transport_properties/")
     legend(loc="upper left")
     title(string(L"Histogram with: $\mu = $",μ," ",set.unit,L", $\sigma = $",σ," ",set.unit))
     tight_layout()
@@ -377,7 +377,7 @@ function bootstrapping(mat, t, set)
 end
 
 # Help function for efficient TDM calculation in bootstrapping
-@everywhere function TDMboot(mat,t,set,bootsample,crit)
+function TDMboot(mat,t,set,bootsample,crit)
     set.cutcrit = crit
     set.do_out = false
     matTMP = mat[:,bootsample]
@@ -386,7 +386,7 @@ end
 end
 
 # Function to eliminate outlier curves
-function eliminate_outlier_curves(mat::Array{Float64,2},set::set_TDM,fID)
+function eliminate_outlier_curves(mat::Array{Float64,2},set::OptsTDM,fID)
     # Settings
     fraction = 0.25      # Fraction what timesteps to use for mean calculation
     factor = 3          # Factor to define outlier curves
@@ -413,7 +413,7 @@ end
 # Function to plot all curves to a figure
 function plot_all_curves(t, mat, set)
     # Output folder
-    outfile = string(set.folder,"/TransportProperties/",set.name,"_all.pdf")
+    outfile = string(set.folder,"/transport_properties/",set.name,"_all.pdf")
 
     figure()
     for i = 1:size(mat,2)
