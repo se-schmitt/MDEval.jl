@@ -37,10 +37,20 @@ include("transport_properties.jl")
 
 Evaluate molecular dynamics (MD) simulation files.
 
-# Arguments
-- `mode::Symbol`: Mode of evaluation (`:single_run`, `:tdm`, `:vle`, `:nemd_shear`, `:nemd_heat`).
-- `folder::String`: Folder containing the MD simulation files.
-- `keywords::NamedTuple`: Keywords for evaluation.
+# Example
+```julia
+mode = :single_run
+folder = "./EMD_LJ"
+keywords = (;
+    ensemble        =   "NVT",
+    do_transport    =   true,
+    corr_length     =   20000,
+    span_corr_fun   =   500,
+    units           =   "reduced",   
+)
+
+mdeval(mode,folder,keywords)
+```
 """
 function mdeval(mode::Symbol, folder::String, keywords::NamedTuple)
     println("="^60,"\n","START: \t",Dates.format(now(),dateformat),"\nFolder: ",folder,"\n","-"^60)
@@ -76,7 +86,7 @@ function mdeval(mode::Symbol, folder::String, keywords::NamedTuple)
     elseif mode == :nemd_shear
         # Get all subfolder
         subfolder = get_subfolder(folder)
-        if isempty(subfolder)
+        if isempty(subfolder) || !opts.do_state
             subfolder = [folder]
         end
 
