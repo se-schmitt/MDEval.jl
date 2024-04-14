@@ -4,11 +4,10 @@ module MDEval
 using Dates, Printf, ProgressMeter
 using DelimitedFiles, Distributed
 using FFTW, LsqFit, NLsolve
-using Distributions, Statistics, StatsBase
+using Distributions, Statistics, StatsBase, RollingFunctions
 using PyCall, PyPlot
 
 # Globals
-hline = "="^60
 dateformat = "yyyy-mm-dd HH:MM:SS"
 reduced_units = false
 kB = 1.380649e-23                   # J/K
@@ -44,7 +43,7 @@ Evaluate molecular dynamics (MD) simulation files.
 - `keywords::NamedTuple`: Keywords for evaluation.
 """
 function mdeval(mode::Symbol, folder::String, keywords::NamedTuple)
-    println(hline,"\n","START: \t",Dates.format(now(),dateformat),"\nFolder: ",folder,"\n",hline)
+    println("="^60,"\n","START: \t",Dates.format(now(),dateformat),"\nFolder: ",folder,"\n","-"^60)
     println("$(Dates.format(now(),dateformat)): RUNNING ... ")
 
     # Get evaluation options
@@ -97,7 +96,7 @@ function mdeval(mode::Symbol, folder::String, keywords::NamedTuple)
     close("all")
     
     println("$(Dates.format(now(),dateformat)): DONE")
-    println(hline)
+    println("="^60)
 end 
 
 # Export 
