@@ -22,7 +22,7 @@ using MDEval
 `mdeval(mode::Symbol, folder::String, keywords::NamedTuple)`
 
 Input arguments:
-- `mode`: defines the mode of the simulations/evaluation. Possible values: `:single_run`, `:tdm,:vle`, `:nemd_shear`, or `:nemd_heat` (see [Section 2.1](#21-evaluation-modes))
+- `mode`: defines the mode of the simulations/evaluation. Possible values: `:single_run`, `:tdm`, `:vle`, `:nemd_shear`, or `:nemd_heat` (see [Section 2.1](#21-evaluation-modes))
 - `folder`: path to main folder containing all simulation data (see [Section 2.3](#23-folder-structure))
 - `keywords`: options to define the evaluation parameters (see [Section 2.2](#22-keywords))
 
@@ -34,8 +34,8 @@ Different simulation types can be evaluated:
 
 - Evaluation of single run simulations for thermodynamic properties (including transport properties) (`:single_run`)
 - [Time decomposition method (TDM)](https://www.doi.org/10.1021/acs.jctc.5b00351) for transport properties (`:tdm`)
-- Evaluation of VLE simulations (direct two phase simualtions) (`:vle`)
-- Evaluation of NEMD shear simulations to determine viscosity (`:nemd_shear`)
+- Evaluation of vapou-liquid equilibrium (VLE) simulations (direct two phase simualtions) (`:vle`)
+- Evaluation of non-equilibrium molecular dynamics (NEMD) shear simulations to determine viscosity (`:nemd_shear`)
 - Evaluation of NEMD heat transfer simulation to determine thermal conductivity (`:nemd_heat`)
 
 ### 2.2 Keywords
@@ -56,8 +56,8 @@ Different simulation types can be evaluated:
 | `debug_mode`    | `true`, `false`                    | `:single_run`                        | if debug mode is enables, errors are thrown directly                                                                                                                            |
 | `acf_calc_mode` | `autocov`, `fft` [`autocov`/`fft`] | `:single_run`, `:tdm`                | mode for acf calculation (`autocov`: full acf by Julia `autocov` command (can be slowly for long signals), `fft`: acf calculation by FFT (fast, but inaccurate for long times)) |
 | `do_structure`  | `true`, `false` [`false`]          | all                                  | structure evaluation                                                                                                                                                            |
-| `n_bin`         | integer ≥ 0 [`100`]                | all                                  | number of bins for rdf calculation                                                                                                                                              |
-| `r_cut`         | float [`10.0`]                     | all                                  | cut-off radius for rdf (unit: Å)calculation                                                                                                                                     |
+| `n_bin`         | integer ≥ 0 [`100`]                | all                                  | number of bins for radial pair distribution (RDF) calculation                                                                                                                                              |
+| `r_cut`         | float [`10.0`]                     | all                                  | cut-off radius for RDF (unit: Å) calculation                                                                                                                                     |
 | `units`         | `metal`, `reduced` [`real`]        | all                                  | units of simulation (real: LAMMPS SI units, reduced: reduced by LJ parameters)                                                                                                  |
 | `k_L_thermo`    | float [`0.1`]                      | `:nemd_heat`                         | reduced length of thermostats (as fraction of total box length)                                                                                                                 |
 
