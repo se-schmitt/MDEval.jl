@@ -37,7 +37,7 @@ function eval_single(subfolder,inpar)
         L_box = (mass_total / ρ.val * 1e-6) ^ (1/3)         # [L_box] = m
     end
 
-    if inpar.do_transport == 1
+    if inpar.do_transport
         # Evaluate Pressure Data to Calculate Viscosities
         if inpar.mode == "single_run"
             η, η_V = calc_viscosities(info, "single"; mode_acf=inpar.acf_calc_mode, CorrLength=inpar.corr_length, SpanCorrFun=inpar.span_corr_fun, nEvery=inpar.n_every)
@@ -64,14 +64,14 @@ function eval_single(subfolder,inpar)
     else
         rdfexists = false
     end
-    if (inpar.do_transport == 1) || ((inpar.do_structure == 1) && !(rdfexists))
+    if inpar.do_transport || (inpar.do_structure && !(rdfexists))
         dump = load_dump(info)
         dumpexists = true
     else
         dump = []
     end
 
-    if inpar.do_transport == 1
+    if inpar.do_transport
         # Evaluate Atoms Positions to calculate Self DIffusivity Coefficient
         if inpar.mode == "single_run"
             D = calc_selfdiffusion(info, dump; err_mode = "particles")
@@ -87,7 +87,7 @@ function eval_single(subfolder,inpar)
             else
                 Dcorr = kB*T.val*ξ/(6*π*η.val*L_box)
             end
-            for i = 1:length(D)
+            for i in eachindex(D)
                 D[i].val = D[i].val + Dcorr
             end
         end
@@ -103,7 +103,7 @@ function eval_single(subfolder,inpar)
     end
 
     # Structural evaluation
-    if inpar.do_structure == 1
+    if inpar.do_structure
         Rg = eval_structure(dump,info)
     else
         Rg = []
