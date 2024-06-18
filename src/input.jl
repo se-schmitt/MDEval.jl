@@ -60,6 +60,7 @@ function get_opts(mode, folder, kw)
 
     # Set options 'tdm'
     if mode == :tdm
+        opts.do_transport = true
         opts.n_boot = :n_boot in keys(kw) ? kw.n_boot : throw_missing(:n_boot)
         opts.cutcrit = :cutcrit in keys(kw) ? kw.cutcrit : 0.4
         opts.acf_calc_mode = :acf_calc_mode in keys(kw) ? kw.acf_calc_mode : "fft"
