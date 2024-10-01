@@ -188,7 +188,7 @@ function TDM(mat::Array{Float64,2}, t::Array{Float64,1}, set::OptsTDM)
     converged = false
     p0_std = [[1.0,1.0], [2.0,0.5], [0.5,2.0], [1e-4,1.0], [1.0,1e-4]]
     fit_std = []
-    pos = findfirst((std_t./ave_t)[:] .> set.cutcrit .&& [1:length(t);] .> 0.1*length(t))
+    pos = findfirst(((std_t./ave_t)[:] .> set.cutcrit) .& ([1:length(t);] .> 0.1*length(t)))
     if isnothing(pos) pos = length(t) end
     cut_std = minimum([length(t), round(Int64,1.1 .* pos)])
     while !(converged)
