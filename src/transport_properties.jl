@@ -188,9 +188,11 @@ function TDM(mat::Array{Float64,2}, t::Array{Float64,1}, set::OptsTDM)
     converged = false
     p0_std = [[1.0,1.0], [2.0,0.5], [0.5,2.0], [1e-4,1.0], [1.0,1e-4]]
     fit_std = []
-    pos = findfirst(((std_t./ave_t)[:] .> set.cutcrit) .& ([1:length(t);] .> 0.1*length(t)))
-    if isnothing(pos) pos = length(t) end
-    cut_std = minimum([length(t), round(Int64,1.1 .* pos)])
+    pos = findfirst(((std_t./ave_t)[:] .> set.cutcrit) .& ([1:length(t);] .> 0.2*length(t)))
+    if isnothing(pos) 
+        pos = length(t) 
+    end
+    cut_std = minimum([length(t), round(Int64,1.5 .* pos)])
     while !(converged)
         k += 1
         fit_std = curve_fit(fun_std, t[1:cut_std], std_t[1:cut_std], p0_std[k])
@@ -201,7 +203,7 @@ function TDM(mat::Array{Float64,2}, t::Array{Float64,1}, set::OptsTDM)
 
     # Calculation of tcut (or cut)
     skip_std = findfirst(t .>= 2)
-    cut = findfirst(fun_std(t[skip_std:end],fit_std.param)./ave_t[skip_std:end] .> set.cutcrit)
+    cut = findfirst((fun_std(t[skip_std:end],fit_std.param)./ave_t[skip_std:end] .> set.cutcrit) .& ([1:length(t);] .> 0.2*length(t)))
     if isnan(set.tskip)
         skip = round(Int64,cut*0.02)
     else
