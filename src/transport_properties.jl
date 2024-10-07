@@ -203,7 +203,7 @@ function TDM(mat::Array{Float64,2}, t::Array{Float64,1}, set::OptsTDM)
 
     # Calculation of tcut (or cut)
     skip_std = findfirst(t .>= 2)
-    cut = findfirst((fun_std(t[skip_std:end],fit_std.param)./ave_t[skip_std:end] .> set.cutcrit) .& ([1:length(t);] .> 0.2*length(t)))
+    cut = findfirst((fun_std(t[skip_std:end],fit_std.param)./ave_t[skip_std:end] .> set.cutcrit) .& ([skip_std:length(t);] .> 0.2*length(t)))
     if isnan(set.tskip)
         skip = round(Int64,cut*0.02)
     else
